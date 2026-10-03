@@ -15,7 +15,7 @@ group = "dnz.launcher"
 version = "0.1.0"
 
 /** DNZ Launcher's released version (installer, Mac app, Windows "Installed apps"). */
-val launcherVersion = "1.0.0"
+val launcherVersion = "1.0.1"
 
 dependencies {
     implementation(compose.desktop.currentOs)
@@ -115,7 +115,7 @@ val macApp = tasks.register("macApp") {
                 <key>CFBundleExecutable</key><string>dnz-launcher</string>
                 <key>CFBundleIconFile</key><string>dnz</string>
                 <key>CFBundlePackageType</key><string>APPL</string>
-                <key>CFBundleShortVersionString</key><string>1.0.0</string>
+                <key>CFBundleShortVersionString</key><string>$launcherVersion</string>
                 <key>CFBundleVersion</key><string>1</string>
                 <key>LSMinimumSystemVersion</key><string>11.0</string>
                 <key>LSApplicationCategoryType</key><string>public.app-category.games</string>

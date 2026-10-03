@@ -1,0 +1,82 @@
+# Builds every DNZ release file from this repository on GitHub's machines: the client and schematic mods
+# (Minecraft 26.2 and 26.3) and DNZ Launcher for Windows (setup, portable, single jar).
+# Runs on every push to main, by hand (Actions -> "Build" -> Run workflow) and for every "v*" tag.
+# The Windows files are the ones sent to SignPath for code signing.
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  mods:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mc: ["26.2", "26.3"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Client
+        working-directory: client
+        run: |
+          chmod +x gradlew
+          ./gradlew build -Pminecraft_version=${{ matrix.mc }} --no-daemon
+
+      - name: Schematic
+        working-directory: schematic
+        run: |
+          chmod +x gradlew
+          ./gradlew build -Pminecraft_version=${{ matrix.mc }} --no-daemon
+
+      - name: Collect
+        run: |
+          mkdir out
+          cp client/build/libs/dnz-client-mc${{ matrix.mc }}-*.jar out/DNZ-Client-mc${{ matrix.mc }}.jar
+          cp schematic/build/libs/dnz-schematic-mc${{ matrix.mc }}-*.jar out/DNZ-Schematic-mc${{ matrix.mc }}.jar
+          rm -f out/*-sources.jar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DNZ-mods-mc${{ matrix.mc }}
+          path: out/*.jar
+
+  launcher-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: launcher
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      # The Microsoft sign-in app id is a repository secret, never in the code.
+      - name: Keys
+        env:
+          MS: ${{ secrets.MICROSOFT_CLIENT_ID }}
+        run: printf 'microsoft.clientId=%s\n' "$MS" > src/main/resources/dnz-keys.properties
+
+      - name: Build
+        run: ./gradlew installer portable standaloneJar "-PjavaRuntime=$JAVA_HOME" --no-daemon
+
+      # installer, portable and standaloneJar write to yayin-dosyalari/ next to launcher/.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DNZ-Launcher-Windows
+          path: yayin-dosyalari/*

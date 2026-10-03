@@ -55,7 +55,7 @@ namespace Dnz
         /// <summary>Privacy policy on the website (DNZ collects nothing; see PRIVACY.md).</summary>
         static void OpenPrivacy()
         {
-            try { Process.Start(new ProcessStartInfo("https://dnzclient.com/privacy") { UseShellExecute = true }); } catch { }
+            try { Process.Start(new ProcessStartInfo("https://dnzclient.com/privacy-policy") { UseShellExecute = true }); } catch { }
         }
 
         void ChooseFolder()
