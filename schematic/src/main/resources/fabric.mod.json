@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "dnzschematic",
+	"version": "${version}",
+	"name": "DNZ Schematic",
+	"description": "Shows .litematic buildings as see-through blocks and marks every wrong, missing or extra block. Layer by layer, with a material list. Press M.",
+	"authors": ["DNZ"],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/dnzschematic/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.dnz.schematic.DnzSchematic"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~${mc}",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

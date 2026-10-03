@@ -1,0 +1,14 @@
+{
+	"schemaVersion": 1,
+	"id": "dnzclient-gametest",
+	"version": "1.0.0",
+	"name": "DNZ Client in-game tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.dnz.client.gametest.DnzScriptGameTest", "com.dnz.client.gametest.DnzMenuGameTest", "com.dnz.client.gametest.DnzTurboGameTest", "com.dnz.client.gametest.DnzHudGameTest", "com.dnz.client.gametest.DnzBenchmarkGameTest"]
+	},
+	"mixins": ["dnzclient-gametest.mixins.json"],
+	"depends": {
+		"dnzclient": "*"
+	}
+}

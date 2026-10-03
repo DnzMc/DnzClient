@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "dnzschematic-gametest",
+	"version": "1.0.0",
+	"name": "DNZ Schematic in-game test",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.dnz.schematic.gametest.SchematicGameTest"]
+	},
+	"depends": {
+		"dnzschematic": "*"
+	}
+}

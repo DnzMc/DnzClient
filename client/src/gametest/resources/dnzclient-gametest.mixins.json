@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.dnz.client.gametest.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"OptionsGraphicsApiMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

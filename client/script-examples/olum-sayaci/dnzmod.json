@@ -1,0 +1,9 @@
+{
+  "id": "olum-sayaci",
+  "name": "Ölüm Sayacı",
+  "version": "1.0.0",
+  "author": "DNZ",
+  "description": "Kaç kez öldüğünü HUD'da gösterir ve kaydeder.",
+  "main": "main.js",
+  "api": 1
+}

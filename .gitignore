@@ -1,0 +1,37 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+run/
+out/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local tools (JDK etc.)
+araclar/
+
+# Anticheat is never published
+anticheat/
+
+# Private keys and IDs (never published; see launcher/dnz-keys.properties.example)
+launcher/src/main/resources/curseforge.key
+launcher/src/main/resources/dnz-keys.properties
+
+# Plans and parts that are not released
+PLAN.md
+bedrock/
+mod-builder/
+
+# Large release files (published on Modrinth/CurseForge instead)
+yayin-dosyalari/
+
+# Logs and crash reports
+*.log
+*.log.gz
+logs/
+crash-reports/
+

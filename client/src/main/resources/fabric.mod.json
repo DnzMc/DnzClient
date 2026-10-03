@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "dnzclient",
+	"version": "${version}",
+	"name": "DNZ Client",
+	"description": "Modern pause menu with skin changer. Powered by Sodium and Sodium Extra.",
+	"authors": ["DNZ"],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/dnzclient/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.dnz.client.DnzClient"]
+	},
+	"mixins": ["dnzclient.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~${mc}",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"recommends": {
+		"sodium": "*",
+		"sodium-extra": "*",
+		"modmenu": "*"
+	}
+}

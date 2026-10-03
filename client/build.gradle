@@ -1,0 +1,134 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+// Mod versions that depend on the Minecraft version live in versions/<mc>.properties.
+// Build for another version with: gradlew build -Pminecraft_version=26.2
+def mcVersionFile = file("versions/${project.minecraft_version}.properties")
+if (!mcVersionFile.exists()) {
+	throw new GradleException("Unknown Minecraft version ${project.minecraft_version}: add versions/${mcVersionFile.name}")
+}
+def mcVersionProps = new Properties()
+mcVersionFile.withInputStream { mcVersionProps.load(it) }
+mcVersionProps.each { key, value -> project.ext.set(key, value) }
+
+// FPS benchmark: gradlew runClientGameTest -Pbench=base (mods from before 01.10.2026) or -Pbench=full (with the new ones).
+def bench = project.findProperty('bench')
+
+repositories {
+	mavenCentral()
+	maven { url = 'https://api.modrinth.com/maven' }
+}
+
+sourceSets {
+	main {
+		java.srcDir "src/mc${project.minecraft_version}/java"
+		// Shaders differ between Minecraft versions (26.3 changed the uniform layout).
+		resources.srcDir "src/mc${project.minecraft_version}/resources"
+	}
+}
+
+base {
+	archivesName = "dnz-client-mc${project.minecraft_version}"
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// JavaScript engine for DNZ Script mods, bundled inside the DNZ Client jar (MPL 2.0).
+	implementation "org.mozilla:rhino:${project.rhino_version}"
+	include "org.mozilla:rhino:${project.rhino_version}"
+
+	// Compiled against Sodium to show its settings in the DNZ menu; not bundled (players get the official jar).
+	compileOnly "maven.modrinth:sodium:${project.sodium_version}"
+
+	// Only for testing in the dev client; players get these from the modpack.
+	localRuntime "maven.modrinth:sodium:${project.sodium_version}"
+	localRuntime "maven.modrinth:sodium-extra:${project.sodium_extra_version}"
+	localRuntime "maven.modrinth:modmenu:${project.modmenu_version}"
+	// Performance mods the launcher installs next to DNZ Client (tested together in the dev client).
+	localRuntime "maven.modrinth:lithium:${project.perf_lithium}"
+	localRuntime "maven.modrinth:entityculling:${project.perf_entityculling}"
+	localRuntime "maven.modrinth:immediatelyfast:${project.perf_immediatelyfast}"
+	localRuntime "maven.modrinth:ferrite-core:${project.perf_ferritecore}"
+	localRuntime "maven.modrinth:badoptimizations:${project.perf_badoptimizations}"
+	// Dynamic FPS lowers the frame rate of an unfocused window, so the FPS benchmark runs without it.
+	if (bench == null) {
+		localRuntime "maven.modrinth:dynamic-fps:${project.perf_dynamicfps}"
+	}
+	// Added 01.10.2026; "-Pbench=base" leaves them out to measure the FPS from before.
+	if (bench != 'base') {
+		localRuntime "maven.modrinth:ixeris:${project.perf_ixeris}"
+		localRuntime "maven.modrinth:gnetum:${project.perf_gnetum}"
+		localRuntime "maven.modrinth:obe:${project.perf_obe}"
+		localRuntime "maven.modrinth:cull-fewer-leaves:${project.perf_cullfewerleaves}"
+		localRuntime "maven.modrinth:asynclogger:${project.perf_asynclogger}"
+		localRuntime "maven.modrinth:debugify:${project.perf_debugify}"
+	}
+}
+
+// In-game tests (gradlew runClientGameTest): a Minecraft window opens, plays through the tests and closes.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "dnzclient-gametest"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+// The in-game test copies the example script mods from here.
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+	systemProperty 'dnz.examples', file('script-examples').absolutePath
+	// With -Pbench only the FPS benchmark runs (the other tests skip themselves).
+	systemProperty 'dnz.bench', bench ?: ''
+	systemProperty 'dnz.benchSize', project.findProperty('bench_size') ?: '1600x900'
+	systemProperty 'dnz.benchApi', project.findProperty('bench_api') ?: ''
+	// Minecraft's own switch: --graphicsBackend vulkan|opengl (the option in options.txt is reset by the test runner).
+	if (project.hasProperty('bench_api')) {
+		args '--graphicsBackend', project.findProperty('bench_api')
+	}
+	// -Pbench_jfr: Java Flight Recorder records where the game spends its time (dnz-bench.jfr in the run folder).
+	if (project.hasProperty('bench_jfr')) {
+		jvmArgs '-XX:StartFlightRecording=filename=dnz-bench.jfr,settings=profile'
+	}
+}
+
+// Checks the DNZ Script sandbox (Java access blocked, endless loops stopped, JS features) without starting the game.
+tasks.register('scriptCheck', JavaExec) {
+	group = 'dnz'
+	dependsOn 'testClasses'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.dnz.client.script.ScriptEngineCheck'
+}
+
+// ScriptEngineCheck is a plain program, not a JUnit test; every build runs it instead.
+tasks.named('test') {
+	failOnNoDiscoveredTests = false
+}
+tasks.named('check') {
+	dependsOn 'scriptCheck'
+}
+
+processResources {
+	def version = project.version
+	def mc = project.minecraft_version
+	inputs.property "version", version
+	inputs.property "mc", mc
+	filesMatching("fabric.mod.json") {
+		expand "version": version, "mc": mc
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}

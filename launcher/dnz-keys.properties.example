@@ -1,0 +1,3 @@
+# Copy to src/main/resources/dnz-keys.properties and fill in your own values. That file is never put in git.
+# Microsoft sign-in: Application (client) ID of your app at portal.azure.com -> App registrations
+microsoft.clientId=

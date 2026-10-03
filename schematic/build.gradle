@@ -1,0 +1,84 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+// Same per-version mod versions as DNZ Client, so both always build against the same Fabric API.
+// Build for another version with: gradlew build -Pminecraft_version=26.2
+def mcVersionFile = file("../client/versions/${project.minecraft_version}.properties")
+if (!mcVersionFile.exists()) {
+	throw new GradleException("Unknown Minecraft version ${project.minecraft_version}: add ../client/versions/${mcVersionFile.name}")
+}
+def mcVersionProps = new Properties()
+mcVersionFile.withInputStream { mcVersionProps.load(it) }
+mcVersionProps.each { key, value -> project.ext.set(key, value) }
+
+repositories {
+	mavenCentral()
+	maven { url = 'https://api.modrinth.com/maven' }
+}
+
+sourceSets {
+	main {
+		java.srcDir "src/mc${project.minecraft_version}/java"
+	}
+}
+
+base {
+	archivesName = "dnz-schematic-mc${project.minecraft_version}"
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Only for testing in the dev client: DNZ players always have Sodium next to this mod.
+	localRuntime "maven.modrinth:sodium:${project.sodium_version}"
+}
+
+// In-game test (gradlew runClientGameTest): a Minecraft window opens, builds a test schematic and closes.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "dnzschematic-gametest"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
+// Reads and checks .litematic files without starting the game: gradlew litematicCheck
+tasks.register('litematicCheck', JavaExec) {
+	group = 'dnz'
+	dependsOn 'testClasses'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.dnz.schematic.LitematicCheck'
+	// Real files to read too: -Pfiles="a.litematic;b.litematic"
+	def files = project.findProperty('files')
+	if (files) {
+		args files.toString().split(';')
+	}
+}
+tasks.named('test') {
+	failOnNoDiscoveredTests = false
+}
+
+processResources {
+	def version = project.version
+	def mc = project.minecraft_version
+	inputs.property "version", version
+	inputs.property "mc", mc
+	filesMatching("fabric.mod.json") {
+		expand "version": version, "mc": mc
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
