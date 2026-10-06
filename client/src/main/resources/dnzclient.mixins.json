@@ -3,6 +3,14 @@
 	"package": "com.dnz.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"OpenWorldTextMixin",
+		"TabListFriendsMixin",
+		"GuiTextStateAccessor",
+		"GuiRenderStateNvgMixin",
+		"ScreenNvgMixin",
+		"SkiaPresentMixin",
+		"CoolFramerateMixin",
+		"OptionsCloudMixin",
 		"AbstractButtonMixin",
 		"AbstractSliderButtonMixin",
 		"BlockEntityRenderDispatcherMixin",
@@ -18,7 +26,6 @@
 		"GlyphEntryAccessor",
 		"GlyphSamplerMixin",
 		"GuiGraphicsAccessor",
-		"GuiMixin",
 		"HudEffectsMixin",
 		"ItemContainerContentsMixin",
 		"ItemStackTooltipMixin",
@@ -36,7 +43,8 @@
 		"TextSmoothMixin",
 		"TitleScreenSmoothMixin",
 		"TrueTypeProviderMixin",
-		"WindowRetinaMixin"
+		"WindowRetinaMixin",
+		"WindowTitleMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,6 +1,13 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import java.net.HttpURLConnection
+import java.net.URI
+import java.security.KeyFactory
+import java.security.MessageDigest
+import java.security.Signature
+import java.security.spec.PKCS8EncodedKeySpec
+import java.util.Base64
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -15,7 +22,7 @@ group = "dnz.launcher"
 version = "0.1.0"
 
 /** DNZ Launcher's released version (installer, Mac app, Windows "Installed apps"). */
-val launcherVersion = "1.0.1"
+val launcherVersion = "1.0.10"
 
 dependencies {
     implementation(compose.desktop.currentOs)
@@ -59,9 +66,16 @@ compose.desktop {
     }
 }
 
+// gradlew run is the developer launcher: it shows developer-only features (the test account, see DevBuild.kt).
+tasks.withType<JavaExec>().configureEach {
+    if (name == "run") systemProperty("dnz.dev", "true")
+}
+
 // The app jar (installer, Mac app, preview) leaves out the developer tools: checks, screenshots, pack builder.
 // The dnz tasks below run them from the compiled classes instead.
 tasks.jar {
+    // Read by the self-update (Updater.kt): only newer versions are installed.
+    manifest { attributes("Implementation-Version" to launcherVersion) }
     // An old private key may still lie in the resources folder; it never goes into a release.
     exclude("curseforge.key")
     exclude("dnz/launcher/*TestKt*.class", "dnz/launcher/*ScreenshotsKt*.class", "dnz/launcher/Shot.class", "dnz/launcher/MrpackBuilder*.class")
@@ -243,6 +257,45 @@ tasks.register("installer") {
         setup.parentFile.mkdirs()
         compile(setup, listOf(src.resolve("Common.cs").path, src.resolve("Setup.cs").path, work.resolve("BuildInfo.cs").path), listOf(logo, zip))
         println("Setup: ${setup.canonicalPath} (${setup.length() / (1024 * 1024)} MB)")
+    }
+}
+
+// ---------------------------------------------------------------- Self-update files (gradlew updatePackage)
+// Files for download.dnzclient.com that installed launchers update themselves from (see Updater.kt):
+// launcher-latest.json (every lib jar with its SHA-256), its Ed25519 signature launcher-latest.json.sig and
+// launcher-<sha256>.jar for each jar the server does not have yet. Signed with the private key in
+// ~/.dnz/update-signing-key.pem (never in the repository). Output: yayin-dosyalari/guncelleme-<version>/.
+tasks.register("updatePackage") {
+    group = "dnz"
+    dependsOn(tasks.jar)
+    doLast {
+        val keyFile = File(System.getProperty("user.home"), ".dnz/update-signing-key.pem")
+        check(keyFile.isFile) { "Update signing key not found: $keyFile" }
+        val pem = keyFile.readText().lines().filter { !it.startsWith("-----") }.joinToString("")
+        val key = KeyFactory.getInstance("Ed25519")
+            .generatePrivate(PKCS8EncodedKeySpec(Base64.getDecoder().decode(pem)))
+        fun sha256(f: File) = MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+        fun onServer(name: String) = runCatching {
+            val c = URI("https://download.dnzclient.com/$name").toURL().openConnection() as HttpURLConnection
+            c.requestMethod = "HEAD"
+            c.responseCode == 200
+        }.getOrDefault(false)
+
+        val out = rootDir.resolve("../yayin-dosyalari/guncelleme-$launcherVersion").apply { deleteRecursively(); mkdirs() }
+        // Same names as in the installed lib folder (installer and portable tasks).
+        val jars = (sourceSets["main"].runtimeClasspath.filter { it.name.endsWith(".jar") } + files(tasks.jar.get().archiveFile)).files
+            .associateBy { it.parentFile.name.take(8) + "-" + it.name }.toSortedMap()
+        val q = "\""
+        val entries = jars.map { (name, f) ->
+            val sha = sha256(f)
+            if (!onServer("launcher-$sha.jar")) f.copyTo(out.resolve("launcher-$sha.jar"), overwrite = true)
+            "    {${q}name$q: $q$name$q, ${q}sha256$q: $q$sha$q}"
+        }
+        val json = ("{\n  ${q}version$q: $q$launcherVersion$q,\n  ${q}files$q: [\n" + entries.joinToString(",\n") + "\n  ]\n}\n").toByteArray()
+        val sig = Signature.getInstance("Ed25519").run { initSign(key); update(json); sign() }
+        out.resolve("launcher-latest.json").writeBytes(json)
+        out.resolve("launcher-latest.json.sig").writeText(Base64.getEncoder().encodeToString(sig))
+        println("Update files: ${out.canonicalPath} (${out.listFiles()!!.size} files to upload)")
     }
 }
 

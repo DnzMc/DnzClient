@@ -5,7 +5,7 @@
 	"name": "DNZ Client in-game tests",
 	"environment": "client",
 	"entrypoints": {
-		"fabric-client-gametest": ["com.dnz.client.gametest.DnzScriptGameTest", "com.dnz.client.gametest.DnzMenuGameTest", "com.dnz.client.gametest.DnzTurboGameTest", "com.dnz.client.gametest.DnzHudGameTest", "com.dnz.client.gametest.DnzBenchmarkGameTest"]
+		"fabric-client-gametest": ["com.dnz.client.gametest.DnzScriptGameTest", "com.dnz.client.gametest.DnzMenuGameTest", "com.dnz.client.gametest.DnzTurboGameTest", "com.dnz.client.gametest.DnzHudGameTest", "com.dnz.client.gametest.DnzBenchmarkGameTest", "com.dnz.client.gametest.DnzSkiaGameTest"]
 	},
 	"mixins": ["dnzclient-gametest.mixins.json"],
 	"depends": {

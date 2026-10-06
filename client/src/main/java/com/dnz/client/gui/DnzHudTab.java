@@ -2,6 +2,7 @@ package com.dnz.client.gui;
 
 import com.dnz.client.DnzConfig;
 import com.dnz.client.L;
+import com.dnz.client.compat.Compat;
 import com.dnz.client.hud.DnzHud;
 import com.dnz.client.hud.HudModule;
 import java.util.ArrayList;
@@ -55,6 +56,9 @@ public class DnzHudTab extends DnzMenuScreen {
 			this.filter = filter;
 		}
 	}
+
+	/** Card id of Open World (opens the single player world to friends). */
+	private static final String OPEN_WORLD = "page.openworld";
 
 	/** One card: a module (switches on/off) or a page (opens). */
 	private record Card(String id, String name, char icon, HudModule module, Tab page) {
@@ -183,6 +187,10 @@ public class DnzHudTab extends DnzMenuScreen {
 			if (Tab.SCHEMATIC.available()) {
 				list.add(new Card("page.schematic", "Schematic", '\uea3b', null, Tab.SCHEMATIC));
 			}
+			// Opens the single player world to friends anywhere (internet hosting comes with DNZ Client).
+			if (this.minecraft.hasSingleplayerServer()) {
+				list.add(new Card(OPEN_WORLD, "Open World", Icon.SERVER, null, null));
+			}
 		}
 		if (!q.isEmpty()) {
 			list.removeIf(c -> !c.name().toLowerCase(Locale.ROOT).contains(q));
@@ -202,14 +210,13 @@ public class DnzHudTab extends DnzMenuScreen {
 		return 4;
 	}
 
-	/** Cards keep the reference proportions: a bit more than half as tall as wide, the name bar about a quarter. */
+	/** Cards a little less than half as tall as wide. */
 	private int cardH() {
-		return Math.round(this.cardW() * 0.53F);
+		return Math.max(40, Math.round(this.cardW() * 0.47F));
 	}
 
-	private int barH() {
-		return Math.max(11, Math.round(this.cardH() * 0.27F));
-	}
+	/** The gear in a module card's top right corner (opens its settings). */
+	private static final int GEAR = 14;
 
 	private int cardW() {
 		int cols = this.columns();
@@ -221,8 +228,8 @@ public class DnzHudTab extends DnzMenuScreen {
 		return Math.max(0, rows * (this.cardH() + GAP) - GAP - this.gridHeight());
 	}
 
-	/** Set by cardAt: the mouse is on the name bar of the card (switches it) instead of its body (opens its settings). */
-	private boolean onBar;
+	/** Set by cardAt: the mouse is on the card's gear (opens its settings) instead of the card (switches it). */
+	private boolean onGear;
 
 	/** The card under the mouse, or null. */
 	private Card cardAt(List<Card> list, double mouseX, double mouseY) {
@@ -237,7 +244,8 @@ public class DnzHudTab extends DnzMenuScreen {
 		int row = (int) (inRow / (this.cardH() + GAP));
 		double inCardY = inRow - row * (this.cardH() + GAP);
 		boolean inCard = (mouseX - this.cx) - col * (w + GAP) < w && inCardY < this.cardH();
-		this.onBar = inCardY >= this.cardH() - this.barH();
+		double inCardX = (mouseX - this.cx) - col * (w + GAP);
+		this.onGear = inCardX >= w - GEAR - 2 && inCardY <= GEAR + 2;
 		int index = row * cols + col;
 		return inCard && col < cols && index >= 0 && index < list.size() ? list.get(index) : null;
 	}
@@ -248,13 +256,15 @@ public class DnzHudTab extends DnzMenuScreen {
 			Card c = this.cardAt(this.cards(), event.x(), event.y());
 			if (c != null) {
 				AbstractWidget.playButtonClickSound(this.minecraft.getSoundManager());
-				if (c.module() == null) {
+				if (OPEN_WORLD.equals(c.id())) {
+					this.minecraft.gui.setScreen(Compat.openWorldScreen(this));
+				} else if (c.module() == null) {
 					this.go(c.page());
-				} else if (this.onBar) {
+				} else if (this.onGear) {
+					this.openPage(new DnzModuleScreen(this.parent, c.module()));
+				} else {
 					c.module().setEnabled(!c.module().enabled());
 					DnzConfig.get().save();
-				} else {
-					this.openPage(new DnzModuleScreen(this.parent, c.module()));
 				}
 				return true;
 			}
@@ -289,7 +299,6 @@ public class DnzHudTab extends DnzMenuScreen {
 		int cols = this.columns();
 		int w = this.cardW();
 		int ch = this.cardH();
-		int bar = this.barH();
 		int accent = Theme.menuAccent();
 		g.enableScissor(this.cx, top, this.cx + this.cw, top + height);
 		for (int i = 0; i < list.size(); i++) {
@@ -303,42 +312,34 @@ public class DnzHudTab extends DnzMenuScreen {
 			if (y + ch < top || y > top + height) {
 				continue;
 			}
-			// Glass card: thin edge, lighter at the top. Only above the name bar, so no gray edge shows around the bar.
-			int barTop = Math.max(top, Math.round(y) + ch - bar);
-			int barBottom = Math.min(top + height, Math.round(y) + ch);
-			if (barTop > top) {
-				g.enableScissor(x - 1, top, x + w + 1, barTop);
-				Smooth.rect(g, x, y, w, ch, 5, Theme.lerp(0xFF3C4552, 0xFF4A5462, st[0]));
-				Smooth.gradient(g, x + 0.75F, y + 0.75F, w - 1.5F, ch - 1.5F, 4.25F,
-					Theme.lerp(0xFF3A4351, 0xFF434D5C, st[0]), Theme.lerp(0xFF2A323E, 0xFF313A47, st[0]), false);
-				g.disableScissor();
+			// Dark card, its edge orange when on; icon top left, name and On / Off at the bottom, gear top right.
+			boolean page = c.module() == null;
+			int edge = page ? Theme.lerp(0xFF1B212C, 0xFF2A3342, st[0]) : Theme.lerp(Theme.lerp(0xFF1B212C, 0xFF2A3342, st[0]), Theme.withAlpha(accent, 0.6F), st[1]);
+			Smooth.rect(g, x - 0.75F, y - 0.75F, w + 1.5F, ch + 1.5F, 8.75F, edge);
+			Smooth.rect(g, x, y, w, ch, 8, Theme.lerp(0xFF121821, 0xFF161D28, st[0]));
+			int iconColor = page ? 0xFFC3C9D6 : Theme.lerp(0xFF6F7787, accent, st[1]);
+			Icon.draw(g, c.icon(), x + 8, y + 8, 12, iconColor);
+			if (!page) {
+				int gear = this.onGear && c.equals(hovered) ? 0xFFFFFFFF : 0xFF5A6272;
+				Icon.draw(g, Icon.PREFERENCES, x + w - GEAR, y + 4, 9, gear);
 			}
-			// Name bar: the bottom of the same rounded card, clipped, so only its lower corners are round.
-			if (barBottom > barTop) {
-				g.enableScissor(x, barTop, x + w, barBottom);
-				Smooth.rect(g, x, y, w, ch, 5, Theme.lerp(0xFF3E4757, accent, st[1]));
-				g.disableScissor();
-				g.fill(x + 1, Math.round(y) + ch - bar, x + w - 1, Math.round(y) + ch - bar + 1, Theme.lerp(0x40FFFFFF, 0x00FFFFFF, st[1]));
-			}
-			// Glowing dot in the top right corner.
-			if (c.module() != null) {
-				Smooth.shadow(g, x + w - 7, y + 4, 3.5F, 3.5F, 1.75F, 3, Theme.withAlpha(accent, 0.8F));
-				Smooth.rect(g, x + w - 7, y + 4, 3.5F, 3.5F, 1.75F, accent);
-			}
-			// Icon
-			float size = Math.round((ch - bar) * 0.55F);
-			Icon.draw(g, c.icon(), x + (w - size) / 2.0F, y + (ch - bar - size) / 2.0F + 1, size, 0xFFFFFFFF);
-			// Name, cut with "…" when it does not fit.
-			float s = 0.72F;
-			Component name = bold(c.name());
-			if (this.font.width(name) * s > w - 6) {
-				name = bold(this.font.plainSubstrByWidth(c.name(), (int) ((w - 12) / s)) + "…");
+			float s = 0.78F;
+			Component name = DnzMenuScreen.bold(c.name());
+			if (this.font.width(name) * s > w - 14) {
+				name = DnzMenuScreen.bold(this.font.plainSubstrByWidth(c.name(), (int) ((w - 20) / s)) + "…");
 			}
 			g.pose().pushMatrix();
-			g.pose().translate(x + w / 2.0F, Math.round(y) + ch - bar + (bar - 8 * s) / 2.0F + 0.5F);
+			g.pose().translate(x + 8, y + ch - (page ? 15 : 22));
 			g.pose().scale(s, s);
-			g.centeredText(this.font, name, 0, 0, st[1] > 0.5F ? Palette.ON_ACCENT : 0xFFFFFFFF);
+			g.text(this.font, name, 0, 0, 0xFFF1F3F7, false);
 			g.pose().popMatrix();
+			if (!page) {
+				g.pose().pushMatrix();
+				g.pose().translate(x + 8, y + ch - 11);
+				g.pose().scale(0.6F, 0.6F);
+				g.text(this.font, Ui.regular(c.module().enabled() ? "On" : "Off"), 0, 0, 0xFF8A93A6, false);
+				g.pose().popMatrix();
+			}
 		}
 		g.disableScissor();
 

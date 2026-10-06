@@ -10,6 +10,30 @@ public class DnzChangelogTab extends DnzMenuScreen {
 	}
 
 	private static final List<Release> RELEASES = List.of(
+		new Release("1.36.0", List.of(
+			"New DNZ menu look: icon rail, orange accent, dark cards (click to switch, gear for settings).",
+			"Right Shift opens a quick screen: DNZ CLIENT, a big MODS button, Profiles, Themes and Settings.",
+			"Friends: add players by name; they get a green star in the player list and you see when they join or leave.",
+			"ESC menu: Minecraft's own menu again, with a DNZ Settings button that opens this menu (Open World is here too).",
+			"Buttons and sliders outside the DNZ menu look like Minecraft's own; \"DNZ Client\" at the bottom right of the inventory and ESC menu.",
+			"The game window is called DNZ Client, and the title screen no longer shows the mod count.")),
+		new Release("1.35.0", List.of(
+			"New modules: Minimap, Look At (block or creature you look at), Custom Crosshair (6 styles, size, gap, thickness, color, outline), Hitboxes.",
+			"More info modules: Direction, Yaw / Pitch, Dimension, TPS, Frame Time, Entities, Chunks, Date, XP Level, Block, Durability, Item Count, Saturation.")),
+		new Release("1.34.0", List.of(
+			"New menu look: flat dark panel, plain sidebar, cards with a name bar (blue when on).",
+			"Menus are drawn by NanoVG on the graphics card (Minecraft 26.2, OpenGL): smoother and fewer stutters.")),
+		new Release("1.33.0", List.of(
+			"Buttons other mods add to the ESC menu (capes and more) now show in the DNZ ESC menu, top left.",
+			"ESC and DNZ menus in a world draw at most 60 FPS (less heat), and Cool mode in Preferences caps FPS for laptops.",
+			"Performance pack: Sciophobia, VMP, ServerCore and ModernFix.")),
+		new Release("1.32.0", List.of(
+			"Cloud save (optional): key bindings and DNZ settings follow your Minecraft account to other computers.",
+			"Turn it on in Preferences or in DNZ Launcher settings; nothing is sent while it is off.",
+			"Settings go to the cloud only when the game closes, never while you play (DNZ Launcher shows when it is saving).")),
+		new Release("1.31.0", List.of(
+			"Open World: open your single player world to friends anywhere (globe card in the Right Shift menu).",
+			"Friends join with the address from chat, no port forwarding needed.")),
 		new Release("1.30.1", List.of(
 			"Title screen: new sunset background (the world and server lists keep theirs).",
 			"Sharp \"DNZ CLIENT\" logo and smooth text on every title screen button.",

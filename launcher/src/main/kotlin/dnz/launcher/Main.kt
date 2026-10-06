@@ -14,10 +14,13 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import kotlin.system.exitProcess
 
 /** "--background": started with Windows, stays hidden until the player opens it. */
 fun main(args: Array<String>) {
     if (!SingleInstance.claim()) return // another DNZ Launcher runs and shows its window
+    // A downloaded update waits: swap it in first (the launcher starts again by itself).
+    if (Updater.applyPendingAtStart(args)) exitProcess(0)
     val background = "--background" in args
     application {
         val windowState = rememberWindowState(width = 1200.dp, height = 740.dp, position = WindowPosition(Alignment.Center))

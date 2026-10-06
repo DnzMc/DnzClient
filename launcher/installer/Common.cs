@@ -34,7 +34,7 @@ namespace Dnz
                 }
             }
             catch { }
-            return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "tr" || CultureInfo.CurrentCulture.TwoLetterISOLanguageName == "tr";
+            return false;
         }
 
         public static string S(string tr, string en)
@@ -45,12 +45,12 @@ namespace Dnz
 
     static class Theme
     {
-        public static readonly Color Bg = Rgb(0x0A0D16);
-        public static readonly Color Surface = Rgb(0x131826);
-        public static readonly Color SurfaceHigh = Rgb(0x1A2133);
+        public static readonly Color Bg = Rgb(0x0A0D12);
+        public static readonly Color Surface = Rgb(0x151B25);
+        public static readonly Color SurfaceHigh = Rgb(0x1C2330);
         public static readonly Color Border = Color.FromArgb(0x22, 255, 255, 255);
-        public static readonly Color Accent = Rgb(0x4FA3FF);
-        public static readonly Color Accent2 = Rgb(0x7B5CFF);
+        public static readonly Color Accent = Rgb(0xFF8A3D);
+        public static readonly Color Accent2 = Rgb(0xFF7A2A);
         public static readonly Color Text = Rgb(0xF2F4FA);
         public static readonly Color Muted = Rgb(0x8C95AB);
         public static readonly Color Danger = Rgb(0xFF6B6B);
@@ -212,7 +212,7 @@ namespace Dnz
     /// <summary>A clickable area drawn by the window. Kind: primary (gradient), secondary, link, toggle, window, close.</summary>
     class Btn
     {
-        public enum Kind { Primary, Danger, Secondary, Link, Toggle, Window, Close, Lang }
+        public enum Kind { Primary, Danger, Secondary, Link, Toggle, Window, Close, Lang, Switch }
 
         public RectangleF Rect;
         public string Label;
@@ -429,7 +429,7 @@ namespace Dnz
                     }
                     using (LinearGradientBrush br = Theme.AccentBrush(r, a, c)) Theme.Fill(g, r, 14, br);
                     if (b.Hover > 0) Theme.Fill(g, r, 14, Color.FromArgb((int)(56 * b.Hover), 255, 255, 255));
-                    Theme.Draw(g, b.Label, Theme.F(r.Height > 44 ? 17 : 14, 2), b.Enabled ? Color.White : Theme.Muted, r, 1);
+                    Theme.Draw(g, b.Label, Theme.F(r.Height > 44 ? 16 : 14, 2), !b.Enabled ? Theme.Muted : b.Type == Btn.Kind.Danger ? Color.White : Theme.Bg, r, 1);
                     break;
                 }
                 case Btn.Kind.Secondary:
@@ -464,6 +464,15 @@ namespace Dnz
                         Theme.Outline(g, box, 5, Color.FromArgb(0x55, 255, 255, 255), 1.2f);
                     }
                     Theme.Draw(g, b.Label, Theme.F(13, 0), Theme.Lerp(Theme.Muted, Theme.Text, b.Checked ? 1f : b.Hover), new RectangleF(r.X + 26, r.Y, r.Width - 26, r.Height), 0);
+                    break;
+                }
+                case Btn.Kind.Switch:
+                {
+                    RectangleF pill = new RectangleF(r.Right - 46, r.Y + (r.Height - 24) / 2, 46, 24);
+                    Theme.Fill(g, pill, 12, b.Checked ? Theme.Accent : Theme.SurfaceHigh);
+                    float kx = b.Checked ? pill.Right - 21 : pill.X + 3;
+                    Theme.Fill(g, new RectangleF(kx, pill.Y + 3, 18, 18), 9, b.Checked ? Theme.Bg : Theme.Muted);
+                    Theme.Draw(g, b.Label, Theme.F(13, 1), Theme.Text, new RectangleF(r.X, r.Y, r.Width - 56, r.Height), 0);
                     break;
                 }
                 case Btn.Kind.Window:
@@ -508,6 +517,16 @@ namespace Dnz
         public static string StartMenuLink()
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "DNZ Launcher.lnk");
+        }
+
+        public static string UploaderDesktopLink()
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "DNZ Workshop Uploader.lnk");
+        }
+
+        public static string UploaderStartMenuLink()
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "DNZ Workshop Uploader.lnk");
         }
 
         public static string StartupLink()

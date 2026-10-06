@@ -5,11 +5,11 @@
 	"name": "DNZ Client",
 	"description": "Modern pause menu with skin changer. Powered by Sodium and Sodium Extra.",
 	"authors": ["DNZ"],
-	"license": "All-Rights-Reserved",
+	"license": "GPL-3.0-only",
 	"icon": "assets/dnzclient/icon.png",
 	"environment": "client",
 	"entrypoints": {
-		"client": ["com.dnz.client.DnzClient"]
+		"client": ["com.dnz.client.DnzClient", "com.dnz.client.FriendsInit"]
 	},
 	"mixins": ["dnzclient.mixins.json"],
 	"depends": {
@@ -18,6 +18,9 @@
 		"java": ">=25",
 		"fabric-api": "*"
 	},
+	"jars": [
+		{"file": "META-INF/jars/${worldHost}"}
+	],
 	"recommends": {
 		"sodium": "*",
 		"sodium-extra": "*",

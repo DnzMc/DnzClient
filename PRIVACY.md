@@ -1,15 +1,15 @@
 # Privacy Policy
 
 *Applies to DNZ Client, DNZ Launcher, DNZ Schematic and the website dnzclient.com.
-Effective date: 3 October 2026.*
+Effective date: 6 October 2026.*
 
 ## Summary
 
 This program will not transfer any information to other networked systems unless specifically requested by the
 user or the person installing or operating it.
 
-- DNZ has **no servers of its own** that receive data from the apps. There is no account system, no tracking, no
-  analytics, no advertising and no telemetry.
+- There is no tracking, no analytics, no advertising and no telemetry. DNZ servers only store what you choose to send:
+  the optional **Cloud save** (off by default, see section 3a).
 - Everything DNZ needs to remember is stored **only on your computer**.
 - DNZ only connects to the services you use through it (Microsoft, Mojang, Modrinth...), and only to do what you ask.
 - DNZ is free, open source software (GPL-3.0). Anyone can check these statements in the source code:
@@ -29,7 +29,7 @@ advertising or tracking libraries.
 ## 3. Information stored on your computer only
 
 The following is saved in the `.dnzlauncher` folder in your user folder (and, for the Minecraft game, in its game
-folders) and is never sent to DNZ:
+folders) and is never sent to DNZ (except the settings listed in section 3a, only if you turn on Cloud save):
 
 - **Minecraft sign-in.** When you sign in with Microsoft, you enter your password on Microsoft's own page in your
   browser; DNZ never sees it. DNZ keeps only the sign-in token Microsoft gives back, so you stay signed in. On
@@ -44,6 +44,26 @@ folders) and is never sent to DNZ:
   settings. The result stays on your computer.
 - **Script mods** you add run inside the game, in a sandbox without access to your files or the internet.
 
+## 3a. Cloud save (optional, off by default)
+
+Only if you turn on **Cloud save** (DNZ Launcher → Settings, or DNZ menu → Preferences), DNZ Client stores a copy of
+these settings on DNZ's server (cloud.dnzclient.com, run on Cloudflare) so they load on your other computers:
+your key bindings and a few control options (mouse sensitivity, toggle sprint/crouch, auto-jump, invert mouse, raw
+input) from options.txt, and your DNZ Client settings (menu look, HUD layout, modules, theme). The copy is stored
+under your Minecraft player ID (UUID).
+
+- **Sign-in without tokens:** the game signs a one-time challenge from DNZ's server with its Mojang-signed player
+  certificate (the same key Minecraft uses to sign chat messages); DNZ's server checks Mojang's signature. Your
+  Minecraft access token, Microsoft password and e-mail address never reach DNZ.
+- Nothing else is sent: no worlds, chat, screenshots, servers list or other game options.
+- Turn it off at any time; the copy is then no longer updated. To delete the stored copy, write to info@dnzclient.com
+  with your Minecraft name (a delete button in the apps is planned).
+
+## 3b. Friends
+
+Your friend list is saved only on your computer (config/dnzclient-friends.json). DNZ uses it to mark friends in the
+player list of the server you are on; nothing about it is sent anywhere.
+
 ## 4. Services DNZ connects to
 
 DNZ connects to these services only when needed for what you do. They receive the usual technical information of
@@ -56,6 +76,9 @@ any internet request (such as your IP address) and have their own privacy polici
 | Fabric (fabricmc.net) | Downloading the Fabric mod loader |
 | Modrinth (modrinth.com) | Mod library: searching and downloading mods, the performance mods of the DNZ pack |
 | Adoptium (adoptium.net, macOS only) | Downloading Java on the first start of the macOS app |
+| DNZ downloads (download.dnzclient.com, Cloudflare) | Checking for and downloading DNZ Launcher updates (signed by DNZ) |
+| DNZ Cloud (cloud.dnzclient.com, Cloudflare) | Only with Cloud save on (section 3a) |
+| e4mc relay (e4mc.link) | Only when you open your world with Open World: friends join through this relay |
 | Minecraft servers you join, websites you open | Because you chose to |
 
 ## 5. Changes to your system
@@ -106,15 +129,15 @@ Questions about privacy: e-mail **info@dnzclient.com**, or open an issue at http
 # Gizlilik Politikası
 
 *DNZ Client, DNZ Launcher, DNZ Schematic ve dnzclient.com web sitesi için geçerlidir.
-Yürürlük tarihi: 3 Ekim 2026.*
+Yürürlük tarihi: 6 Ekim 2026.*
 
 ## Özet
 
 Bu program, kullanıcı ya da programı kuran/kullanan kişi özellikle istemedikçe hiçbir bilgiyi başka sistemlere
 göndermez.
 
-- DNZ'nin uygulamalardan veri alan **kendi sunucusu yoktur**. Hesap sistemi, takip, analiz, reklam ya da kullanım
-  verisi toplama yoktur.
+- Takip, analiz, reklam ya da kullanım verisi toplama yoktur. DNZ sunucuları sadece senin göndermeyi seçtiklerini
+  saklar: isteğe bağlı **Bulut kaydetme** (varsayılan olarak kapalı, bkz. bölüm 3a).
 - DNZ'nin hatırlaması gereken her şey **sadece senin bilgisayarında** saklanır.
 - DNZ yalnızca senin kullandığın hizmetlere (Microsoft, Mojang, Modrinth...) ve sadece istediğin iş için bağlanır.
 - DNZ ücretsiz ve açık kaynaklıdır (GPL-3.0). Bu yazılanları herkes kaynak kodunda kontrol edebilir:
@@ -134,7 +157,7 @@ analiz, reklam ya da takip kütüphanesi yoktur.
 ## 3. Sadece bilgisayarında saklananlar
 
 Aşağıdakiler kullanıcı klasöründeki `.dnzlauncher` klasöründe (oyun için de oyunun klasörlerinde) saklanır ve
-DNZ'ye hiç gönderilmez:
+DNZ'ye hiç gönderilmez (Bulut kaydetmeyi açarsan bölüm 3a'daki ayarlar hariç):
 
 - **Minecraft girişi.** Microsoft ile giriş yaparken şifreni tarayıcında Microsoft'un kendi sayfasına yazarsın;
   DNZ şifreni hiç görmez. DNZ sadece Microsoft'un geri verdiği giriş anahtarını saklar ki tekrar giriş yapman
@@ -149,6 +172,26 @@ DNZ'ye hiç gönderilmez:
   ekranına bakar. Sonuç bilgisayarında kalır.
 - **Script modlar** oyunun içinde, dosyalarına ve internete erişemeyen kapalı bir alanda çalışır.
 
+## 3a. Bulut kaydetme (isteğe bağlı, varsayılan olarak kapalı)
+
+Sadece **Bulut kaydetme**yi açarsan (DNZ Launcher → Ayarlar ya da DNZ menüsü → Tercihler), DNZ Client şu ayarların
+bir kopyasını DNZ'nin sunucusunda (cloud.dnzclient.com, Cloudflare üzerinde) saklar ki diğer bilgisayarlarında da
+yüklensin: options.txt'deki tuş atamaların ve birkaç kontrol ayarı (fare hassasiyeti, koşma/eğilme açma-kapama,
+otomatik zıplama, fareyi ters çevirme, ham fare girişi) ile DNZ Client ayarların (menü görünümü, HUD düzeni,
+modüller, tema). Kopya Minecraft oyuncu kimliğinle (UUID) saklanır.
+
+- **Anahtarsız giriş:** oyun, DNZ sunucusundan gelen tek kullanımlık bir soruyu Mojang imzalı oyuncu sertifikasıyla
+  imzalar (Minecraft'ın sohbet mesajlarını imzaladığı anahtarın aynısı); DNZ sunucusu Mojang'ın imzasını kontrol
+  eder. Minecraft giriş anahtarın, Microsoft şifren ve e-posta adresin DNZ'ye hiç gelmez.
+- Başka hiçbir şey gönderilmez: dünyalar, sohbet, ekran görüntüleri, sunucu listesi ya da diğer oyun ayarları gitmez.
+- İstediğin zaman kapatabilirsin; kopya o zaman güncellenmez. Saklanan kopyanın silinmesi için Minecraft adınla
+  info@dnzclient.com adresine yaz (uygulamalara silme düğmesi eklenecek).
+
+## 3b. Arkadaşlar
+
+Arkadaş listen sadece bilgisayarında saklanır (config/dnzclient-friends.json). DNZ bunu, girdiğin sunucunun oyuncu
+listesinde arkadaşlarını işaretlemek için kullanır; hiçbir yere gönderilmez.
+
 ## 4. DNZ'nin bağlandığı hizmetler
 
 DNZ bu hizmetlere sadece yaptığın iş için gerektiğinde bağlanır. Bu hizmetler her internet isteğindeki olağan teknik
@@ -161,6 +204,9 @@ bilgileri (örneğin IP adresi) alır ve kendi gizlilik politikaları vardır:
 | Fabric (fabricmc.net) | Fabric mod yükleyicisinin indirilmesi |
 | Modrinth (modrinth.com) | Mod kütüphanesi: mod arama ve indirme, DNZ paketindeki performans modları |
 | Adoptium (sadece macOS) | macOS uygulamasının ilk açılışında Java'nın indirilmesi |
+| DNZ indirmeleri (download.dnzclient.com, Cloudflare) | DNZ Launcher güncellemelerini kontrol etme ve indirme (DNZ imzalı) |
+| DNZ Cloud (cloud.dnzclient.com, Cloudflare) | Sadece Bulut kaydetme açıksa (bölüm 3a) |
+| e4mc aktarıcısı (e4mc.link) | Sadece dünyanı Open World ile açınca: arkadaşların bu aktarıcı üzerinden katılır |
 | Girdiğin Minecraft sunucuları, açtığın siteler | Sen seçtiğin için |
 
 ## 5. Sisteminde yapılan değişiklikler

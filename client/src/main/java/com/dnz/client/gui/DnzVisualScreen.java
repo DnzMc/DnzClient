@@ -174,6 +174,13 @@ public class DnzVisualScreen extends DnzMenuScreen {
 				mc.levelExtractor.allChanged(); // re-render blocks with the new rotation
 			}
 		}).note(L.t("visual.streamer.note")));
+		rows.add(new SwitchOption(L.t("cool.title"), () -> config.coolMode, on -> {
+			config.coolMode = on;
+			config.save();
+		}).note(L.t("cool.note")));
+		// DNZ Cloud (off until the player turns it on; also in DNZ Launcher settings).
+		rows.add(new SwitchOption(L.t("cloud.title"), com.dnz.client.CloudSync::enabled, com.dnz.client.CloudSync::setEnabled)
+			.note(L.t("cloud.note")));
 		return rows;
 	}
 

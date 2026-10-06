@@ -52,6 +52,11 @@ public final class Smooth {
 		from = Palette.map(from);
 		to = Palette.map(to);
 		GuiGraphicsAccessor access = (GuiGraphicsAccessor) g;
+		if (com.dnz.client.nvg.NvgRecorder.recording) {
+			com.dnz.client.nvg.NvgRecorder.add(new com.dnz.client.nvg.NvgRecorder.Shape(com.dnz.client.nvg.NvgRecorder.matrix(g.pose()), x, y, w, h,
+				radius, softness, from, to, horizontal, access.dnz$scissor().peek()));
+			return;
+		}
 		float shorter = Math.min(w, h) / 2.0F;
 		int r = Math.round(Math.max(0, Math.min(1, radius / shorter)) * 32767);
 		int soft = Math.round(Math.max(0, Math.min(1, softness / shorter)) * 32767);

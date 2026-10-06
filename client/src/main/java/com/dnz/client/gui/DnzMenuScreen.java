@@ -46,7 +46,8 @@ public abstract class DnzMenuScreen extends Screen {
 		SCHEMATIC("menu.schematic", DnzMenuScreen::openSchematic),
 		/** DNZ style only: version notes and the feedback page. */
 		CHANGELOG("menu.changelog", DnzChangelogTab::new),
-		FEEDBACK("menu.feedback", DnzFeedbackTab::new);
+		FEEDBACK("menu.feedback", DnzFeedbackTab::new),
+		FRIENDS("menu.friends", DnzFriendsTab::new);
 
 		private final String key;
 		private final Function<Screen, Screen> factory;
@@ -58,6 +59,11 @@ public abstract class DnzMenuScreen extends Screen {
 
 		public String label() {
 			return L.t(this.key);
+		}
+
+		/** Opens this page of the DNZ menu. */
+		public Screen open(Screen parent) {
+			return this.factory.apply(parent);
 		}
 
 		boolean available() {
@@ -193,7 +199,7 @@ public abstract class DnzMenuScreen extends Screen {
 	// Sidebar with grouped pages and line icons, a top bar with back/forward arrows, the page title, a search box
 	// and a close button, and the player at the bottom of the sidebar.
 
-	private static final int DNZ_SIDEBAR_W = 104;
+	private static final int DNZ_SIDEBAR_W = 34;
 	private static final int BG_TOP = 0xF71D2633;
 	private static final int BG_BOTTOM = 0xF7171F2A;
 	private static final int SIDEBAR_BG = 0xFF222C39;
@@ -221,6 +227,7 @@ public abstract class DnzMenuScreen extends Screen {
 			case PERFORMANCE -> "Preferences";
 			case CHANGELOG -> "Changelog";
 			case FEEDBACK -> "Feedback";
+			case FRIENDS -> "Friends";
 			default -> t.label();
 		};
 	}
@@ -265,68 +272,46 @@ public abstract class DnzMenuScreen extends Screen {
 		this.px = (this.width - this.panelW) / 2;
 		this.py = Math.max(4, (this.height - 22 - this.panelH) / 2);
 		this.cx = this.px + DNZ_SIDEBAR_W + 10;
-		this.cw = this.panelW - DNZ_SIDEBAR_W - 18;
-		this.cy = this.py + 34;
-		this.ch = this.panelH - 42;
+		this.cw = this.panelW - DNZ_SIDEBAR_W - 22;
+		this.cy = this.py + 52;
+		this.ch = this.panelH - 60;
 
 		// Installed mods, scripts and schematic open from cards on the Mods page, so "Mods" stays selected there.
 		Tab current = this.tab == Tab.MODS || this.tab == Tab.SCRIPTS || this.tab == Tab.SCHEMATIC ? Tab.HUD : this.tab;
-		Map<String, List<SideEntry>> groups = new LinkedHashMap<>();
-		groups.put("", List.of(
-			new SideEntry("Edit HUD", Icon.EDIT_HUD, false, false, () -> this.minecraft.gui.setScreen(new DnzHudScreen(this))),
-			new SideEntry("Global Search", Icon.SEARCH, false, false, () -> this.setFocused(this.search))));
-		groups.put("MODS & OPTIONS", List.of(
+		List<SideEntry> rail = List.of(
 			this.page(Tab.HUD, Icon.MODS, current),
+			new SideEntry("Edit HUD", Icon.EDIT_HUD, false, false, () -> this.minecraft.gui.setScreen(new DnzHudScreen(this))),
 			this.page(Tab.SKIN, Icon.PROFILES, current),
+			this.page(Tab.FRIENDS, Icon.PROFILES, current),
 			new SideEntry("Keybinds", Icon.KEYBINDS, false, false,
-				() -> this.minecraft.gui.setScreen(new KeyBindsScreen(this, this.minecraft.options)))));
-		groups.put("PERSONALIZATION", List.of(this.page(Tab.VISUAL, Icon.THEMES, current), this.page(Tab.PERFORMANCE, Icon.PREFERENCES, current)));
-		groups.put("DNZ CLIENT", List.of(
+				() -> this.minecraft.gui.setScreen(new KeyBindsScreen(this, this.minecraft.options))),
+			this.page(Tab.VISUAL, Icon.THEMES, current),
+			this.page(Tab.PERFORMANCE, Icon.PREFERENCES, current),
 			this.page(Tab.CHANGELOG, Icon.CHANGELOG, current),
-			new SideEntry("Feedback", Icon.FEEDBACK, current == Tab.FEEDBACK, true, () -> this.go(Tab.FEEDBACK))));
-
-		// Entries get closer together on small screens so they never reach the player card.
-		int items = groups.values().stream().mapToInt(List::size).sum();
-		int heads = (int) groups.keySet().stream().filter(k -> !k.isEmpty()).count();
-		int room = this.panelH - 32 - 40;
-		int head = 13;
-		int step = Math.max(12, Math.min(16, (room - heads * head) / items));
-		if (heads * head + items * step > room) {
-			head = 10;
-		}
-		int x = this.px + 7;
-		int w = DNZ_SIDEBAR_W - 12;
-		int y = this.py + 27;
-		this.groupHeads.clear();
-		for (Map.Entry<String, List<SideEntry>> group : groups.entrySet()) {
-			if (!group.getKey().isEmpty()) {
-				y += 3;
-				this.groupHeads.add(Map.entry(y + head - 10, group.getKey()));
-				y += head - 3;
-			}
-			for (SideEntry e : group.getValue()) {
-				this.addRenderableWidget(new DnzSideItem(x, y, w, step - 2, e.label(), e.icon(), e.selected(), e.beta(), e.action()));
-				y += step;
-			}
+			new SideEntry("Feedback", Icon.FEEDBACK, current == Tab.FEEDBACK, true, () -> this.go(Tab.FEEDBACK)));
+		// Icon rail: one rounded square per page (its name shows when the mouse rests on it).
+		int step = Math.max(18, Math.min(24, (this.panelH - 34 - 26) / rail.size()));
+		int y = this.py + 34;
+		for (SideEntry e : rail) {
+			this.tip(this.addRenderableWidget(new RailButton(this.px + 7, y, 20, Math.min(20, step - 2), e.icon(), e.selected(), e.action())),
+				Component.literal(e.label()));
+			y += step;
 		}
 
-		// Top bar: back / forward, search box, close
-		this.addRenderableWidget(new IconButton(this.cx - 2, this.py + 9, 13, 13, Icon.BACK, () -> !BACK.isEmpty(), () -> this.history(BACK, FORWARD)));
-		this.addRenderableWidget(new IconButton(this.cx + 11, this.py + 9, 13, 13, Icon.FORWARD, () -> !FORWARD.isEmpty(), () -> this.history(FORWARD, BACK)));
+		// Top bar: back / forward and search on the right, close in the corner.
 		int sw = this.searchWidth();
 		int sx = this.searchX();
-		this.search = new EditBox(this.font, sx + 14, this.py + 12, sw - 17, 10, Component.literal("Search mods..."));
+		this.addRenderableWidget(new IconButton(sx - 30, this.py + 21, 13, 13, Icon.BACK, () -> !BACK.isEmpty(), () -> this.history(BACK, FORWARD)));
+		this.addRenderableWidget(new IconButton(sx - 16, this.py + 21, 13, 13, Icon.FORWARD, () -> !FORWARD.isEmpty(), () -> this.history(FORWARD, BACK)));
+		this.search = new EditBox(this.font, sx + 15, this.py + 24, sw - 18, 10, Component.literal("Search mods..."));
 		this.search.setBordered(false);
 		this.search.setMaxLength(32);
 		this.search.setTextColor(0xFFFFFFFF);
-		this.search.setHint(Theme.smooth(Component.literal("Search mods...").withColor(0x7D8798)));
+		this.search.setHint(Theme.smooth(Component.literal("Search mods...").withColor(0x6F7787)));
 		this.search.setValue(query);
 		this.search.setResponder(this::onSearch);
 		this.addRenderableWidget(this.search);
-		this.addRenderableWidget(new IconButton(this.cx + this.cw - 15, this.py + 8, 15, 15, Icon.CLOSE, () -> true, this::onClose));
-		// Bell next to the player: opens the changelog.
-		this.addRenderableWidget(new IconButton(this.px + DNZ_SIDEBAR_W - 21, this.py + this.panelH - 25, 13, 13, Icon.BELL, () -> true,
-			() -> this.go(Tab.CHANGELOG)));
+		this.addRenderableWidget(new IconButton(this.px + this.panelW - 19, this.py + 6, 13, 13, Icon.CLOSE, () -> true, this::onClose));
 		if (focusSearch) {
 			focusSearch = false;
 			this.setInitialFocus(this.search);
@@ -338,7 +323,7 @@ public abstract class DnzMenuScreen extends Screen {
 	}
 
 	private int searchX() {
-		return this.cx + this.cw - 22 - this.searchWidth();
+		return this.cx + this.cw - this.searchWidth();
 	}
 
 	private SideEntry page(Tab t, char icon, Tab current) {
@@ -367,74 +352,89 @@ public abstract class DnzMenuScreen extends Screen {
 
 	private void extractDnzFrame(GuiGraphicsExtractor g) {
 		int accent = Theme.menuAccent();
-		// Panel: soft shadow, thin light edge, dark blue-gray body a little darker at the bottom.
-		Smooth.shadow(g, this.px, this.py + 3, this.panelW, this.panelH, 10, 16, 0x80000000);
-		Smooth.rect(g, this.px - 0.75F, this.py - 0.75F, this.panelW + 1.5F, this.panelH + 1.5F, 10.75F, 0x30FFFFFF);
-		Smooth.gradient(g, this.px, this.py, this.panelW, this.panelH, 10, BG_TOP, BG_BOTTOM, false);
-		// Sidebar: the left part of the same rounded panel, a bit lighter, with a thin line on its right.
-		g.enableScissor(this.px, this.py, this.px + DNZ_SIDEBAR_W, this.py + this.panelH);
-		Smooth.rect(g, this.px, this.py, this.panelW, this.panelH, 10, SIDEBAR_BG);
-		g.disableScissor();
-		g.fill(this.px + DNZ_SIDEBAR_W, this.py, this.px + DNZ_SIDEBAR_W + 1, this.py + this.panelH, 0x18FFFFFF);
-
-		// Brand: bold light blue capitals.
+		// Panel: near-black, big soft shadow; the icon rail on the left is part of it (no separate color).
+		Smooth.shadow(g, this.px, this.py + 5, this.panelW, this.panelH, 10, 16, 0x99000000);
+		Smooth.rect(g, this.px - 0.5F, this.py - 0.5F, this.panelW + 1, this.panelH + 1, 10.5F, 0xFF1B212C);
+		Smooth.rect(g, this.px, this.py, this.panelW, this.panelH, 10, 0xFA0A0D12);
+		// Logo: an orange square at the top of the rail.
+		Smooth.rect(g, this.px + 9, this.py + 9, 16, 16, 4, accent);
 		g.pose().pushMatrix();
-		g.pose().translate(this.px + DNZ_SIDEBAR_W / 2.0F, this.py + 11);
-		g.pose().scale(1.15F, 1.15F);
-		g.centeredText(this.font, bold("DNZ CLIENT"), 0, 0, Theme.lerp(accent, 0xFFFFFFFF, 0.3F));
+		g.pose().translate(this.px + 17, this.py + 13.5F);
+		g.pose().scale(0.55F, 0.55F);
+		g.centeredText(this.font, bold("DNZ"), 0, 0, 0xFF0A0D12);
 		g.pose().popMatrix();
-
-		for (Map.Entry<Integer, String> head : this.groupHeads) {
-			g.pose().pushMatrix();
-			g.pose().translate(this.px + 11, head.getKey() + 1);
-			g.pose().scale(0.6F, 0.6F);
-			g.text(this.font, bold(head.getValue()), 0, 0, 0xFFD3D9E2, false);
-			g.pose().popMatrix();
-		}
 		this.extractPlayerCard(g, accent);
 
-		// Top bar: page title and the search box frame
+		// "DNZ CLIENT" tag over the big page title.
+		String tag = "DNZ CLIENT";
+		float ts = 0.55F;
+		int tagW = Math.round(this.font.width(bold(tag)) * ts) + 10;
+		Smooth.rect(g, this.cx, this.py + 10, tagW, 10, 3, Theme.withAlpha(accent, 0.16F));
 		g.pose().pushMatrix();
-		g.pose().translate(this.cx + 30, this.py + 10.5F);
-		g.pose().scale(1.3F, 1.3F);
-		g.text(this.font, bold(this.pageTitle()), 0, 0, 0xFFFFFFFF, false);
+		g.pose().translate(this.cx + 5, this.py + 12.6F);
+		g.pose().scale(ts, ts);
+		g.text(this.font, bold(tag), 0, 0, accent, false);
 		g.pose().popMatrix();
+		g.pose().pushMatrix();
+		g.pose().translate(this.cx - 0.5F, this.py + 24);
+		g.pose().scale(2.1F, 2.1F);
+		g.text(this.font, bold(this.pageTitle()), 0, 0, 0xFFF1F3F7, false);
+		g.pose().popMatrix();
+		// Search box frame.
 		int sw = this.searchWidth();
 		int sx = this.searchX();
 		boolean focused = this.search != null && this.search.isFocused();
-		Smooth.rect(g, sx, this.py + 9, sw, 14, 3.5F, focused ? Theme.withAlpha(Theme.menuAccent(), 0.8F) : 0xFF3A4452);
-		Smooth.rect(g, sx + 0.75F, this.py + 9.75F, sw - 1.5F, 12.5F, 2.75F, 0xFF242C37);
-		Icon.draw(g, Icon.SEARCH, sx + 4, this.py + 12, 7.5F, 0xFFAEB6C3);
+		Smooth.rect(g, sx - 0.5F, this.py + 18.5F, sw + 1, 19, 6.5F, focused ? Theme.withAlpha(accent, 0.7F) : 0xFF1B212C);
+		Smooth.rect(g, sx, this.py + 19, sw, 18, 6, 0xFF151B25);
+		Icon.draw(g, Icon.SEARCH, sx + 5, this.py + 24, 8, 0xFF6F7787);
 	}
 
-	/** The player's face, name and game version at the bottom of the sidebar. */
+	/** The player's face at the bottom of the icon rail. */
 	private void extractPlayerCard(GuiGraphicsExtractor g, int accent) {
-		int y = this.py + this.panelH - 32;
-		g.fill(this.px + 1, y, this.px + DNZ_SIDEBAR_W, y + 1, 0x18FFFFFF);
-		int x = this.px + 9;
-		String name = this.minecraft.getUser().getName();
+		int x = this.px + 10;
+		int y = this.py + this.panelH - 24;
 		if (this.minecraft.player != null) {
-			PlayerFaceExtractor.extractRenderState(g, this.minecraft.player.getSkin(), x, y + 9, 14);
+			PlayerFaceExtractor.extractRenderState(g, this.minecraft.player.getSkin(), x, y, 14);
 		} else {
-			Smooth.rect(g, x, y + 9, 14, 14, 2, accent);
+			Smooth.rect(g, x, y, 14, 14, 3, accent);
 		}
-		g.pose().pushMatrix();
-		g.pose().translate(x + 19, y + 9.5F);
-		g.pose().scale(0.8F, 0.8F);
-		g.text(this.font, Theme.smooth(this.font.plainSubstrByWidth(name, (int) ((DNZ_SIDEBAR_W - 50) / 0.8F))), 0, 0, 0xFFFFFFFF, false);
-		g.pose().popMatrix();
-		String version = FabricLoader.getInstance().getModContainer("minecraft")
-			.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
-		g.pose().pushMatrix();
-		g.pose().translate(x + 19, y + 18);
-		g.pose().scale(0.6F, 0.6F);
-		g.text(this.font, Theme.smooth("Fabric " + version), 0, 0, MUTED, false);
-		g.pose().popMatrix();
-		// Little dot on the bell: there is something new in the changelog.
-		float dx = this.px + DNZ_SIDEBAR_W - 12.5F;
-		float dy = this.py + this.panelH - 25.5F;
-		Smooth.shadow(g, dx, dy, 3.5F, 3.5F, 1.75F, 3, Theme.withAlpha(accent, 0.7F));
-		Smooth.rect(g, dx, dy, 3.5F, 3.5F, 1.75F, accent);
+	}
+
+	/** A page in the icon rail: a rounded square, lit when its page is open. */
+	private static final class RailButton extends net.minecraft.client.gui.components.AbstractButton {
+		private final char icon;
+		private final boolean selected;
+		private final Runnable action;
+		private float hover;
+
+		RailButton(int x, int y, int w, int h, char icon, boolean selected, Runnable action) {
+			super(x, y, w, h, Component.empty());
+			this.icon = icon;
+			this.selected = selected;
+			this.action = action;
+		}
+
+		@Override
+		public void onPress(net.minecraft.client.input.InputWithModifiers input) {
+			this.action.run();
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
+			this.hover = Anim.approach(this.hover, this.isHoveredOrFocused() ? 1.0F : 0.0F, 14.0F);
+			if (this.selected) {
+				Smooth.rect(g, this.getX(), this.getY(), this.width, this.height, 5, 0xFF1C2330);
+			} else if (this.hover > 0.01F) {
+				Smooth.rect(g, this.getX(), this.getY(), this.width, this.height, 5, Theme.withAlpha(0x151B25, this.hover));
+			}
+			int color = this.selected ? Theme.menuAccent() : Theme.lerp(0xFF7A8394, 0xFFE6EAF0, this.hover);
+			Icon.draw(g, this.icon, this.getX() + (this.width - 10) / 2.0F, this.getY() + (this.height - 10) / 2.0F, 10, color);
+		}
+
+		@Override
+		protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+			this.defaultButtonNarrationText(output);
+		}
 	}
 
 	/** Small icon button (arrows, close, bell); grayed out while it can't be used. */
@@ -548,7 +548,9 @@ public abstract class DnzMenuScreen extends Screen {
 	}
 
 	private void extractMenu(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		Theme.panel(g, this.px, this.py, this.panelW, this.panelH);
+		if (!Theme.dnzStyle()) {
+			Theme.panel(g, this.px, this.py, this.panelW, this.panelH);
+		}
 
 		if (Theme.dnzStyle()) {
 			this.extractDnzFrame(g);

@@ -51,6 +51,11 @@ object GameLauncher {
         // 01.10.2026, measured in the FPS benchmark: stutters halved (1% low 49 -> 104 FPS), block-entity scenes +30%.
         // Input on its own thread, HUD spread over frames, faster chests/signs, leaf culling, async log, bug fixes.
         "ixeris", "gnetum", "obe", "cull-fewer-leaves", "asynclogger", "debugify",
+        // 03.10.2026, measured against a pack with all extra mods: no FPS difference, so only the stable ones that help
+        // where the benchmark cannot look: hidden-block culling, multiplayer networking, the single player server.
+        "sciophobia", "vmp-fabric", "servercore",
+        // ModernFix (26.x port "ModernFix-mVUS" on Modrinth): faster start, less RAM.
+        "modernfix-mvus",
     )
 
     /**
@@ -86,7 +91,21 @@ object GameLauncher {
         return result
     }
 
+    /** This profile's game is already open (maybe started before the launcher was reopened). */
+    class AlreadyRunning : Exception("already running")
+
+    /** Holds the process id of the game that runs in this folder. */
+    private fun runningFile(instance: File) = File(instance, "dnz-running.pid")
+
+    /** True while a game started from this profile folder is still open. */
+    fun isRunning(profile: Profile): Boolean {
+        val pid = runCatching { runningFile(instanceDir(profile)).readText().trim().toLong() }.getOrNull() ?: return false
+        return ProcessHandle.of(pid).map { p -> p.isAlive && p.info().command().map { it.contains("java", ignoreCase = true) }.orElse(true) }.orElse(false)
+    }
+
     suspend fun play(profile: Profile, account: Account, ramGb: Int, progress: (String, Float) -> Unit): Process = withContext(Dispatchers.IO) {
+        // Two games in one folder break each other (Fabric's mod files); the second one is not started.
+        if (isRunning(profile)) throw AlreadyRunning()
         val mc = profile.version
 
         progress("Minecraft $mc bilgileri alınıyor...", 0.02f)
@@ -187,7 +206,7 @@ object GameLauncher {
             // Java settings left on the computer by other programs would sneak into the game (and can slow it down).
             environment().remove("_JAVA_OPTIONS")
             environment().remove("JAVA_TOOL_OPTIONS")
-        }.start()
+        }.start().also { runCatching { runningFile(instance).writeText(it.pid().toString()) } }
     }
 
     /** DNZ Client + the Modrinth mods, into [mods]. Progress value goes 0..1. */
@@ -195,9 +214,20 @@ object GameLauncher {
         mods.mkdirs()
         progress("DNZ Client kuruluyor...", 0f)
         installDnzClient(mc, mods)
+        // Modrinth slow or down: mods that are already here are used as they are (the update check waits for the
+        // next start), so the game still starts. Only a mod that is missing has to be downloaded.
+        var offline = false
         modrinthMods.forEachIndexed { i, slug ->
             progress("Modlar indiriliyor ($slug)...", (i + 1f) / (modrinthMods.size + 1))
-            installModrinthMod(slug, mc, mods)
+            val marker = File(mods, ".dnz-$slug")
+            val present = marker.exists() && marker.readText().trim().let { File(mods, it).exists() || File(mods, "$it.disabled").exists() }
+            if (offline && present) return@forEachIndexed
+            try {
+                installModrinthMod(slug, mc, mods)
+            } catch (e: Exception) {
+                if (!present) throw e
+                offline = true
+            }
         }
         progress("Modlar hazır", 1f)
     }

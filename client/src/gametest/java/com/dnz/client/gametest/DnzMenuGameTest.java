@@ -3,7 +3,6 @@ package com.dnz.client.gametest;
 import com.dnz.client.DnzConfig;
 import com.dnz.client.compat.Compat;
 import com.dnz.client.gui.DnzModsScreen;
-import com.dnz.client.gui.DnzPauseScreen;
 import com.dnz.client.gui.DnzVisualScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -13,7 +12,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 public class DnzMenuGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
-		if (!System.getProperty("dnz.bench", "").isEmpty()) {
+		if (!System.getProperty("dnz.bench", "").isEmpty() || !System.getProperty("dnz.skia", "").isEmpty()) {
 			return; // only the FPS benchmark runs
 		}
 		// One-time FPS defaults (DnzClient): VSync off, unlimited FPS, saved to options.txt.
@@ -65,12 +64,30 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 		context.setScreen(() -> null);
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
 			world.getConnection().waitForChunksRender();
-			shot(context, "simple-1-pause", DnzPauseScreen::new);
+			shot(context, "simple-1-pause", () -> new net.minecraft.client.gui.screens.PauseScreen(true));
+			shot(context, "simple-1-inventory", () -> new net.minecraft.client.gui.screens.inventory.InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
 			shot(context, "simple-2-visual", () -> new DnzVisualScreen(null));
 			shot(context, "simple-3-mods", () -> new DnzModsScreen(null));
 			shot(context, "simple-4-options", () -> Compat.optionsScreen(null));
 			style(context, false);
-			shot(context, "dnz-pause", DnzPauseScreen::new);
+			shot(context, "dnz-pause", () -> new net.minecraft.client.gui.screens.PauseScreen(true));
+			shot(context, "dnz-inventory", () -> new net.minecraft.client.gui.screens.inventory.InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
+			// "DNZ Settings" in the ESC menu opens the DNZ menu.
+			context.setScreen(() -> new net.minecraft.client.gui.screens.PauseScreen(true));
+			context.waitTicks(5);
+			String opened = context.computeOnClient(mc -> {
+				for (var w : net.fabricmc.fabric.api.client.screen.v1.Screens.getWidgets(mc.gui.screen())) {
+					if (w.getMessage().getString().equals("DNZ Settings") && w instanceof net.minecraft.client.gui.components.Button b) {
+						b.onPress(new net.minecraft.client.input.KeyEvent(257, 0, 0));
+						return mc.gui.screen().getClass().getSimpleName();
+					}
+				}
+				return "no button";
+			});
+			System.out.println("[DNZ TEST] DNZ Settings opens: " + opened);
+			if (opened.equals("no button") || opened.equals("PauseScreen")) {
+				throw new AssertionError("DNZ Settings button missing or did nothing: " + opened);
+			}
 			shot(context, "dnz-visual", () -> new DnzVisualScreen(null));
 			shot(context, "dnz-performance", () -> new com.dnz.client.gui.DnzPerformanceTab(null));
 			shot(context, "dnz-mods", () -> new DnzModsScreen(null));

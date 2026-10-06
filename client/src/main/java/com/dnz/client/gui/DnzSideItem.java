@@ -36,24 +36,21 @@ public class DnzSideItem extends AbstractButton {
 		int x = this.getX();
 		int y = this.getY();
 		int accent = Theme.menuAccent();
-		if (this.selected) {
-			Smooth.rect(g, x, y, this.width, this.height, 3.5F, accent);
-		} else if (this.hover > 0.01F) {
-			Smooth.rect(g, x, y, this.width, this.height, 3.5F, Theme.withAlpha(0xFFFFFF, 0.06F * this.hover));
+		// Plain text list: muted gray, white on hover or when selected (with a faint background).
+		if (this.selected || this.hover > 0.01F) {
+			Smooth.rect(g, x, y, this.width, this.height, 3.5F, Theme.withAlpha(0xFFFFFF, this.selected ? 0.06F : 0.04F * this.hover));
 		}
-		int color = this.selected ? Palette.ON_ACCENT : Theme.lerp(0xFFE1E5EC, 0xFFFFFFFF, this.hover);
-		Icon.draw(g, this.icon, x + 7, y + (this.height - 8) / 2.0F, 8, color);
-		// Name a little smaller than normal text, like a web page.
-		Component text = Ui.medium(this.getMessage().getString());
+		int color = this.selected ? 0xFFFFFFFF : Theme.lerp(0xFF9AA3B5, 0xFFFFFFFF, this.hover);
+		Component text = Ui.regular(this.getMessage().getString());
 		float s = 0.8F;
 		g.pose().pushMatrix();
-		g.pose().translate(x + 21, y + (this.height - 8 * s) / 2.0F);
+		g.pose().translate(x + 6, y + (this.height - 8 * s) / 2.0F);
 		g.pose().scale(s, s);
 		g.text(font, text, 0, 0, color, false);
 		g.pose().popMatrix();
 		if (this.beta) {
 			// Small "BETA" pill after the name.
-			float bx = x + 25 + font.width(text) * s;
+			float bx = x + 10 + font.width(text) * s;
 			Smooth.rect(g, bx, y + (this.height - 8) / 2.0F, 20, 8, 4, accent);
 			g.pose().pushMatrix();
 			g.pose().translate(bx + 10, y + (this.height - 8) / 2.0F + 2);

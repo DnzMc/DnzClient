@@ -3,7 +3,9 @@ package com.dnz.client;
 import com.dnz.client.gui.DnzButton;
 import com.dnz.client.gui.DnzMenuScreen;
 import com.dnz.client.gui.DnzVisualScreen;
+import com.dnz.client.gui.PauseMenu;
 import com.dnz.client.gui.SharpFonts;
+import com.dnz.client.gui.Watermark;
 import com.dnz.client.hud.CombatTracker;
 import com.dnz.client.hud.DnzHud;
 import com.dnz.client.hud.FoodOverlay;
@@ -20,6 +22,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -35,6 +39,14 @@ public class DnzClient implements ClientModInitializer {
 		KeyMappingHelper.registerKeyMapping(Zoom.KEY);
 		KeyMappingHelper.registerKeyMapping(MENU_KEY);
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("dnzclient", "hud"), DnzHud::render);
+		// Custom crosshair when its module is on, Minecraft's own otherwise.
+		HudElementRegistry.replaceElement(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
+			if (com.dnz.client.hud.Crosshair.active(net.minecraft.client.Minecraft.getInstance())) {
+				com.dnz.client.hud.Crosshair.render(g, delta);
+			} else {
+				vanilla.extractRenderState(g, delta);
+			}
+		});
 		CombatTracker.register();
 		FoodOverlay.register();
 		com.dnz.client.hud.ShulkerPreview.register();
@@ -43,6 +55,11 @@ public class DnzClient implements ClientModInitializer {
 
 		// Once per install: VSync off and no FPS cap (they hold FPS back and add input delay in PvP).
 		// After that the player's own choice is kept.
+		// DNZ Cloud (opt-in): settings from the player's account at start, the last changes at exit.
+		ClientLifecycleEvents.CLIENT_STARTED.register(client -> CloudSync.start());
+		ClientLifecycleEvents.CLIENT_STARTED.register(client -> com.dnz.client.mods.ModMenuTitleCount.hide());
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> CloudSync.stop());
+
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
 			DnzConfig config = DnzConfig.get();
 			if (config.fpsDefaults < 1) {
@@ -61,7 +78,7 @@ public class DnzClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (MENU_KEY.consumeClick()) {
 				if (client.gui.screen() == null) {
-					client.gui.setScreen(DnzMenuScreen.open(null));
+					client.gui.setScreen(new com.dnz.client.gui.DnzShiftScreen()); // DNZ CLIENT + MODS screen first
 				}
 			}
 			CombatTracker.tick(client);
@@ -78,6 +95,13 @@ public class DnzClient implements ClientModInitializer {
 			if (screen instanceof OptionsScreen) {
 				Screens.getWidgets(screen).add(new DnzButton(6, 6, 64, 20, Component.literal("Visual"),
 					() -> client.gui.setScreen(new DnzVisualScreen(screen))));
+			}
+			boolean pauseMenu = screen instanceof PauseScreen pause && pause.showsPauseMenu();
+			if (pauseMenu) {
+				PauseMenu.addDnzButton(client, (PauseScreen) screen);
+			}
+			if (pauseMenu || screen instanceof AbstractContainerScreen<?>) {
+				ScreenEvents.afterExtract(screen).register((s, g, mouseX, mouseY, a) -> Watermark.draw(s, g));
 			}
 		});
 	}

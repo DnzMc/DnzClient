@@ -63,6 +63,18 @@ public final class Theme {
 		return DnzConfig.get().javaStyle;
 	}
 
+	/**
+	 * Vanilla Minecraft buttons and sliders: always outside the DNZ menus (ESC menu, options, title screen...),
+	 * and inside them too in the Java style.
+	 */
+	public static boolean vanillaWidgets() {
+		if (javaStyle()) {
+			return true;
+		}
+		net.minecraft.client.gui.screens.Screen screen = net.minecraft.client.Minecraft.getInstance().gui.screen();
+		return screen == null || !screen.getClass().getName().startsWith("com.dnz.client.");
+	}
+
 	/** Simple style: clean glass menus (rounded, dark glass, smooth font). */
 	public static boolean simpleStyle() {
 		DnzConfig config = DnzConfig.get();
@@ -132,7 +144,7 @@ public final class Theme {
 
 	/** Selection blue of the DNZ menu (the accent color when another one is chosen). */
 	public static int menuAccent() {
-		return DnzConfig.get().accent == 0 ? 0xFF4A7CF6 : 0xFF000000 | accentInfo().rgb();
+		return DnzConfig.get().accent == 0 ? 0xFFFF8A3D : 0xFF000000 | accentInfo().rgb(); // default: DNZ orange
 	}
 
 	/** Button text: smooth in the Simple style, the normal Minecraft font otherwise. */

@@ -20,10 +20,13 @@ object Settings {
         /** Mac: AUTO already ran once by itself on the first start. */
         val macAutoDone: Boolean? = null,
         val mojangNoticeHidden: Boolean? = null,
+        /** Theme from the old Workshop (not used any more; kept so older settings files still load). */
+        val workshopTheme: String? = null,
     )
 
     fun snapshot(state: LauncherState) = Saved(
         state.language, state.ramGb, state.launchMode, state.profiles.toList(), state.selectedProfile, Dnz.theme, state.macAutoDone, state.mojangNoticeHidden,
+        null,
     )
 
     fun load(state: LauncherState) {

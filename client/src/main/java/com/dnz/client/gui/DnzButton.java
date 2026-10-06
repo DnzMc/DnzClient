@@ -43,7 +43,7 @@ public class DnzButton extends AbstractButton {
 	@Override
 	protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
 		Font font = Minecraft.getInstance().font;
-		if (Theme.javaStyle()) {
+		if (Theme.vanillaWidgets()) {
 			// Vanilla Minecraft button; selected options get yellow text.
 			this.extractDefaultSprite(g);
 			int color = !this.active ? 0xFFA0A0A0 : this.selected ? 0xFFFFFF55 : 0xFFFFFFFF;

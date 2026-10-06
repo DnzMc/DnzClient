@@ -53,6 +53,21 @@ public final class Modules {
 			mc -> mc.getConnection() == null ? "-" : Integer.toString(mc.getConnection().getOnlinePlayers().size())));
 		list.add(new TextModule("light", Category.INFO, 0.84F, 0.325F, false, Modules::light));
 		list.add(new TextModule("session", Category.INFO, 0.84F, 0.37F, false, mc -> duration(CombatTracker.sessionMillis())));
+		list.add(new TextModule("direction", Category.INFO, 0.84F, 0.415F, false, Modules::direction));
+		list.add(new TextModule("rotation", Category.INFO, 0.84F, 0.46F, false,
+			mc -> mc.player == null ? "-" : String.format("%.1f / %.1f", Mth.wrapDegrees(mc.player.getYRot()), mc.player.getXRot())));
+		list.add(new TextModule("dimension", Category.INFO, 0.84F, 0.505F, false, Modules::dimension));
+		list.add(new TextModule("tps", Category.INFO, 0.84F, 0.55F, false, Modules::tps));
+		list.add(new TextModule("frametime", Category.INFO, 0.84F, 0.595F, false, mc -> String.format("%.1f ms", 1000.0 / Math.max(1, mc.getFps()))));
+		list.add(new TextModule("entities", Category.INFO, 0.84F, 0.64F, false, mc -> mc.level == null ? "-" : Integer.toString(mc.level.getEntityCount())));
+		list.add(new TextModule("chunks", Category.INFO, 0.84F, 0.685F, false,
+			mc -> mc.level == null ? "-" : Integer.toString(mc.level.getChunkSource().getLoadedChunksCount())));
+		list.add(new TextModule("date", Category.INFO, 0.84F, 0.73F, false, mc -> java.time.LocalDate.now().toString()));
+		list.add(new TextModule("xp", Category.INFO, 0.84F, 0.775F, false,
+			mc -> mc.player == null ? "-" : mc.player.experienceLevel + "  (" + Math.round(mc.player.experienceProgress * 100) + "%)"));
+		list.add(new TextModule("block", Category.INFO, 0.84F, 0.82F, false, Modules::targetBlock));
+		list.add(new LookAt());
+		list.add(new Minimap());
 
 		// ---- PvP
 		list.add(new KeystrokesModule());
@@ -65,6 +80,8 @@ public final class Modules {
 		list.add(new TextModule("combo", Category.PVP, 0.20F, 0.055F, false, mc -> Integer.toString(CombatTracker.combo())));
 		list.add(new TargetModule());
 		list.add(new HudModule.Feature("togglesprint", Category.PVP, false));
+		list.add(new HudModule.Feature("crosshair", Category.PVP, false));
+		list.add(new HudModule.Feature("hitboxes", Category.PVP, false, Modules::hitboxes, Modules::setHitboxes));
 
 		// ---- Items
 		list.add(new ArmorModule());
@@ -78,6 +95,10 @@ public final class Modules {
 		list.add(new CounterModule("arrows", 0.225F, 0.70F, false, () -> new ItemStack(Items.ARROW),
 			s -> s.is(Items.ARROW) || s.is(Items.SPECTRAL_ARROW) || s.is(Items.TIPPED_ARROW)));
 		list.add(new HudModule.Feature("shulkerpreview", Category.ITEMS, true));
+		list.add(new TextModule("durability", Category.ITEMS, 0.20F, 0.10F, false, Modules::durability));
+		list.add(new TextModule("itemcount", Category.ITEMS, 0.20F, 0.145F, false, Modules::itemCount));
+		list.add(new TextModule("saturation", Category.FOOD, 0.20F, 0.19F, false,
+			mc -> mc.player == null ? "-" : String.format("%.1f", mc.player.getFoodData().getSaturationLevel())));
 
 		// ---- Food (on the vanilla hunger bar and item tooltips)
 		list.add(new HudModule.Feature("foodsaturation", Category.FOOD, true));
@@ -94,6 +115,74 @@ public final class Modules {
 	}
 
 	// ---------------------------------------------------------------- values
+
+	private static String direction(Minecraft mc) {
+		if (mc.player == null) {
+			return "-";
+		}
+		String[] names = {"S", "SW", "W", "NW", "N", "NE", "E", "SE"};
+		return names[Math.floorMod(Math.round(mc.player.getYRot() / 45.0F), 8)];
+	}
+
+	private static String dimension(Minecraft mc) {
+		if (mc.level == null) {
+			return "-";
+		}
+		String path = mc.level.dimension().identifier().getPath();
+		return path.equals("overworld") ? "Overworld" : path.equals("the_nether") ? "Nether" : path.equals("the_end") ? "End" : path;
+	}
+
+	/** Ticks per second of the single player server (a multiplayer server does not tell its TPS). */
+	private static String tps(Minecraft mc) {
+		var server = mc.getSingleplayerServer();
+		if (server == null) {
+			return "-";
+		}
+		double ms = server.getAverageTickTimeNanos() / 1e6;
+		return String.format("%.1f  (%.1f ms)", Math.min(20.0, 1000.0 / Math.max(50.0, ms)), ms);
+	}
+
+	private static String targetBlock(Minecraft mc) {
+		if (mc.level != null && mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult b
+			&& mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+			return mc.level.getBlockState(b.getBlockPos()).getBlock().getName().getString();
+		}
+		return "-";
+	}
+
+	private static String durability(Minecraft mc) {
+		if (mc.player == null) {
+			return "-";
+		}
+		ItemStack held = mc.player.getMainHandItem();
+		return held.isDamageableItem() ? (held.getMaxDamage() - held.getDamageValue()) + " / " + held.getMaxDamage() : "-";
+	}
+
+	/** How many of the held item the player has in total. */
+	private static String itemCount(Minecraft mc) {
+		if (mc.player == null || mc.player.getMainHandItem().isEmpty()) {
+			return "-";
+		}
+		ItemStack held = mc.player.getMainHandItem();
+		Inventory inv = mc.player.getInventory();
+		int n = 0;
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			if (ItemStack.isSameItem(inv.getItem(i), held)) {
+				n += inv.getItem(i).getCount();
+			}
+		}
+		return Integer.toString(n);
+	}
+
+	/** Entity hitboxes (like F3 + B). */
+	private static boolean hitboxes() {
+		return Minecraft.getInstance().debugEntries.isCurrentlyEnabled(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES);
+	}
+
+	private static void setHitboxes(boolean on) {
+		Minecraft.getInstance().debugEntries.setStatus(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES,
+			on ? net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.ALWAYS_ON : net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.NEVER);
+	}
 
 	private static String ping(Minecraft mc) {
 		if (mc.player == null || mc.getConnection() == null) {

@@ -5,7 +5,7 @@
 	"name": "DNZ Schematic",
 	"description": "Shows .litematic buildings as see-through blocks and marks every wrong, missing or extra block. Layer by layer, with a material list. Press M.",
 	"authors": ["DNZ"],
-	"license": "All-Rights-Reserved",
+	"license": "GPL-3.0-only",
 	"icon": "assets/dnzschematic/icon.png",
 	"environment": "client",
 	"entrypoints": {

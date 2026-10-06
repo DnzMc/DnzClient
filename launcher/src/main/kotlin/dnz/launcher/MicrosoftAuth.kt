@@ -22,7 +22,7 @@ import java.time.Duration
  */
 object MicrosoftAuth {
     /** Mojang approved DNZ Launcher for Minecraft sign-in. Set to true once the approval arrives. */
-    const val approved = false
+    const val approved = true // Mojang approved the App ID on 06.10.2026
 
     /** Application (client) ID from portal.azure.com -> App registrations ("microsoft.clientId" in dnz-keys.properties). */
     val CLIENT_ID = Keys.get("microsoft.clientId")

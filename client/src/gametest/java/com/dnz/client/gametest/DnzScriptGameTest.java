@@ -43,7 +43,7 @@ public class DnzScriptGameTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext context) {
-		if (!System.getProperty("dnz.bench", "").isEmpty()) {
+		if (!System.getProperty("dnz.bench", "").isEmpty() || !System.getProperty("dnz.skia", "").isEmpty()) {
 			return; // only the FPS benchmark runs
 		}
 		Path scripts = context.computeOnClient(mc -> ScriptManager.folder());

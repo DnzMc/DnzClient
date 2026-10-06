@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Draws every vanilla button (title screen, options menus etc.) in the DNZ style.
+ * Draws the vanilla buttons inside the DNZ menus in the DNZ style (outside them they stay vanilla, see Theme.vanillaWidgets).
  * In the Simple style the label is also redrawn: smooth font, no drop shadow (the pixel font with
  * a shadow looks broken next to the smooth DNZ texts).
  */
@@ -27,7 +27,7 @@ public class AbstractButtonMixin {
 
 	@Inject(method = "extractDefaultSprite", at = @At("HEAD"), cancellable = true)
 	private void dnz$modernButton(GuiGraphicsExtractor g, CallbackInfo ci) {
-		if (Theme.javaStyle()) {
+		if (Theme.vanillaWidgets()) {
 			return;
 		}
 		ci.cancel();
@@ -37,7 +37,7 @@ public class AbstractButtonMixin {
 
 	@Inject(method = "extractDefaultLabel", at = @At("HEAD"), cancellable = true)
 	private void dnz$skipPixelLabel(ActiveTextCollector collector, CallbackInfo ci) {
-		if (Theme.simpleStyle()) {
+		if (Theme.simpleStyle() && !Theme.vanillaWidgets()) {
 			ci.cancel();
 			this.dnz$smoothLabel = true;
 		}

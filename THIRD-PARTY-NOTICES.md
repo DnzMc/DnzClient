@@ -23,9 +23,13 @@ The launcher downloads their official, unmodified files from their official sour
 | Cull Fewer Leaves | See project page | LGPL-3.0 | https://modrinth.com/mod/cull-fewer-leaves |
 | Async Logger | See project page | LGPL-3.0 | https://modrinth.com/mod/asynclogger |
 | Debugify | See project page | LGPL-3.0 | https://modrinth.com/mod/debugify |
+| ModernFix (mVUS port) | embeddedt, coredex-source | LGPL-3.0 | https://modrinth.com/mod/modernfix-mvus |
+| VMP | See project page | MIT | https://modrinth.com/mod/vmp-fabric |
+| ServerCore | See project page | MIT | https://modrinth.com/mod/servercore |
+| Sciophobia | See project page | LGPL-3.0 | https://modrinth.com/mod/sciophobia |
 
 These projects stay under their own licenses and belong to their authors. DNZ's own license
-(see LICENSE, all rights reserved) does not apply to them.
+(GPL-3.0, see LICENSE) does not apply to them.
 
 ### Bundled inside DNZ Client
 
@@ -33,11 +37,12 @@ These projects stay under their own licenses and belong to their authors. DNZ's 
 |---|---|---|---|
 | Rhino (JavaScript engine for DNZ Script mods) | Mozilla | MPL 2.0 | https://github.com/mozilla/rhino |
 | Inter font (smooth text in the Simple menu style) | The Inter Project Authors | SIL Open Font License 1.1 | https://github.com/rsms/inter |
-
 | Poppins font, Regular, Medium, SemiBold and Bold (DNZ menu, Simple style) | The Poppins Project Authors | SIL Open Font License 1.1 | https://github.com/itfoundry/Poppins |
 | Material Symbols Outlined icons (DNZ menu icons) | Google LLC | Apache License 2.0 | https://github.com/google/material-design-icons |
+| e4mc (Open World: hosts a single player world for friends over the internet) | Skye | MIT | https://github.com/vgskye/e4mc-minecraft-architectury |
 
-The font license texts are included next to the fonts: `assets/dnzclient/font/inter-OFL.txt`, `poppins-OFL.txt`.
+The font license texts are included next to the fonts: `assets/dnzclient/font/inter-OFL.txt`, `poppins-OFL.txt`. The e4mc license text is in `assets/dnzclient/licenses/e4mc-MIT.txt`; e4mc is
+bundled with its code unchanged (only its mod list entry is marked as a library of DNZ Client).
 
 Rhino is included unmodified. Its source code is available at the link above, under the Mozilla Public License 2.0.
 

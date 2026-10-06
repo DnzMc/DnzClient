@@ -16,7 +16,7 @@ public class DnzTurboGameTest implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext context) {
-		if (!System.getProperty("dnz.bench", "").isEmpty()) {
+		if (!System.getProperty("dnz.bench", "").isEmpty() || !System.getProperty("dnz.skia", "").isEmpty()) {
 			return; // only the FPS benchmark runs
 		}
 		context.runOnClient(mc -> DnzConfig.get().turbo = true);

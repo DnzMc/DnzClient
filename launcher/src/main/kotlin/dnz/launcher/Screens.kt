@@ -15,11 +15,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -37,18 +39,143 @@ import kotlin.random.Random
 
 // ------------------------------------------------------------------ Home
 
+/** Turkish or English text (trial design, not in the string tables yet). */
+private fun tr(state: LauncherState, turkish: String, english: String) = if (state.language == Lang.TR) turkish else english
+
 @Composable
 fun HomeScreen(state: LauncherState) {
-    Column(Modifier.fillMaxSize().padding(28.dp)) {
-        Hero(state)
-        Spacer(Modifier.height(24.dp))
-        Text(state.t("news"), color = Dnz.Text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
+    val profile = state.profiles[state.selectedProfile]
+    val scope = rememberCoroutineScope()
+    Column(Modifier.fillMaxSize().padding(start = 56.dp, end = 40.dp, top = 24.dp, bottom = 28.dp)) {
+        // Top right: search and the account.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Dnz.Surface).dnzClickable { state.screen = Screen.Mods },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Outlined.Search, null, tint = Dnz.Muted, modifier = Modifier.size(22.dp)) }
+            Spacer(Modifier.width(12.dp))
+            Row(
+                Modifier.height(44.dp).clip(RoundedCornerShape(12.dp)).background(Dnz.Surface).dnzClickable { state.screen = Screen.Account }
+                    .padding(start = 6.dp, end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SkinHead(state.currentAccount, 32.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(state.currentAccount?.name ?: state.t("account"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
+        }
         MojangNotice(state)
+        Spacer(Modifier.weight(1f))
+        Box(Modifier.fillMaxWidth()) {
+        // Pixel scene at the right, level with the profile name; its edges fade into the page.
+        Box(Modifier.align(Alignment.CenterEnd).width(460.dp).height(354.dp)) {
+            Image(
+                HomeScene, null, Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
+            )
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.75f to Color.Transparent, 1f to Dnz.Background)))
+            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(0f to Dnz.Background, 0.18f to Color.Transparent, 0.85f to Color.Transparent, 1f to Dnz.Background)))
+        }
+        Column {
+        // Selected profile
+        Text(
+            tr(state, "SEÇİLİ PROFİL", "SELECTED PROFILE"), color = Dnz.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Dnz.Accent.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+        Spacer(Modifier.height(14.dp))
+        Text(profile.name, color = Dnz.Text, fontSize = 72.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val mods = remember(profile) { GameLauncher.instanceDir(profile).resolve("mods").listFiles { f -> f.name.endsWith(".jar") }?.size ?: 0 }
+            listOf(profile.version, "Fabric", "$mods mod").forEach {
+                Text(
+                    it, color = Dnz.Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Dnz.Surface).padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(28.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val label = when {
+                state.gameRunning -> state.t("running")
+                state.busy -> "${(state.progress * 100).toInt()}%"
+                else -> tr(state, "OYNA", "PLAY")
+            }
+            Row(
+                Modifier.width(196.dp).height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Accent)
+                    .dnzClickable { if (!state.busy && !state.gameRunning) scope.launch { play(state) } },
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!state.busy && !state.gameRunning) {
+                    Icon(Icons.Filled.PlayArrow, null, tint = Dnz.OnAccent, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(label, color = Dnz.OnAccent, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+            }
+            Spacer(Modifier.width(12.dp))
+            Box(
+                Modifier.height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Surface)
+                    .dnzClickable { state.editingProfile = state.selectedProfile }.padding(horizontal = 28.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(tr(state, "Düzenle", "Edit"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+        }
+        state.status?.let { status ->
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.width(420.dp)) {
+                Text(status, color = Dnz.Muted, fontSize = 12.sp, maxLines = 1)
+                if (state.busy) {
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { state.progress },
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                        color = Dnz.Accent, trackColor = Dnz.Surface,
+                    )
+                }
+            }
+        }
+        }
+        }
+        Spacer(Modifier.weight(1f))
+        // My profiles
+        Text(tr(state, "Profillerim", "My profiles"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            NewsCard(state.t("news1.title"), state.t("news1.body"), Dnz.Accent, Modifier.weight(1f))
-            NewsCard(state.t("news2.title"), state.t("news2.body"), Dnz.Accent2, Modifier.weight(1f))
-            NewsCard(state.t("news3.title"), state.t("news3.body"), Dnz.Accent3, Modifier.weight(1f))
+            state.profiles.take(4).forEachIndexed { i, p ->
+                val selected = i == state.selectedProfile
+                Column(
+                    Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Surface)
+                        .border(1.5.dp, if (selected) Dnz.Accent else Dnz.Border, RoundedCornerShape(14.dp))
+                        .dnzClickable { state.selectedProfile = i; state.version = p.version }.padding(16.dp),
+                ) {
+                    Icon(Icons.Outlined.List, null, tint = if (selected) Dnz.Accent else Dnz.Muted, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.weight(1f))
+                    Text(p.name, color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+                    Text("Fabric · ${p.version}", color = Dnz.Muted, fontSize = 12.sp)
+                }
+            }
+            val dash = Dnz.Border
+            Box(
+                Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(14.dp))
+                    .drawBehind {
+                        drawRoundRect(
+                            dash, cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 1.5.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
+                            ),
+                        )
+                    }
+                    .dnzClickable { state.editingProfile = -1 },
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.Add, null, tint = Dnz.Muted, modifier = Modifier.size(26.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(tr(state, "Yeni profil", "New profile"), color = Dnz.Muted, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
+            // Always five slots wide, so a single profile card keeps its size.
+            repeat(4 - state.profiles.size.coerceAtMost(4)) { Spacer(Modifier.weight(1f)) }
         }
     }
 }
@@ -56,7 +183,7 @@ fun HomeScreen(state: LauncherState) {
 /** Red notice until Mojang approves DNZ for Microsoft sign-in. ✕ hides it until the next start; "Don't show again" for good. */
 @Composable
 private fun MojangNotice(state: LauncherState) {
-    if (state.mojangNoticeHidden || state.mojangNoticeClosed) return
+    if (MicrosoftAuth.approved || state.mojangNoticeHidden || state.mojangNoticeClosed) return
     Row(
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(12.dp)).background(Dnz.Danger.copy(alpha = 0.14f))
             .border(1.dp, Dnz.Danger.copy(alpha = 0.55f), RoundedCornerShape(12.dp)).padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
@@ -165,6 +292,9 @@ internal suspend fun play(state: LauncherState) {
         state.status = state.t("running")
         withContext(Dispatchers.IO) { process.waitFor() }
         state.status = null
+    } catch (e: GameLauncher.AlreadyRunning) {
+        state.dialog = state.t("launch_error") to state.t("already_running")
+        state.status = null
     } catch (e: Exception) {
         state.dialog = state.t("launch_error") to (e.message ?: e.toString())
         state.status = null
@@ -236,6 +366,27 @@ private fun NewsCard(title: String, body: String, color: Color, modifier: Modifi
 
 // ------------------------------------------------------------------ Settings
 
+/** DNZ Cloud: key bindings and DNZ settings follow the Minecraft account (off until the player turns it on). */
+@Composable
+private fun CloudCard(state: LauncherState) {
+    var on by remember { mutableStateOf(Cloud.enabled) }
+    Card(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(state.t("cloud.title"), color = Dnz.Text, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(state.t("cloud.caption"), color = Dnz.Muted, fontSize = 11.sp, lineHeight = 15.sp)
+            }
+            Spacer(Modifier.width(20.dp))
+            Switch(
+                checked = on,
+                onCheckedChange = { Cloud.enabled = it; on = Cloud.enabled },
+                modifier = Modifier.handCursor(), colors = SwitchDefaults.colors(checkedThumbColor = Dnz.OnAccent, checkedTrackColor = Dnz.Accent),
+            )
+        }
+    }
+}
+
 @Composable
 fun SettingsScreen(state: LauncherState) {
     Column(
@@ -262,6 +413,7 @@ fun SettingsScreen(state: LauncherState) {
                 )
             }
         }
+        CloudCard(state)
         Card(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(state.t("settings.ram"), color = Dnz.Text, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -333,11 +485,11 @@ private fun LangChip(state: LauncherState, lang: Lang, label: String) {
 /** A theme button with a small preview of its colors. */
 @Composable
 private fun ThemeChip(state: LauncherState, theme: LauncherTheme) {
-    val selected = Dnz.theme == theme
+    val selected = Dnz.custom == null && Dnz.theme == theme
     val preview = if (theme == LauncherTheme.Mono) listOf(Color(0xFF050505), Color(0xFFF2F2F2)) else listOf(Color(0xFF4FA3FF), Color(0xFF7B5CFF))
     Row(
         Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) Dnz.Accent else Dnz.SurfaceHigh)
-            .dnzClickable { Dnz.theme = theme }.padding(horizontal = 14.dp, vertical = 10.dp),
+            .dnzClickable { Dnz.theme = theme; Dnz.custom = null }.padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -381,6 +533,17 @@ fun AccountScreen(state: LauncherState) {
                     // Until Mojang approves DNZ Launcher, sign-in can't work: show the same notice as on Home.
                     if (MicrosoftAuth.approved && MicrosoftAuth.ready) signInWithMicrosoft(state)
                     else state.dialog = state.t("sign_in") to state.t("mojang_notice")
+                }
+                // Developer test account: only when the launcher runs from the source code (gradlew run),
+                // never in a released build (installer, portable, Mac app).
+                if (DevBuild.fromSource) {
+                    Spacer(Modifier.height(10.dp))
+                    Box(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Dnz.SurfaceHigh)
+                            .dnzClickable { state.account = Account.offline("DNZ_Test") }.padding(12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(state.t("test_account"), color = Dnz.Text, fontWeight = FontWeight.SemiBold) }
+                    Text(state.t("test_account.info"), color = Dnz.Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
                 }
             } else {
                 Box(

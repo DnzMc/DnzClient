@@ -49,7 +49,7 @@ namespace Dnz
             }
             try
             {
-                foreach (string link in new string[] { DesktopLink(), StartMenuLink(), StartupLink() })
+                foreach (string link in new string[] { DesktopLink(), StartMenuLink(), StartupLink(), UploaderDesktopLink(), UploaderStartMenuLink() })
                 {
                     if (File.Exists(link)) File.Delete(link);
                 }

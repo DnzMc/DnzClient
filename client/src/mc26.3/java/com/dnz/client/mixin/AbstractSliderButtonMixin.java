@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Draws sliders (FOV, volume, ...) in the DNZ style. */
+/** Draws sliders inside the DNZ menus in the DNZ style (vanilla elsewhere, see Theme.vanillaWidgets). */
 @Mixin(AbstractSliderButton.class)
 public class AbstractSliderButtonMixin {
 	@Redirect(
@@ -20,7 +20,7 @@ public class AbstractSliderButtonMixin {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIIII)V")
 	)
 	private void dnz$modernSlider(GuiGraphicsExtractor g, RenderPipeline pipeline, Identifier sprite, int x, int y, int w, int h, int color) {
-		if (Theme.javaStyle()) {
+		if (Theme.vanillaWidgets()) {
 			g.blitSprite(pipeline, sprite, x, y, w, h, color);
 			return;
 		}

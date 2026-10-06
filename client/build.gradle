@@ -32,6 +32,39 @@ base {
 	archivesName = "dnz-client-mc${project.minecraft_version}"
 }
 
+// Open World hosting mod, repacked as a library of DNZ Client: mod lists show it under DNZ Client (hidden with the
+// other libraries) and without its own icon. Its code and license file are unchanged.
+configurations {
+	worldHost {
+		transitive = false
+	}
+}
+def worldHostJar = tasks.register('worldHostJar', Jar) {
+	def modJson = layout.buildDirectory.file('worldhost/fabric.mod.json')
+	inputs.files(configurations.worldHost)
+	archiveFileName = "dnz-open-world-${project.e4mc_version}.jar"
+	destinationDirectory = layout.buildDirectory.dir('worldhost')
+	from({ zipTree(configurations.worldHost.singleFile) }) {
+		exclude 'fabric.mod.json', 'e4mc_icon.png'
+	}
+	from(modJson)
+	doFirst {
+		def json = new groovy.json.JsonSlurper().parseText(zipTree(configurations.worldHost.singleFile)
+			.matching { include 'fabric.mod.json' }.singleFile.text)
+		json.remove('icon')
+		json.custom = (json.custom ?: [:]) + [modmenu: [parent: 'dnzclient', badges: ['library']]]
+		def out = modJson.get().asFile
+		out.parentFile.mkdirs()
+		out.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+	}
+}
+// Loom's include only nests Maven modules, so the repacked jar is nested by hand (listed in fabric.mod.json).
+tasks.named('jar') {
+	from(worldHostJar) {
+		into 'META-INF/jars'
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
@@ -40,6 +73,28 @@ dependencies {
 	// JavaScript engine for DNZ Script mods, bundled inside the DNZ Client jar (MPL 2.0).
 	implementation "org.mozilla:rhino:${project.rhino_version}"
 	include "org.mozilla:rhino:${project.rhino_version}"
+
+	// Open World (internet hosting, MIT, see THIRD-PARTY-NOTICES.md): bundled inside the DNZ Client jar, see worldHostJar.
+	worldHost "maven.modrinth:e4mc:${project.e4mc_version}"
+	localRuntime files(worldHostJar)
+
+	// Skia menus (experiment, dev client only for now): drawn on the graphics card into Minecraft's OpenGL window.
+	compileOnly "org.jetbrains.skiko:skiko-awt:0.150.1"
+	localRuntime "org.jetbrains.skiko:skiko-awt:0.150.1"
+	localRuntime "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.150.1"
+	localRuntime "org.jetbrains.kotlin:kotlin-stdlib:2.4.20"
+	localRuntime "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0"
+	// NanoVG: small vector drawing library of LWJGL (Minecraft 26.2's LWJGL version) that draws the DNZ menus.
+	compileOnly "org.lwjgl:lwjgl-nanovg:3.4.1"
+	localRuntime "org.lwjgl:lwjgl-nanovg:3.4.1"
+	localRuntime "org.lwjgl:lwjgl-nanovg:3.4.1:natives-windows"
+	// NanoVG menus ship with DNZ Client on 26.2 (26.3 keeps the normal menus for now): classes and natives.
+	if (project.minecraft_version == "26.2") {
+		include "org.lwjgl:lwjgl-nanovg:3.4.1"
+		["natives-windows", "natives-windows-arm64", "natives-macos", "natives-macos-arm64", "natives-linux"].each {
+			include "org.lwjgl:lwjgl-nanovg:3.4.1:${it}"
+		}
+	}
 
 	// Compiled against Sodium to show its settings in the DNZ menu; not bundled (players get the official jar).
 	compileOnly "maven.modrinth:sodium:${project.sodium_version}"
@@ -53,9 +108,12 @@ dependencies {
 	localRuntime "maven.modrinth:entityculling:${project.perf_entityculling}"
 	localRuntime "maven.modrinth:immediatelyfast:${project.perf_immediatelyfast}"
 	localRuntime "maven.modrinth:ferrite-core:${project.perf_ferritecore}"
-	localRuntime "maven.modrinth:badoptimizations:${project.perf_badoptimizations}"
+	// -Pbench=oc: the other pack's mod set (it has no BadOptimizations / Dynamic FPS).
+	if (bench != 'oc') {
+		localRuntime "maven.modrinth:badoptimizations:${project.perf_badoptimizations}"
+	}
 	// Dynamic FPS lowers the frame rate of an unfocused window, so the FPS benchmark runs without it.
-	if (bench == null) {
+	if (bench == null && !project.hasProperty('skia')) {
 		localRuntime "maven.modrinth:dynamic-fps:${project.perf_dynamicfps}"
 	}
 	// Added 01.10.2026; "-Pbench=base" leaves them out to measure the FPS from before.
@@ -66,6 +124,18 @@ dependencies {
 		localRuntime "maven.modrinth:cull-fewer-leaves:${project.perf_cullfewerleaves}"
 		localRuntime "maven.modrinth:asynclogger:${project.perf_asynclogger}"
 		localRuntime "maven.modrinth:debugify:${project.perf_debugify}"
+	}
+	// Added 03.10.2026 (versions/*.properties perx_*); "-Pbench=nox" leaves them out to measure the difference.
+	if (bench != 'base' && bench != 'nox') {
+		['fabric-language-kotlin', 'fzzy-config', 'resourceful-config', 'zconfig', 'c2me-fabric', 'scalablelux', 'vmp-fabric',
+		 'servercore', 'sciophobia', 'modernfix-mvus', 'structure-layout-optimizer', 'zfastnoise', 'zfastsurface', 'particle-core'].each { slug ->
+			def id = project.findProperty("perx_${slug.replace('-', '')}")
+			// -Pbench_skip=slug,slug leaves single mods out (to find which ones help).
+			def skip = (project.findProperty('bench_skip') ?: '').split(',')
+			if (id && !(slug in skip)) {
+				localRuntime "maven.modrinth:${slug}:${id}"
+			}
+		}
 	}
 }
 
@@ -85,6 +155,7 @@ tasks.matching { it.name == 'runClientGameTest' }.configureEach {
 	systemProperty 'dnz.examples', file('script-examples').absolutePath
 	// With -Pbench only the FPS benchmark runs (the other tests skip themselves).
 	systemProperty 'dnz.bench', bench ?: ''
+	systemProperty 'dnz.skia', project.hasProperty('skia') ? 'yes' : ''
 	systemProperty 'dnz.benchSize', project.findProperty('bench_size') ?: '1600x900'
 	systemProperty 'dnz.benchApi', project.findProperty('bench_api') ?: ''
 	// Minecraft's own switch: --graphicsBackend vulkan|opengl (the option in options.txt is reset by the test runner).
@@ -92,6 +163,10 @@ tasks.matching { it.name == 'runClientGameTest' }.configureEach {
 		args '--graphicsBackend', project.findProperty('bench_api')
 	}
 	// -Pbench_jfr: Java Flight Recorder records where the game spends its time (dnz-bench.jfr in the run folder).
+	// -Pbench=oc: the other pack's Java flags (Compact Object Headers; G1 below 8 GB heap).
+	if (bench == 'oc') {
+		jvmArgs '-XX:+UseCompactObjectHeaders', '-XX:+UseG1GC', '-XX:+ParallelRefProcEnabled', '-Xms512M'
+	}
 	if (project.hasProperty('bench_jfr')) {
 		jvmArgs '-XX:StartFlightRecording=filename=dnz-bench.jfr,settings=profile'
 	}
@@ -116,10 +191,12 @@ tasks.named('check') {
 processResources {
 	def version = project.version
 	def mc = project.minecraft_version
+	def worldHost = "dnz-open-world-${project.e4mc_version}.jar"
 	inputs.property "version", version
 	inputs.property "mc", mc
+	inputs.property "worldHost", worldHost
 	filesMatching("fabric.mod.json") {
-		expand "version": version, "mc": mc
+		expand "version": version, "mc": mc, "worldHost": worldHost
 	}
 }
 

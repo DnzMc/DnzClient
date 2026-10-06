@@ -61,6 +61,16 @@ fun main(args: Array<String>) {
         File(out, "${shot.name}.png").writeBytes(image.encodeToData()!!.bytes)
         scene.close()
     }
+    if (args.size < 2 || args[1].startsWith("custom")) {
+        val state = LauncherState().apply { screen = Screen.Home }
+        Dnz.custom = ThemeColors("Purple Night", 0xFF0E0A18, 0xFF0B0814, 0xFF1A1428, 0xFF241C38, 0xFFA56BFF, 0xFF6B4BFF, 0xFFF2EEFA, 0xFF9A90B5)
+        val scene = ImageComposeScene(1200, 740, Density(1f)) { LauncherApp(state, dragArea = { it() }, onMinimize = {}, onClose = {}) }
+        var image = scene.render(0)
+        repeat(4) { i -> Thread.sleep(500); image = scene.render((i + 1) * 500_000_000L) }
+        File(out, "custom-theme-home.png").writeBytes(image.encodeToData()!!.bytes)
+        scene.close()
+        Dnz.custom = null
+    }
     println("Saved to ${out.absolutePath}")
     exitProcess(0)
 }

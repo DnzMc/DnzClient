@@ -22,7 +22,7 @@ public final class DnzConfig {
 	public boolean fullbright = false;
 	/** Hides random block texture rotation and HUD coordinates. */
 	public boolean streamerMode = false;
-	/** Java style: vanilla Minecraft buttons, DNZ layout only in the ESC menu. */
+	/** Java style: vanilla Minecraft buttons. */
 	public boolean javaStyle = false;
 	/** Simple style: clean glass menus with a smooth font (ignored while javaStyle is on). */
 	public boolean simpleStyle = false;
@@ -32,6 +32,10 @@ public final class DnzConfig {
 	public int fpsDefaults = 0;
 	/** DNZ Turbo: far decorations/drops/signs not drawn, particle cap (see Turbo). */
 	public boolean turbo = true;
+	/** Cool mode: FPS capped at twice the screen refresh rate (less heat, steadier frames on laptops). */
+	public boolean coolMode = false;
+	/** DNZ menus drawn by NanoVG on the graphics card (OpenGL only; off = DNZ's own drawing). */
+	public boolean nanoVg = true;
 	/** macOS: draw at full Retina resolution (sharper, much lower FPS). Off = normal resolution, like most Mac games. */
 	public boolean macRetina = false;
 	/** Size of the DNZ menu in percent (100 = about two thirds of the window, at any resolution and GUI scale). */
@@ -44,6 +48,19 @@ public final class DnzConfig {
 	public java.util.Map<String, HudPos> hud = new java.util.LinkedHashMap<>();
 	/** DNZ Script mods the player turned off (by mod id). */
 	public java.util.Set<String> disabledScripts = new java.util.LinkedHashSet<>();
+
+	/** Custom crosshair settings (module "crosshair"); sizes in screen pixels. */
+	public Crosshair crosshair = new Crosshair();
+
+	public static class Crosshair {
+		public int style = 0;
+		public float size = 6;
+		public float gap = 3;
+		public float thickness = 2;
+		public int color = 0xFFFFFFFF;
+		public boolean outline = true;
+		public boolean dot = false;
+	}
 
 	/** A module's saved state (the name stays HudPos so older config files keep working). */
 	public static class HudPos {
@@ -75,6 +92,18 @@ public final class DnzConfig {
 		return instance;
 	}
 
+	/** DNZ Cloud: settings from another computer take the place of these. */
+	static void replace(DnzConfig config) {
+		if (config.hud == null) {
+			config.hud = new java.util.LinkedHashMap<>();
+		}
+		if (config.disabledScripts == null) {
+			config.disabledScripts = new java.util.LinkedHashSet<>();
+		}
+		instance = config;
+		config.save();
+	}
+
 	private static DnzConfig load() {
 		if (Files.exists(FILE)) {
 			try (Reader reader = Files.newBufferedReader(FILE)) {
@@ -86,6 +115,9 @@ public final class DnzConfig {
 					}
 					if (config.disabledScripts == null) {
 						config.disabledScripts = new java.util.LinkedHashSet<>();
+					}
+					if (config.crosshair == null) {
+						config.crosshair = new Crosshair();
 					}
 					return config;
 				}
@@ -101,6 +133,7 @@ public final class DnzConfig {
 			try (Writer writer = Files.newBufferedWriter(FILE)) {
 				GSON.toJson(this, writer);
 			}
+			CloudSync.changed();
 		} catch (IOException ignored) {
 		}
 	}
