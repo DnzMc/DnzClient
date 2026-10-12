@@ -22,11 +22,14 @@ object Settings {
         val mojangNoticeHidden: Boolean? = null,
         /** Theme from the old Workshop (not used any more; kept so older settings files still load). */
         val workshopTheme: String? = null,
+        /** Accent color picked in Settings (ARGB), null for DNZ orange. */
+        val accent: Long? = null,
+        val skinAnimation: Boolean? = null,
     )
 
     fun snapshot(state: LauncherState) = Saved(
         state.language, state.ramGb, state.launchMode, state.profiles.toList(), state.selectedProfile, Dnz.theme, state.macAutoDone, state.mojangNoticeHidden,
-        null,
+        null, Dnz.accent, state.skinAnimation,
     )
 
     fun load(state: LauncherState) {
@@ -35,6 +38,8 @@ object Settings {
         saved.ramGb?.let { state.ramGb = it.coerceIn(2f, 16f) }
         saved.launchMode?.let { state.launchMode = it }
         saved.theme?.let { Dnz.theme = it }
+        saved.accent?.let { Dnz.pickAccent(it) }
+        saved.skinAnimation?.let { state.skinAnimation = it }
         saved.macAutoDone?.let { state.macAutoDone = it }
         saved.mojangNoticeHidden?.let { state.mojangNoticeHidden = it }
         // Profiles from an old or edited file may miss fields; keep only complete ones.

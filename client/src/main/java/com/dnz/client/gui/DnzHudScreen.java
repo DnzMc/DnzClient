@@ -7,6 +7,7 @@ import com.dnz.client.hud.HudModule;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -65,7 +66,7 @@ public class DnzHudScreen extends Screen {
 			return;
 		}
 		DnzConfig.HudPos p = m.pos();
-		int rows = 3 + m.options().size();
+		int rows = 3 + m.options().size() + (m.editableValue() ? 1 : 0);
 		this.popH = 22 + rows * 20 + 4;
 		int[] at = DnzHud.screenPos(m.id, this.width, this.height);
 		int[] size = DnzHud.size(m.id);
@@ -89,6 +90,23 @@ public class DnzHudScreen extends Screen {
 				p.opts.put(key, !on);
 				this.changed();
 			}).selected(on));
+			y += 20;
+		}
+		if (m.editableValue()) {
+			EditBox value = new EditBox(this.font, x, y, w, 18, Component.literal(L.t("hud.opt.value")));
+			value.setMaxLength(256);
+			value.setValue(p.value == null ? "" : p.value);
+			value.setHint(Component.literal(m.id.equals("itemcounter") ? "minecraft:diamond"
+				: m.id.equals("shape") ? "rectangle / ellipse / star..."
+				: m.id.equals("customimage") ? "file.png|80|100"
+				: m.id.equals("keystrokes") ? "key.keyboard.r"
+				: m.id.equals("blockabove") ? "Alert distance (blocks)"
+				: m.id.equals("blockplacecount") ? "Interval (seconds)" : "Text (\\n = new line)"));
+			value.setResponder(text -> {
+				p.value = text;
+				DnzConfig.get().save();
+			});
+			this.addRenderableWidget(value);
 			y += 20;
 		}
 		this.addRenderableWidget(new DnzButton(x, y, w, 18, Component.literal(L.t("hud.hide")), () -> {

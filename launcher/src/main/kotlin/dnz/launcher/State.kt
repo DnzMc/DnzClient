@@ -115,6 +115,8 @@ class LauncherState {
     /** Home page notice about Mojang's approval: hidden for good (saved) / closed until the next start. */
     var mojangNoticeHidden by mutableStateOf(false)
     var mojangNoticeClosed by mutableStateOf(false)
+    /** Home page: the player's skin as a moving 3D character (off: the pixel scene). */
+    var skinAnimation by mutableStateOf(true)
 
     /** Install / launch progress shown on the Home screen. */
     var busy by mutableStateOf(false)
@@ -136,7 +138,7 @@ class LauncherState {
     }
 }
 
-enum class Lang { TR, EN }
+enum class Lang { TR, EN, DE }
 
 object Strings {
     private val tr = mapOf(
@@ -154,8 +156,13 @@ object Strings {
         "play.pending.body" to "Oyunu başlatma bir sonraki aşamada eklenecek. Microsoft girişi Mojang onayından sonra açılacak.",
         "signin.pending.body" to "Microsoft girişi, Mojang'ın DNZ Launcher'ı onaylamasından sonra açılacak. Giriş her zaman Microsoft'un resmi sayfasında yapılır.",
         "profiles.new" to "Yeni Profil", "profiles.selected" to "Seçili",
-        "mods.search" to "Modrinth'te mod ara...", "mods.searching" to "Aranıyor...", "mods.install" to "Yükle",
+        "mods.search_all" to "Modrinth'te mod ve doku paketi ara...", "mods.search_cf_all" to "CurseForge'da mod ve doku paketi ara...", "lib.results_all" to "%s sonuç",
+        "mods.search_packs" to "Modrinth'te doku paketi ara...", "mods.search_cf_packs" to "CurseForge'da doku paketi ara...", "lib.kind.mods" to "Modlar", "lib.kind.packs" to "Doku Paketleri", "lib.pack_tag" to "Doku paketi",
+        "lib.pack_installed" to "%s, \"%p\" profiline eklendi. Oyunda Seçenekler → Kaynak Paketleri'nden açabilirsin.",
+        "mods.search" to "Modrinth'te mod ara...", "mods.search_cf" to "CurseForge'da mod ara...", "mods.searching" to "Aranıyor...", "mods.install" to "Yükle",
         "mods.error" to "Arama başarısız. İnternet bağlantını kontrol et.", "mods.downloads" to "indirme",
+        "settings.accent" to "Vurgu rengi", "settings.accent.caption" to "Düğmeler, seçili yerler ve parlamalar bu renkte olur.",
+        "settings.character" to "Animasyonlu karakter", "settings.character.caption" to "Ana sayfada skin'in 3D olarak durur, nefes alır ve fareye bakar. Sürükleyerek çevir, tıklayınca el sallar.",
         "settings.ram" to "Bellek (RAM)", "settings.language" to "Dil", "settings.theme" to "Tema", "theme.color" to "Renkli", "theme.mono" to "Siyah Beyaz", "settings.folder" to "Oyun klasörü",
         "settings.ram.hint" to "PvP için 4 GB yeterli. Shader kullanıyorsan 6-8 GB önerilir.",
         "account.title" to "Microsoft Hesabı",
@@ -164,7 +171,8 @@ object Strings {
         "account.safe3" to "İstediğin zaman account.microsoft.com'dan izni kaldırabilirsin.",
         "ok" to "Tamam",
         "need_account.title" to "Önce giriş yap",
-        "need_account.body" to "Oynamak için Hesap sayfasından Microsoft ile giriş yap. Mojang onayı gelene kadar Ayarlar'dan Resmi Minecraft Launcher yöntemiyle oynayabilirsin.",
+        "need_account.body" to "Oynamak için Hesap sayfasından Microsoft ile giriş yap.",
+        "signin.no_internet" to "Microsoft'a bağlanılamadı, bu yüzden girişin yenilenemedi. İnternet bağlantını kontrol edip tekrar Oyna'ya bas.",
         "sign_out" to "Çıkış yap",
         "running" to "Oyun açık",
         "launch_error" to "Oyun başlatılamadı",
@@ -173,7 +181,7 @@ object Strings {
         "mode.official" to "Resmi Minecraft Launcher",
         "mode.official.info" to "Önerilen. Hesabın Minecraft Launcher'da kalır, DNZ hesabına hiç dokunmaz. OYNA'ya basınca Minecraft Launcher açılır, orada DNZ profilini seçip Oyna'ya bas.",
         "mode.direct" to "DNZ ile direkt başlat",
-        "mode.direct.info" to "Tek tıkla oyunu açar. Microsoft hesabıyla giriş gerekir (Mojang onayından sonra).",
+        "mode.direct.info" to "Tek tıkla oyunu açar. Microsoft hesabıyla giriş gerekir.",
         "official.done" to "Minecraft Launcher'da \"%s\" profilini seç ve Oyna'ya bas.",
         "account.official" to "Resmi Minecraft Launcher yöntemi seçili: hesabın Minecraft Launcher'da. Burada giriş yapmana gerek yok.",
     )
@@ -192,8 +200,13 @@ object Strings {
         "play.pending.body" to "Launching the game comes in the next stage. Microsoft sign-in opens after Mojang approval.",
         "signin.pending.body" to "Microsoft sign-in opens once Mojang approves DNZ Launcher. You always sign in on Microsoft's official page.",
         "profiles.new" to "New Profile", "profiles.selected" to "Selected",
-        "mods.search" to "Search mods on Modrinth...", "mods.searching" to "Searching...", "mods.install" to "Install",
+        "mods.search_all" to "Search mods and texture packs on Modrinth...", "mods.search_cf_all" to "Search mods and texture packs on CurseForge...", "lib.results_all" to "%s results",
+        "mods.search_packs" to "Search texture packs on Modrinth...", "mods.search_cf_packs" to "Search texture packs on CurseForge...", "lib.kind.mods" to "Mods", "lib.kind.packs" to "Texture Packs", "lib.pack_tag" to "Texture pack",
+        "lib.pack_installed" to "%s added to the \"%p\" profile. Turn it on in the game: Options → Resource Packs.",
+        "mods.search" to "Search mods on Modrinth...", "mods.search_cf" to "Search mods on CurseForge...", "mods.searching" to "Searching...", "mods.install" to "Install",
         "mods.error" to "Search failed. Check your internet connection.", "mods.downloads" to "downloads",
+        "settings.accent" to "Accent color", "settings.accent.caption" to "Buttons, selections and glows use this color.",
+        "settings.character" to "Animated character", "settings.character.caption" to "Your skin stands on the home page in 3D, breathing and looking at the mouse. Drag to turn it, click to make it wave.",
         "settings.ram" to "Memory (RAM)", "settings.language" to "Language", "settings.theme" to "Theme", "theme.color" to "Colorful", "theme.mono" to "Black & White", "settings.folder" to "Game folder",
         "settings.ram.hint" to "4 GB is enough for PvP. Use 6-8 GB with shaders.",
         "account.title" to "Microsoft Account",
@@ -202,7 +215,8 @@ object Strings {
         "account.safe3" to "You can remove access anytime at account.microsoft.com.",
         "ok" to "OK",
         "need_account.title" to "Sign in first",
-        "need_account.body" to "Sign in with Microsoft on the Account page to play. Until Mojang approves DNZ, play with the official Minecraft Launcher method in Settings.",
+        "need_account.body" to "Sign in with Microsoft on the Account page to play.",
+        "signin.no_internet" to "Couldn't reach Microsoft to renew your sign-in. Check your internet connection and press Play again.",
         "sign_out" to "Sign out",
         "running" to "Game running",
         "launch_error" to "Could not start the game",
@@ -211,7 +225,7 @@ object Strings {
         "mode.official" to "Official Minecraft Launcher",
         "mode.official.info" to "Recommended. Your account stays in the Minecraft Launcher; DNZ never touches it. PLAY opens the Minecraft Launcher: pick the DNZ profile there and press Play.",
         "mode.direct" to "Start directly with DNZ",
-        "mode.direct.info" to "Opens the game in one click. Needs a Microsoft sign-in (after Mojang approval).",
+        "mode.direct.info" to "Opens the game in one click. Needs a Microsoft sign-in.",
         "official.done" to "In the Minecraft Launcher, pick the \"%s\" profile and press Play.",
         "account.official" to "Official Minecraft Launcher mode is selected: your account lives in the Minecraft Launcher. No sign-in needed here.",
     )
@@ -225,7 +239,7 @@ object Strings {
         "cat.magic" to "Büyü", "cat.management" to "Yönetim", "cat.mobs" to "Moblar", "cat.social" to "Sosyal", "cat.storage" to "Depolama",
         "cat.technology" to "Teknoloji", "cat.transportation" to "Ulaşım", "cat.worldgen" to "Dünya Üretimi", "cat.food" to "Yemek",
         "cat.economy" to "Ekonomi", "cat.minigame" to "Mini Oyun",
-        "lib.results" to "%s mod", "lib.load_more" to "Daha fazla göster", "lib.no_results" to "Sonuç yok. Başka bir şey ara ya da kategoriyi değiştir.",
+        "lib.results" to "%s mod", "lib.results_packs" to "%s paket", "lib.load_more" to "Daha fazla göster", "lib.no_results" to "Sonuç yok. Başka bir şey ara ya da kategoriyi değiştir.",
         "lib.by" to "%s tarafından", "lib.installed_badge" to "Yüklü", "lib.installing" to "Yükleniyor...",
         "lib.resolving" to "Gerekli modlar kontrol ediliyor...", "lib.downloading" to "%s indiriliyor...",
         "lib.no_version" to "Bu modun Minecraft %s için Fabric sürümü yok.", "lib.untrusted" to "Güvenilmeyen indirme adresi.",
@@ -234,7 +248,10 @@ object Strings {
         "lib.restart" to "Oyun açık: değişiklikler oyunu yeniden başlatınca geçerli olur.",
         "lib.back" to "Geri", "lib.followers" to "takipçi", "lib.gallery" to "Galeri", "lib.description" to "Açıklama",
         "lib.versions" to "Sürümler (Minecraft %s)", "lib.more_versions" to "Tüm sürümleri göster (%s)",
-        "lib.read_more" to "Devamını Modrinth'te oku", "lib.license" to "Lisans",
+        "lib.read_more" to "Devamını Modrinth'te oku", "lib.read_more_cf" to "Devamını CurseForge'da oku", "lib.license" to "Lisans",
+        "lib.cf_lists" to "CurseForge'un popüler ve yeni güncellenen modları gösteriliyor. Başka bir mod için, CurseForge'daki mod sayfasında yazan Project ID numarasını arama kutusuna yaz.",
+        "lib.link.curseforge" to "CurseForge", "lib.cf_not_ready" to "CurseForge bu sürümde bağlı değil. Şimdilik Modrinth'i kullanabilirsin.",
+        "lib.cf_blocked" to "%s modunun yapımcısı, modun başka launcher'lardan indirilmesine izin vermiyor. Mod sayfasındaki CurseForge butonuyla sitesinden indirebilirsin.",
         "lib.link.modrinth" to "Modrinth", "lib.link.source" to "Kaynak Kod", "lib.link.issues" to "Hata Bildir",
         "lib.link.wiki" to "Wiki", "lib.link.discord" to "Discord",
         "lib.release" to "Kararlı", "lib.beta" to "Beta", "lib.alpha" to "Alfa",
@@ -278,6 +295,9 @@ object Strings {
         "startup.failed" to "Başlangıç ayarı değiştirilemedi.",
         "tray.open" to "DNZ Launcher'ı Aç", "tray.quit" to "Çıkış",
         "update.ready" to "DNZ Launcher %s hazır", "update.restart" to "Yeniden başlat",
+        "update.title" to "Güncellemeler", "update.version" to "Sürüm %s", "update.caption" to "Yeni sürüm çıkınca launcher bir sonraki açılışta kendini günceller.",
+        "update.checking" to "Kontrol ediliyor...", "update.latest" to "En son sürümü kullanıyorsun.", "update.failed" to "Kontrol edilemedi, internetini kontrol et.",
+        "update.dev" to "Geliştirme sürümü: güncelleme yok.", "update.check" to "Güncellemeleri kontrol et", "update.now" to "Şimdi güncelle",
         "cloud.title" to "Bulut kaydetme",
         "cloud.saving.title" to "Kapatma!", "cloud.saving.body" to "Ayarların buluta kaydediliyor...",
         "cloud.caption" to "Tuş atamaların ve DNZ ayarların (HUD, menü, modüller) Minecraft hesabına kaydedilir; başka bir bilgisayarda aynı hesapla oyuna girince kendiliğinden gelir. Kapalıyken hiçbir şey gönderilmez.",
@@ -347,7 +367,7 @@ object Strings {
         "cat.magic" to "Magic", "cat.management" to "Management", "cat.mobs" to "Mobs", "cat.social" to "Social", "cat.storage" to "Storage",
         "cat.technology" to "Technology", "cat.transportation" to "Transportation", "cat.worldgen" to "World Generation", "cat.food" to "Food",
         "cat.economy" to "Economy", "cat.minigame" to "Minigame",
-        "lib.results" to "%s mods", "lib.load_more" to "Show more", "lib.no_results" to "No results. Try another search or category.",
+        "lib.results" to "%s mods", "lib.results_packs" to "%s packs", "lib.load_more" to "Show more", "lib.no_results" to "No results. Try another search or category.",
         "lib.by" to "by %s", "lib.installed_badge" to "Installed", "lib.installing" to "Installing...",
         "lib.resolving" to "Checking required mods...", "lib.downloading" to "Downloading %s...",
         "lib.no_version" to "This mod has no Fabric version for Minecraft %s.", "lib.untrusted" to "Untrusted download address.",
@@ -356,7 +376,10 @@ object Strings {
         "lib.restart" to "The game is running: changes apply after a restart.",
         "lib.back" to "Back", "lib.followers" to "followers", "lib.gallery" to "Gallery", "lib.description" to "Description",
         "lib.versions" to "Versions (Minecraft %s)", "lib.more_versions" to "Show all versions (%s)",
-        "lib.read_more" to "Read more on Modrinth", "lib.license" to "License",
+        "lib.read_more" to "Read more on Modrinth", "lib.read_more_cf" to "Read more on CurseForge", "lib.license" to "License",
+        "lib.cf_lists" to "Showing CurseForge's popular and recently updated mods. For any other mod, type the Project ID number shown on its CurseForge page into the search box.",
+        "lib.link.curseforge" to "CurseForge", "lib.cf_not_ready" to "CurseForge is not connected in this build. Use Modrinth for now.",
+        "lib.cf_blocked" to "The author of %s does not allow downloads from other launchers. Use the CurseForge button on the mod page to get it from their site.",
         "lib.link.modrinth" to "Modrinth", "lib.link.source" to "Source", "lib.link.issues" to "Report issue",
         "lib.link.wiki" to "Wiki", "lib.link.discord" to "Discord",
         "lib.release" to "Release", "lib.beta" to "Beta", "lib.alpha" to "Alpha",
@@ -400,6 +423,9 @@ object Strings {
         "startup.failed" to "Could not change the startup setting.",
         "tray.open" to "Open DNZ Launcher", "tray.quit" to "Quit",
         "update.ready" to "DNZ Launcher %s is ready", "update.restart" to "Restart",
+        "update.title" to "Updates", "update.version" to "Version %s", "update.caption" to "When a new version is out, the launcher updates itself the next time it opens.",
+        "update.checking" to "Checking...", "update.latest" to "You have the latest version.", "update.failed" to "Could not check, look at your internet.",
+        "update.dev" to "Development build: no updates.", "update.check" to "Check for updates", "update.now" to "Update now",
         "cloud.title" to "Cloud save",
         "cloud.saving.title" to "Don't close!", "cloud.saving.body" to "Saving your settings to the cloud...",
         "cloud.caption" to "Your key bindings and DNZ settings (HUD, menu, modules) are saved to your Minecraft account and load by themselves when you play with the same account on another computer. Nothing is sent while this is off.",
@@ -468,5 +494,9 @@ object Strings {
     fun current(key: String): String = get(currentLang, key)
 
     fun get(lang: Lang, key: String): String =
-        (if (lang == Lang.TR) tr[key] ?: trLibrary[key] else en[key] ?: enLibrary[key]) ?: key
+        when (lang) {
+            Lang.TR -> tr[key] ?: trLibrary[key]
+            Lang.DE -> germanStrings[key] ?: en[key] ?: enLibrary[key]
+            Lang.EN -> en[key] ?: enLibrary[key]
+        } ?: key
 }

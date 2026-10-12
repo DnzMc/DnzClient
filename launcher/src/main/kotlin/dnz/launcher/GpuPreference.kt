@@ -20,8 +20,10 @@ object GpuPreference {
             if (targets.isEmpty()) return
             val existing = reg("query", KEY) ?: ""
             for (exe in targets) {
-                if (hasChoice(existing, exe.absolutePath)) continue
-                reg("add", KEY, "/v", exe.absolutePath, "/t", "REG_SZ", "/d", "GpuPreference=2;", "/f")
+                val value = valueOf(existing, exe.absolutePath)
+                if (Regex("GpuPreference=([12]);").containsMatchIn(value)) continue
+                // Windows keeps other settings in the same text (HDR, ...): they stay, only the choice is added.
+                reg("add", KEY, "/v", exe.absolutePath, "/t", "REG_SZ", "/d", value.replace(Regex("GpuPreference=\\d+;"), "") + "GpuPreference=2;", "/f")
             }
         }
     }
@@ -38,11 +40,12 @@ object GpuPreference {
         }
     }
 
-    /** "GpuPreference=1;" or "=2;" means the player chose; "=0;" (let Windows decide) is not a real choice. */
-    private fun hasChoice(query: String, path: String): Boolean = query.lineSequence().any { line ->
-        val parts = line.trim().split(Regex("\\s{2,}|\\t"))
-        parts.size >= 3 && parts[0].equals(path, ignoreCase = true) && Regex("GpuPreference=([12]);").containsMatchIn(parts.last())
-    }
+    /**
+     * The registered settings of [path] ("AppStatus=1;AutoHDREnable=2097;"), or "" when it has none.
+     * "GpuPreference=1;" or "=2;" in it means someone chose; "=0;" (let Windows decide) is not a real choice.
+     */
+    private fun valueOf(query: String, path: String): String = query.lineSequence().map { it.trim().split(Regex("\\s{2,}|\\t")) }
+        .firstOrNull { it.size >= 3 && it[0].equals(path, ignoreCase = true) }?.last() ?: ""
 
     private fun reg(vararg args: String): String? {
         val exe = File(System.getenv("SystemRoot") ?: "C:\\Windows", "System32/reg.exe").path

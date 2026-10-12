@@ -28,6 +28,8 @@ public final class DnzConfig {
 	public boolean simpleStyle = false;
 	/** DNZ look for the multiplayer server list (cards with ping in ms and player count). */
 	public boolean serverCards = true;
+	/** Discord profile shows "Playing DNZ Client" (see DiscordPresence). */
+	public boolean discordPresence = true;
 	/** Which one-time FPS defaults were applied (1 = VSync off + unlimited FPS). Never applied twice. */
 	public int fpsDefaults = 0;
 	/** DNZ Turbo: far decorations/drops/signs not drawn, particle cap (see Turbo). */
@@ -75,6 +77,8 @@ public final class DnzConfig {
 		public java.util.Map<String, Boolean> opts = new java.util.HashMap<>();
 		/** Text before the value ("FPS" in "FPS 240"); empty = the module's own name. */
 		public String label = "";
+		/** Free-form value used by editable HUD modules (text or item identifier). */
+		public String value = "";
 
 		public HudPos() {
 		}

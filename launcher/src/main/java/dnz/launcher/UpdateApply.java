@@ -24,6 +24,8 @@ public final class UpdateApply {
 		File lib = new File(args[1]);
 		File stage = new File(args[2]);
 		List<String> restart = new ArrayList<>(Arrays.asList(args).subList(Arrays.asList(args).indexOf("--") + 1, args.length));
+		// The player sees "Updating your launcher" until the new launcher is up (not when started hidden with Windows).
+		UpdateSplash splash = restart.contains("--background") ? null : UpdateSplash.show("Updating your launcher...");
 
 		// Old copies of this program from earlier updates.
 		File[] old = new File(System.getProperty("java.io.tmpdir")).listFiles((d, n) -> n.startsWith("dnz-update-") && n.endsWith(".jar"));
@@ -57,11 +59,20 @@ public final class UpdateApply {
 					}
 				}
 			}
+		} catch (Exception e) {
+			// The launcher still starts: its next update check compares every jar again and fetches what is missing.
+			e.printStackTrace();
 		} finally {
 			// Never retried: a failed swap must not end in a restart loop.
 			deleteTree(stage);
 		}
 		new ProcessBuilder(restart).directory(lib.getParentFile()).start();
+		if (splash != null) {
+			Thread.sleep(3500); // the launcher's own window needs a few seconds to appear
+			splash.close();
+			Thread.sleep(100);
+		}
+		System.exit(0);
 	}
 
 	/** Copies with a few retries: antivirus programs sometimes hold a fresh file for a moment. */

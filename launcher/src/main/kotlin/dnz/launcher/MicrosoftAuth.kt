@@ -158,21 +158,45 @@ object MicrosoftAuth {
         }
     }
 
-    /** Signs in again with the saved refresh token (no window). Null if there is none or it no longer works. */
+    /** Name and id of the last signed-in player (nothing secret), so the launcher shows them at once on start. */
+    private val profileFile = File(GameLauncher.root, "microsoft-profile.json")
+
+    /** A sign-in is saved (it may still need renewing). */
+    val hasSaved: Boolean get() = ready && saved.isFile
+
+    /** The last signed-in player without a token yet (renewed by [restore]); null if nobody is signed in. */
+    fun lastAccount(): Account? {
+        if (!hasSaved) return null
+        return runCatching {
+            val o = JsonParser.parseString(profileFile.readText()).asJsonObject
+            Account(o["name"].asString, o["id"].asString, "", offline = false)
+        }.getOrNull()
+    }
+
+    /**
+     * Signs in again with the saved refresh token (no window).
+     * Null when there is none or Microsoft no longer accepts it (then the saved sign-in is dropped);
+     * throws when Microsoft can't be reached (no internet yet), so it can be tried again later.
+     */
     fun restore(): Account? {
-        if (!ready || !saved.isFile) return null
+        if (!hasSaved) return null
         val refresh = runCatching { Secret.decrypt(saved.readText()) }.getOrNull() ?: return null
         val o = postForm(
             "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
             mapOf("client_id" to CLIENT_ID, "grant_type" to "refresh_token", "refresh_token" to refresh, "scope" to "XboxLive.signin offline_access"),
             allowError = true,
         )
-        if (o.has("error")) return null
+        if (o["error"]?.asString == "invalid_grant") {
+            signOut()
+            return null
+        }
+        check(!o.has("error")) { o["error_description"]?.asString ?: o["error"].asString }
         return loginWithMicrosoft(o["access_token"].asString, o["refresh_token"]?.asString ?: refresh)
     }
 
     fun signOut() {
         saved.delete()
+        profileFile.delete()
         Secret.forget()
     }
 
@@ -227,6 +251,7 @@ object MicrosoftAuth {
             saved.setReadable(false, false)
             saved.setReadable(true, true)
         }
+        profileFile.writeText(JsonObject().apply { addProperty("name", p["name"].asString); addProperty("id", p["id"].asString) }.toString())
         return Account(p["name"].asString, p["id"].asString, mcToken, offline = false)
     }
 

@@ -48,12 +48,24 @@ import java.net.URI
 
 enum class LibraryTab { Discover, Installed }
 
+/** Where the Discover list searches. */
+enum class ModSource { Modrinth, CurseForge }
+
+/** Discover filter: everything, mods only or texture packs only. */
+enum class Kind(val key: String) { All("cat.all"), Mods("lib.kind.mods"), Packs("lib.kind.packs") }
+
 /** Mod library state; kept in LauncherState so results stay when the player switches pages. */
 class LibraryState {
     var tab by mutableStateOf(LibraryTab.Discover)
     var query by mutableStateOf("")
     var sort by mutableStateOf(Modrinth.Sort.Relevance)
     var category by mutableStateOf<String?>(null)
+    var source by mutableStateOf(ModSource.Modrinth)
+    /** What Discover shows: mods and texture packs together, or only one of them (a filter chip). */
+    var kind by mutableStateOf(Kind.All)
+    /** Texture packs installed in the selected profile (project ids). */
+    var packIds by mutableStateOf(emptySet<String>())
+    var packNames by mutableStateOf(emptySet<String>())
     val hits = mutableStateListOf<Modrinth.Hit>()
     var total by mutableStateOf(0)
     var searching by mutableStateOf(false)
@@ -118,16 +130,44 @@ fun ModsScreen(state: LauncherState) {
     }
 }
 
-private fun searchKey(lib: LibraryState, mc: String) = "${lib.query.trim()}|${lib.sort}|${lib.category}|$mc"
+private fun searchKey(lib: LibraryState, mc: String) = "${lib.kind}|${lib.source}|${lib.query.trim()}|${lib.sort}|${lib.category}|$mc"
+/** Already in the profile, from either site (the same mod or pack on Modrinth and CurseForge counts). */
+private fun isInstalled(lib: LibraryState, id: String, slug: String, title: String, pack: Boolean) =
+    if (pack) id in lib.packIds || Library.simpleName(title) in lib.packNames else Library.isInstalled(lib.installed, id, slug, title)
+
+/** Text key ending for the search box and the result count: "" (mods), "_packs" or "_all". */
+private fun kindSuffix(lib: LibraryState) = when (lib.kind) { Kind.Mods -> ""; Kind.Packs -> "_packs"; Kind.All -> "_all" }
 private fun scanKey(profile: Profile) = "${profile.name}|${profile.version}"
 
 private suspend fun search(lib: LibraryState, mc: String, reset: Boolean) {
     val key = searchKey(lib, mc)
+    if (lib.source == ModSource.CurseForge && !CurseForge.ready) return
     lib.searching = true
     lib.searchError = false
     try {
-        val offset = if (reset) 0 else lib.hits.size
-        val page = withContext(Dispatchers.IO) { Modrinth.search(lib.query.trim(), mc, lib.sort, lib.category, offset) }
+        // Each kind pages on its own: "Show more" continues after the mods and the packs already in the list.
+        val modOffset = if (reset) 0 else lib.hits.count { !it.pack }
+        val packOffset = if (reset) 0 else lib.hits.count { it.pack }
+        val query = lib.query.trim()
+        val curse = lib.source == ModSource.CurseForge
+        val page = withContext(Dispatchers.IO) {
+            fun one(packs: Boolean, limit: Int): Modrinth.SearchPage {
+                val offset = if (packs) packOffset else modOffset
+                return if (curse) CurseForge.search(query, mc, lib.sort, offset, limit, packs)
+                else Modrinth.search(query, mc, lib.sort, if (packs) null else lib.category, offset, limit, packs)
+            }
+            when (lib.kind) {
+                Kind.Mods -> one(false, 20)
+                Kind.Packs -> one(true, 20)
+                Kind.All -> {
+                    // Mods and texture packs together, taking turns in the list.
+                    val mods = one(false, 10)
+                    val packs = one(true, 10)
+                    val mixed = (0 until maxOf(mods.hits.size, packs.hits.size)).flatMap { i -> listOfNotNull(mods.hits.getOrNull(i), packs.hits.getOrNull(i)) }
+                    Modrinth.SearchPage(mixed, mods.total + packs.total)
+                }
+            }
+        }
         if (reset) lib.hits.clear()
         val seen = lib.hits.map { it.id }.toHashSet()
         lib.hits.addAll(page.hits.filter { seen.add(it.id) })
@@ -148,6 +188,8 @@ private suspend fun rescan(lib: LibraryState, profile: Profile) {
         val list = Library.scan(profile, checkUpdates = true)
         lib.installed.clear()
         lib.installed.addAll(list)
+        lib.packIds = withContext(Dispatchers.IO) { Library.packIds(profile) }
+        lib.packNames = withContext(Dispatchers.IO) { Library.packNames(profile) }
         lib.scannedFor = scanKey(profile)
     } catch (e: CancellationException) {
         throw e
@@ -158,15 +200,16 @@ private suspend fun rescan(lib: LibraryState, profile: Profile) {
 }
 
 /** Installs a mod (and what it needs) into the selected profile, in the background. */
-private fun installProject(state: LauncherState, projectId: String, version: Modrinth.Version? = null) {
+private fun installProject(state: LauncherState, projectId: String, version: Modrinth.Version? = null, pack: Boolean = false) {
     val lib = state.library
     if (projectId in lib.busy) return
     val profile = state.profiles[state.selectedProfile]
     lib.busy[projectId] = state.t("lib.installing")
     state.scope.launch {
         try {
-            val result = Library.install(profile, projectId, version) { text -> lib.busy[projectId] = text }
-            var message = state.t("lib.installed_toast").replace("%s", result.main).replace("%p", profile.name)
+            val result = if (pack) Library.installPack(profile, projectId, version) { text -> lib.busy[projectId] = text }
+            else Library.install(profile, projectId, version) { text -> lib.busy[projectId] = text }
+            var message = state.t(if (pack) "lib.pack_installed" else "lib.installed_toast").replace("%s", result.main).replace("%p", profile.name)
             if (result.dependencies.isNotEmpty()) message += "\n" + state.t("lib.deps") + " " + result.dependencies.joinToString(", ")
             if (state.gameRunning) message += "\n" + state.t("lib.restart")
             state.toast = message
@@ -179,8 +222,12 @@ private fun installProject(state: LauncherState, projectId: String, version: Mod
     }
 }
 
+/** Links come from mod authors: only web pages open (a "file:" or network path would start a program). */
 private fun openUrl(url: String) {
-    runCatching { Desktop.getDesktop().browse(URI(url)) }
+    runCatching {
+        val uri = URI(url.trim())
+        if (uri.scheme?.lowercase() in setOf("https", "http") && !uri.host.isNullOrBlank()) Desktop.getDesktop().browse(uri)
+    }
 }
 
 private fun openFolder(dir: File) {
@@ -198,9 +245,18 @@ private fun DiscoverView(state: LauncherState, mc: String) {
     val lib = state.library
     SearchBar(state, mc)
     Spacer(Modifier.height(10.dp))
+    // Without a CurseForge key (released builds) there is only Modrinth, so no switch.
+    if (!CurseForge.ready) lib.source = ModSource.Modrinth
+    val curse = lib.source == ModSource.CurseForge
     Row(verticalAlignment = Alignment.CenterVertically) {
+        if (CurseForge.ready) {
+            SourceSwitch(state)
+            Spacer(Modifier.width(10.dp))
+        }
         SortMenu(state)
         Spacer(Modifier.width(10.dp))
+        // Filters: everything, mods or texture packs, then the mod categories (CurseForge has its own categories; its
+        // list is searched without them). Picking a category shows mods only.
         Box(Modifier.weight(1f)) {
             val rowState = rememberLazyListState()
             val scope = rememberCoroutineScope()
@@ -213,9 +269,16 @@ private fun DiscoverView(state: LauncherState, mc: String) {
                 state = rowState,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                item { Chip(state.t("cat.all"), lib.category == null) { lib.category = null } }
-                items(Modrinth.categories) { c ->
-                    Chip(state.t("cat.$c"), lib.category == c) { lib.category = if (lib.category == c) null else c }
+                items(Kind.entries) { k ->
+                    Chip(state.t(k.key), lib.kind == k && lib.category == null) { lib.kind = k; lib.category = null }
+                }
+                if (!curse) {
+                    item { Box(Modifier.padding(horizontal = 4.dp).width(1.dp).height(22.dp).background(Dnz.Border)) }
+                    items(Modrinth.categories) { c ->
+                        Chip(state.t("cat.$c"), lib.category == c) {
+                            if (lib.category == c) lib.category = null else { lib.category = c; lib.kind = Kind.Mods }
+                        }
+                    }
                 }
                 item { Spacer(Modifier.width(40.dp)) }
             }
@@ -229,14 +292,20 @@ private fun DiscoverView(state: LauncherState, mc: String) {
         }
     }
     Spacer(Modifier.height(12.dp))
-    val installedIds = lib.installed.mapNotNull { it.projectId }.toSet()
+    if (curse && !CurseForge.ready) {
+        Card(Modifier.fillMaxWidth()) { Text(state.t("lib.cf_not_ready"), color = Dnz.Muted, fontSize = 13.sp, lineHeight = 19.sp) }
+        return
+    }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (curse && !CurseForge.searchAllowed) {
+            item { Text(state.t("lib.cf_lists"), color = Dnz.Muted, fontSize = 12.sp, lineHeight = 17.sp) }
+        }
         if (lib.searchError) {
             item { Text(state.t("mods.error"), color = Dnz.Danger, fontSize = 13.sp) }
         } else if (!lib.searching && lib.hits.isEmpty() && lib.searchedFor != null) {
             item { Text(state.t("lib.no_results"), color = Dnz.Muted, fontSize = 13.sp) }
         }
-        items(lib.hits, key = { it.id }) { hit -> ModRow(state, hit, hit.id in installedIds) }
+        items(lib.hits, key = { it.id }) { hit -> ModRow(state, hit, isInstalled(lib, hit.id, hit.slug, hit.title, hit.pack)) }
         if (lib.searching) {
             item { Loading(state.t("mods.searching")) }
         } else if (lib.hits.size < lib.total && !lib.searchError) {
@@ -260,7 +329,7 @@ private fun SearchBar(state: LauncherState, mc: String) {
         Icon(Icons.Filled.Search, null, tint = Dnz.Muted)
         Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f)) {
-            if (lib.query.isEmpty()) Text(state.t("mods.search"), color = Dnz.Muted)
+            if (lib.query.isEmpty()) Text(state.t((if (lib.source == ModSource.CurseForge) "mods.search_cf" else "mods.search") + kindSuffix(lib)), color = Dnz.Muted)
             BasicTextField(
                 lib.query, { lib.query = it }, singleLine = true,
                 textStyle = TextStyle(color = Dnz.Text, fontSize = 15.sp), cursorBrush = SolidColor(Dnz.Accent),
@@ -271,8 +340,35 @@ private fun SearchBar(state: LauncherState, mc: String) {
             Icon(Icons.Filled.Close, null, tint = Dnz.Muted, modifier = Modifier.size(18.dp).dnzClickable { lib.query = "" })
             Spacer(Modifier.width(10.dp))
         }
-        val count = if (lib.searchedFor != null) "  •  " + state.t("lib.results").replace("%s", Modrinth.format(lib.total.toLong())) else ""
+        val count = if (lib.searchedFor != null) "  •  " + state.t("lib.results" + kindSuffix(lib)).replace("%s", Modrinth.format(lib.total.toLong())) else ""
         Text("Minecraft $mc$count", color = Dnz.Muted, fontSize = 12.sp)
+    }
+}
+
+/** The sites' own small icons, loaded like mod icons (nothing stored in the launcher). */
+private val SOURCE_LOGOS = mapOf(
+    ModSource.Modrinth to "https://modrinth.com/favicon.ico",
+    ModSource.CurseForge to "https://static-beta.curseforge.com/images/favicon.ico",
+)
+
+/** Modrinth / CurseForge switch for the Discover list. */
+@Composable
+private fun SourceSwitch(state: LauncherState) {
+    val lib = state.library
+    Row(Modifier.clip(RoundedCornerShape(10.dp)).background(Dnz.Surface).border(1.dp, Dnz.Border, RoundedCornerShape(10.dp)).padding(3.dp)) {
+        ModSource.entries.forEach { source ->
+            val active = lib.source == source
+            Row(
+                Modifier.clip(RoundedCornerShape(8.dp)).background(if (active) Dnz.SurfaceHigh else Color.Transparent)
+                    .dnzClickable { if (!active) { lib.source = source; lib.hits.clear(); lib.searchedFor = null } }
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RemoteImage(SOURCE_LOGOS[source], Modifier.size(14.dp).alpha(if (active) 1f else 0.6f), ContentScale.Fit)
+                Spacer(Modifier.width(6.dp))
+                Text(source.name, color = if (active) Dnz.Text else Dnz.Muted, fontSize = 12.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
+            }
+        }
     }
 }
 
@@ -326,16 +422,17 @@ private fun ModRow(state: LauncherState, hit: Modrinth.Hit, installed: Boolean) 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Stat("↓ " + Modrinth.format(hit.downloads))
                 Stat("♥ " + Modrinth.format(hit.follows))
+                if (hit.pack) Tag(state.t("lib.pack_tag"))
                 hit.categories.filter { it in Modrinth.categories }.take(3).forEach { Tag(state.t("cat.$it")) }
             }
         }
         Spacer(Modifier.width(12.dp))
-        InstallButton(state, hit.id, installed)
+        InstallButton(state, hit.id, installed, hit.pack)
     }
 }
 
 @Composable
-private fun InstallButton(state: LauncherState, projectId: String, installed: Boolean, version: Modrinth.Version? = null) {
+private fun InstallButton(state: LauncherState, projectId: String, installed: Boolean, pack: Boolean, version: Modrinth.Version? = null) {
     val busy = state.library.busy[projectId]
     when {
         busy != null -> Row(Modifier.widthIn(max = 200.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -352,7 +449,7 @@ private fun InstallButton(state: LauncherState, projectId: String, installed: Bo
             Spacer(Modifier.width(6.dp))
             Text(state.t("lib.installed_badge"), color = Dnz.Success, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
-        else -> DnzButton(state.t("mods.install")) { installProject(state, projectId, version) }
+        else -> DnzButton(state.t("mods.install")) { installProject(state, projectId, version, pack) }
     }
 }
 
@@ -369,8 +466,13 @@ private fun ModPage(state: LauncherState, projectId: String) {
         value = null
         value = withContext(Dispatchers.IO) {
             runCatching {
-                val project = Modrinth.project(projectId)
-                PageData(project, Modrinth.author(project.id), Modrinth.versions(project.id, mc))
+                if (CurseForge.isCf(projectId)) {
+                    val project = CurseForge.project(projectId)
+                    PageData(project, project.author, CurseForge.versions(project.id, mc, packs = project.pack))
+                } else {
+                    val project = Modrinth.project(projectId)
+                    PageData(project, Modrinth.author(project.id), Modrinth.versions(project.id, mc, packs = project.pack))
+                }
             }
         }
     }
@@ -404,7 +506,7 @@ private fun ModPage(state: LauncherState, projectId: String) {
                     val p = page.project
                     // Compare with the real id: the page may have been opened with the mod's short name.
                     val installedVersions = lib.installed.filter { it.projectId == p.id }.mapNotNull { it.versionId }.toSet()
-                    val installed = lib.installed.any { it.projectId == p.id }
+                    val installed = isInstalled(lib, p.id, p.slug, p.title, p.pack)
                     item { PageHeader(state, page, installed, mc) }
                     if (p.gallery.isNotEmpty()) {
                         item {
@@ -424,7 +526,7 @@ private fun ModPage(state: LauncherState, projectId: String) {
                         item { Text(state.t("lib.no_version").replace("%s", mc), color = Dnz.Muted, fontSize = 13.sp) }
                     }
                     val shown = if (allVersions) page.versions else page.versions.take(5)
-                    items(shown, key = { it.id }) { v -> VersionRow(state, p.id, v, v.id in installedVersions) }
+                    items(shown, key = { it.id }) { v -> VersionRow(state, p.id, v, v.id in installedVersions, p.pack) }
                     if (!allVersions && page.versions.size > 5) {
                         item { SmallButton(state.t("lib.more_versions").replace("%s", page.versions.size.toString())) { allVersions = true } }
                     }
@@ -468,12 +570,12 @@ private fun PageHeader(state: LauncherState, page: PageData, installed: Boolean,
             if (page.versions.isEmpty() && !installed) {
                 Text(state.t("lib.unavailable").replace("%s", mc), color = Dnz.Danger, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             } else {
-                InstallButton(state, p.id, installed)
+                InstallButton(state, p.id, installed, p.pack)
             }
         }
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LinkChip(state.t("lib.link.modrinth"), p.pageUrl)
+            LinkChip(state.t(if (CurseForge.isCf(p.id)) "lib.link.curseforge" else "lib.link.modrinth"), p.pageUrl)
             p.sourceUrl?.let { LinkChip(state.t("lib.link.source"), it) }
             p.issuesUrl?.let { LinkChip(state.t("lib.link.issues"), it) }
             p.wikiUrl?.let { LinkChip(state.t("lib.link.wiki"), it) }
@@ -483,7 +585,7 @@ private fun PageHeader(state: LauncherState, page: PageData, installed: Boolean,
 }
 
 @Composable
-private fun VersionRow(state: LauncherState, projectId: String, v: Modrinth.Version, installed: Boolean) {
+private fun VersionRow(state: LauncherState, projectId: String, v: Modrinth.Version, installed: Boolean, pack: Boolean) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Dnz.Surface).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -502,7 +604,7 @@ private fun VersionRow(state: LauncherState, projectId: String, v: Modrinth.Vers
             Text("${v.number}  •  ${formatDate(v.date)}  •  ↓ ${Modrinth.format(v.downloads)}", color = Dnz.Muted, fontSize = 11.sp, maxLines = 1)
         }
         Spacer(Modifier.width(12.dp))
-        InstallButton(state, projectId, installed, v)
+        InstallButton(state, projectId, installed, pack, v)
     }
 }
 
@@ -540,7 +642,7 @@ private fun Description(state: LauncherState, p: Modrinth.Project) {
         }
         if (cut) {
             Spacer(Modifier.height(10.dp))
-            LinkChip(state.t("lib.read_more"), p.pageUrl)
+            LinkChip(state.t(if (CurseForge.isCf(p.id)) "lib.read_more_cf" else "lib.read_more"), p.pageUrl)
         }
     }
 }

@@ -36,6 +36,35 @@ fun main(args: Array<String>) = runBlocking {
         val toRemove = Library.scan(profile, checkUpdates = false).first()
         check(Library.remove(toRemove)) { "could not remove" }
         println("Removed ${toRemove.title}; left: ${Library.scan(profile, checkUpdates = false).map { it.title }}")
+
+        // Texture packs: the first Modrinth result and, when DNZ Cloud reaches it, the first CurseForge result.
+        val packIds = mutableListOf(Modrinth.search("faithful", mc, Modrinth.Sort.Relevance, null, 0, 1, packs = true).hits.first().id)
+        CurseForge.check()
+        if (CurseForge.ready) packIds += CurseForge.search("faithful", mc, Modrinth.Sort.Relevance, 0, 1, packs = true).hits.first().id
+        for (id in packIds) {
+            val pack = Library.installPack(profile, id) { println("  $it") }
+            println("Pack installed: ${pack.main}")
+        }
+        val packs = Library.packsDir(profile).listFiles().orEmpty().filter { it.name.endsWith(".zip") }
+        println("Pack files: ${packs.map { "${it.name} (${it.length() / 1024} KB)" }}")
+        check(packs.size == packIds.size && Library.packIds(profile) == packIds.toSet()) { "packs not recognised" }
+
+        // The same mod from both sites: installed from Modrinth it shows as installed on CurseForge too, and
+        // installing the CurseForge file replaces the Modrinth one (never two copies).
+        if (CurseForge.ready) {
+            val cross = args.getOrNull(2) ?: "appleskin"
+            Library.install(profile, cross) { println("  $it") }
+            val cfHit = CurseForge.search(cross, mc, Modrinth.Sort.Relevance, 0, 5).hits.first { Library.simpleName(it.title) == Library.simpleName(Modrinth.project(cross).title) }
+            val afterModrinth = Library.scan(profile, checkUpdates = false)
+            check(Library.isInstalled(afterModrinth, cfHit.id, cfHit.slug, cfHit.title)) { "${cfHit.title} on CurseForge not seen as installed" }
+            println("CurseForge ${cfHit.title} (${cfHit.id}) shows as installed after the Modrinth install")
+            Library.install(profile, cfHit.id) { println("  $it") }
+            val jars = Library.modsDir(profile).listFiles().orEmpty().filter { it.name.endsWith(".jar") }
+            val copies = jars.filter { Library.isInstalled(Library.scan(profile, false).filter { m -> m.file == it }, cfHit.id, cfHit.slug, cfHit.title) }
+            println("Jars: ${jars.map { it.name }}")
+            check(copies.size == 1) { "copies of ${cfHit.title}: ${copies.map { it.name }}" }
+            check(jars.none { it.name.startsWith("fabric-api") }) { "Fabric API was added, PLAY installs it itself" }
+        }
         println("OK")
     } finally {
         dir.deleteRecursively()

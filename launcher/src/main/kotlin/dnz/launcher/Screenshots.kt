@@ -16,6 +16,9 @@ fun main(args: Array<String>) {
         Shot("profiles") { screen = Screen.Profiles },
         Shot("profiles-edit") { screen = Screen.Profiles; editingProfile = 0 },
         Shot("mods", 9000) { screen = Screen.Mods },
+        Shot("mods-all", 9000) { screen = Screen.Mods; library.query = "pvp" },
+        Shot("mods-packs", 9000) { screen = Screen.Mods; library.kind = Kind.Packs },
+        Shot("mods-packs-cf", 12000) { screen = Screen.Mods; library.kind = Kind.Packs; CurseForge.check(); library.source = ModSource.CurseForge },
         Shot("mods-page", 9000) { screen = Screen.Mods; library.openProject = "sodium" },
         Shot("mods-cf-page", 9000) { screen = Screen.Mods; library.openProject = "cf:248787" },
         Shot("mods-installed", 7000) { screen = Screen.Mods; library.tab = LibraryTab.Installed },
@@ -26,6 +29,12 @@ fun main(args: Array<String>) {
         },
         Shot("servers", 6000) { screen = Screen.Servers },
         Shot("settings") { screen = Screen.Settings },
+        // The whole Settings page in one tall picture (appearance cards at the bottom).
+        Shot("settings-all") { screen = Screen.Settings },
+        // Home with another accent color picked in Settings.
+        Shot("home-de") { screen = Screen.Home; language = Lang.DE },
+        Shot("settings-de") { screen = Screen.Settings; language = Lang.DE },
+        Shot("home-purple") { screen = Screen.Home; Dnz.pickAccent(0xFF9D6BFF) },
         // Real scan of this computer, but nothing is changed (plan only).
         Shot("settings-auto") {
             screen = Screen.Settings
@@ -46,7 +55,7 @@ fun main(args: Array<String>) {
         if (args.size > 1 && !shot.name.startsWith(args[1])) continue
         Dnz.theme = LauncherTheme.Colorful
         val state = LauncherState().apply(shot.setup)
-        val scene = ImageComposeScene(1200, if (shot.name == "profiles-import") 1300 else 740, Density(1f)) {
+        val scene = ImageComposeScene(1200, when (shot.name) { "profiles-import" -> 1300; "settings-all" -> 1900; else -> 740 }, Density(1f)) {
             LauncherApp(state, dragArea = { it() }, onMinimize = {}, onClose = {})
         }
         // Render a few frames so async content can appear.

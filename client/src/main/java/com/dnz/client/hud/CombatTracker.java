@@ -25,6 +25,7 @@ public final class CombatTracker {
 	private static int lastOwnHurtTime;
 
 	private static double speed;
+	private static double rawSpeed;
 	private static Vec3 lastPos;
 	private static long sessionStart;
 	private static Object sessionLevel;
@@ -58,6 +59,7 @@ public final class CombatTracker {
 	public static void tick(Minecraft mc) {
 		if (mc.player == null || mc.level == null) {
 			lastPos = null;
+			rawSpeed = 0;
 			sessionLevel = null;
 			return;
 		}
@@ -87,8 +89,8 @@ public final class CombatTracker {
 		if (lastPos != null) {
 			double dx = pos.x - lastPos.x, dz = pos.z - lastPos.z;
 			// Blocks per tick * 20 = blocks per second (horizontal only, like other speed meters).
-			double now2 = Math.sqrt(dx * dx + dz * dz) * 20.0;
-			speed += (now2 - speed) * 0.5;
+			rawSpeed = Math.sqrt(dx * dx + dz * dz) * 20.0;
+			speed += (rawSpeed - speed) * 0.5;
 		}
 		lastPos = pos;
 	}
@@ -116,6 +118,10 @@ public final class CombatTracker {
 
 	public static double speed() {
 		return speed;
+	}
+
+	public static double rawSpeed() {
+		return rawSpeed;
 	}
 
 	public static long sessionMillis() {

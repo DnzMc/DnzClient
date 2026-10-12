@@ -10,6 +10,10 @@
 // Bindings (Cloudflare dashboard → Worker → Settings):
 //   BUCKET  R2 bucket for the settings files (private, e.g. "dnz-cloud")
 //   SECRET  secret text, a long random value (signs the challenges and the short-lived session tokens)
+//   CURSEFORGE_KEY  secret text, DNZ's CurseForge API key (console.curseforge.com → API keys)
+//
+// CurseForge relay (/cf/...): DNZ Launcher's mod library asks this worker, and the worker asks CurseForge with DNZ's
+// key, so the key is never inside the launcher. Only reading Minecraft mods is passed on; answers are cached briefly.
 
 const MAX_SIZE = 256 * 1024;
 const TOKEN_TIME = 60 * 60; // seconds
@@ -24,6 +28,9 @@ export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
 		try {
+			if (url.pathname.startsWith("/cf/")) {
+				return await curseforge(request, url, env);
+			}
 			if (url.pathname === "/challenge" && request.method === "GET") {
 				const nonce = b64url(new TextEncoder().encode(JSON.stringify({ t: Math.floor(Date.now() / 1000), r: b64url(crypto.getRandomValues(new Uint8Array(16))) })));
 				return json({ challenge: `${nonce}.${await sign(nonce, env.SECRET)}` });
@@ -61,6 +68,44 @@ export default {
 		}
 	},
 };
+
+/** CurseForge requests the launcher may make (anything else is refused). */
+const CF_GET = [/^\/v1\/mods\/search$/, /^\/v1\/mods\/\d{1,9}$/, /^\/v1\/mods\/\d{1,9}\/description$/, /^\/v1\/mods\/\d{1,9}\/files$/];
+const CF_CACHE = 300; // seconds
+
+async function curseforge(request, url, env) {
+	const path = url.pathname.slice(3); // "/cf/v1/..." → "/v1/..."
+	const featured = path === "/v1/mods/featured" && request.method === "POST";
+	if (!featured && (request.method !== "GET" || !CF_GET.some((r) => r.test(path)))) {
+		return json({ error: "not allowed" }, 403);
+	}
+	if (path === "/v1/mods/search" && url.searchParams.get("gameId") !== "432") {
+		return json({ error: "minecraft only" }, 403);
+	}
+	if (url.search.length > 600) {
+		return json({ error: "too long" }, 414);
+	}
+	const headers = { "x-api-key": env.CURSEFORGE_KEY, Accept: "application/json" };
+	if (featured) {
+		// Only Minecraft's lists; the launcher's body is not passed on.
+		headers["Content-Type"] = "application/json";
+		const r = await fetch("https://api.curseforge.com/v1/mods/featured", { method: "POST", headers, body: JSON.stringify({ gameId: 432, excludedModIds: [] }) });
+		return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json" } });
+	}
+	// The same question within a few minutes is answered from Cloudflare's cache (CurseForge is asked once).
+	const cache = caches.default;
+	const cacheKey = new Request(url.toString(), { method: "GET" });
+	const hit = await cache.match(cacheKey);
+	if (hit) {
+		return hit;
+	}
+	const r = await fetch("https://api.curseforge.com" + path + url.search, { headers });
+	const response = new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CF_CACHE}` } });
+	if (r.ok) {
+		await cache.put(cacheKey, response.clone());
+	}
+	return response;
+}
 
 /**
  * {uuid, expiresAt, publicKey, keySignature, challenge, signature} → a session token for one hour, when Mojang

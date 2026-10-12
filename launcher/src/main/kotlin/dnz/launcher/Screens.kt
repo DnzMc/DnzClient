@@ -39,8 +39,12 @@ import kotlin.random.Random
 
 // ------------------------------------------------------------------ Home
 
-/** Turkish or English text (trial design, not in the string tables yet). */
-private fun tr(state: LauncherState, turkish: String, english: String) = if (state.language == Lang.TR) turkish else english
+/** Turkish, English or German text (trial design, not in the string tables yet). */
+private fun tr(state: LauncherState, turkish: String, english: String, german: String) = when (state.language) {
+    Lang.TR -> turkish
+    Lang.DE -> german
+    Lang.EN -> english
+}
 
 @Composable
 fun HomeScreen(state: LauncherState) {
@@ -68,6 +72,20 @@ fun HomeScreen(state: LauncherState) {
         MojangNotice(state)
         Spacer(Modifier.weight(1f))
         Box(Modifier.fillMaxWidth()) {
+        // The player's skin as a 3D character at the right (or the pixel scene when that is off / there is no skin).
+        val skinOwner = state.currentAccount?.uuid
+        var skin by remember { mutableStateOf<LoadedSkin?>(null) }
+        var skinLoaded by remember { mutableStateOf(false) }
+        LaunchedEffect(skinOwner, state.skinAnimation) { if (state.skinAnimation) { skin = loadSkin(skinOwner); skinLoaded = true } }
+        val shownSkin = skin
+        if (state.skinAnimation && !skinLoaded) {
+            // Still loading the skin: nothing yet (no flash of the pixel scene).
+        } else if (state.skinAnimation && shownSkin != null) {
+            Box(Modifier.align(Alignment.CenterEnd).padding(end = 60.dp).width(340.dp).height(420.dp)) {
+                Box(Modifier.matchParentSize().background(Brush.radialGradient(listOf(Dnz.Accent.copy(alpha = 0.22f), Color.Transparent))))
+                PlayerModel(shownSkin, animate = !state.gameRunning, modifier = Modifier.matchParentSize())
+            }
+        } else
         // Pixel scene at the right, level with the profile name; its edges fade into the page.
         Box(Modifier.align(Alignment.CenterEnd).width(460.dp).height(354.dp)) {
             Image(
@@ -80,7 +98,7 @@ fun HomeScreen(state: LauncherState) {
         Column {
         // Selected profile
         Text(
-            tr(state, "SEÇİLİ PROFİL", "SELECTED PROFILE"), color = Dnz.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+            tr(state, "SEÇİLİ PROFİL", "SELECTED PROFILE", "AUSGEWÄHLTES PROFIL"), color = Dnz.Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Dnz.Accent.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 6.dp),
         )
         Spacer(Modifier.height(14.dp))
@@ -88,7 +106,7 @@ fun HomeScreen(state: LauncherState) {
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val mods = remember(profile) { GameLauncher.instanceDir(profile).resolve("mods").listFiles { f -> f.name.endsWith(".jar") }?.size ?: 0 }
-            listOf(profile.version, "Fabric", "$mods mod").forEach {
+            listOf(profile.version, "Fabric", state.t("profiles.mods").replace("%s", mods.toString())).forEach {
                 Text(
                     it, color = Dnz.Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Dnz.Surface).padding(horizontal = 12.dp, vertical = 6.dp),
@@ -100,7 +118,7 @@ fun HomeScreen(state: LauncherState) {
             val label = when {
                 state.gameRunning -> state.t("running")
                 state.busy -> "${(state.progress * 100).toInt()}%"
-                else -> tr(state, "OYNA", "PLAY")
+                else -> tr(state, "OYNA", "PLAY", "SPIELEN")
             }
             Row(
                 Modifier.width(196.dp).height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Accent)
@@ -118,7 +136,7 @@ fun HomeScreen(state: LauncherState) {
                 Modifier.height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Surface)
                     .dnzClickable { state.editingProfile = state.selectedProfile }.padding(horizontal = 28.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text(tr(state, "Düzenle", "Edit"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+            ) { Text(tr(state, "Düzenle", "Edit", "Bearbeiten"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
         }
         state.status?.let { status ->
             Spacer(Modifier.height(12.dp))
@@ -138,7 +156,7 @@ fun HomeScreen(state: LauncherState) {
         }
         Spacer(Modifier.weight(1f))
         // My profiles
-        Text(tr(state, "Profillerim", "My profiles"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(tr(state, "Profillerim", "My profiles", "Meine Profile"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             state.profiles.take(4).forEachIndexed { i, p ->
@@ -171,7 +189,7 @@ fun HomeScreen(state: LauncherState) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Outlined.Add, null, tint = Dnz.Muted, modifier = Modifier.size(26.dp))
                     Spacer(Modifier.height(6.dp))
-                    Text(tr(state, "Yeni profil", "New profile"), color = Dnz.Muted, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(tr(state, "Yeni profil", "New profile", "Neues Profil"), color = Dnz.Muted, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
             // Always five slots wide, so a single profile card keeps its size.
@@ -275,6 +293,15 @@ internal suspend fun play(state: LauncherState) {
     if (account != null && !account.offline) {
         account = withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.restore() }.getOrNull() } ?: account
         state.account = account
+        // Shown from the last start but never renewed (no internet): the game can't start without a sign-in.
+        if (account.accessToken.isEmpty()) {
+            if (MicrosoftAuth.hasSaved) {
+                state.dialog = state.t("launch_error") to state.t("signin.no_internet")
+                return
+            }
+            account = null // Microsoft no longer accepts the saved sign-in
+            state.account = null
+        }
     }
     if (account == null) {
         state.dialog = state.t("need_account.title") to state.t("need_account.body")
@@ -394,6 +421,7 @@ fun SettingsScreen(state: LauncherState) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         ScreenTitle(state.t("settings"))
+        UpdateCard(state)
         AutoCard(state)
         Card(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -438,6 +466,7 @@ fun SettingsScreen(state: LauncherState) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LangChip(state, Lang.TR, "Türkçe")
                 LangChip(state, Lang.EN, "English")
+                LangChip(state, Lang.DE, "Deutsch")
             }
         }
         Card(Modifier.fillMaxWidth()) {
@@ -448,9 +477,70 @@ fun SettingsScreen(state: LauncherState) {
             }
         }
         Card(Modifier.fillMaxWidth()) {
+            Text(state.t("settings.accent"), color = Dnz.Text, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(state.t("settings.accent.caption"), color = Dnz.Muted, fontSize = 11.sp)
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Dnz.ACCENTS.forEachIndexed { i, color ->
+                    val selected = (Dnz.accent ?: Dnz.ACCENTS[0]) == color && Dnz.theme == LauncherTheme.Colorful
+                    Box(
+                        Modifier.size(34.dp).clip(RoundedCornerShape(50))
+                            .border(if (selected) 3.dp else 0.dp, if (selected) Dnz.Text else Color.Transparent, RoundedCornerShape(50))
+                            .padding(if (selected) 5.dp else 0.dp).clip(RoundedCornerShape(50)).background(Color(color))
+                            .dnzClickable { Dnz.pickAccent(if (i == 0) null else color); Dnz.theme = LauncherTheme.Colorful },
+                    )
+                }
+            }
+        }
+        Card(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(state.t("settings.character"), color = Dnz.Text, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(state.t("settings.character.caption"), color = Dnz.Muted, fontSize = 11.sp, lineHeight = 15.sp)
+                }
+                Spacer(Modifier.width(20.dp))
+                Switch(
+                    checked = state.skinAnimation, onCheckedChange = { state.skinAnimation = it },
+                    modifier = Modifier.handCursor(), colors = SwitchDefaults.colors(checkedThumbColor = Dnz.OnAccent, checkedTrackColor = Dnz.Accent),
+                )
+            }
+        }
+        Card(Modifier.fillMaxWidth()) {
             Text(state.t("settings.folder"), color = Dnz.Text, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             Text(GameLauncher.root.absolutePath, color = Dnz.Muted, fontSize = 13.sp)
+        }
+    }
+}
+
+/** "Check for updates": looks now; a found update is downloaded and installed with one more click (restart). */
+@Composable
+private fun UpdateCard(state: LauncherState) {
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val status = Updater.status
+    Card(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(state.t("update.title"), color = Dnz.Text, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                val line = when {
+                    Updater.ready != null -> state.t("update.ready").format(Updater.ready)
+                    status == Updater.Status.Checking -> state.t("update.checking")
+                    status == Updater.Status.UpToDate -> state.t("update.latest")
+                    status == Updater.Status.Failed -> state.t("update.failed")
+                    status == Updater.Status.NotInstalled -> state.t("update.dev")
+                    else -> state.t("update.caption")
+                }
+                Text(state.t("update.version").format(Updater.current ?: "dev") + "  •  " + line, color = Dnz.Muted, fontSize = 11.sp, lineHeight = 15.sp)
+            }
+            Spacer(Modifier.width(20.dp))
+            when {
+                Updater.ready != null -> DnzButton(state.t("update.now"), onClick = { if (Updater.restartNow()) kotlin.system.exitProcess(0) })
+                status == Updater.Status.Checking -> CircularProgressIndicator(Modifier.size(22.dp), color = Dnz.Accent, strokeWidth = 2.5.dp)
+                else -> DnzButton(state.t("update.check"), onClick = { scope.launch { withContext(Dispatchers.IO) { Updater.check() } } })
+            }
         }
     }
 }
@@ -485,11 +575,11 @@ private fun LangChip(state: LauncherState, lang: Lang, label: String) {
 /** A theme button with a small preview of its colors. */
 @Composable
 private fun ThemeChip(state: LauncherState, theme: LauncherTheme) {
-    val selected = Dnz.custom == null && Dnz.theme == theme
-    val preview = if (theme == LauncherTheme.Mono) listOf(Color(0xFF050505), Color(0xFFF2F2F2)) else listOf(Color(0xFF4FA3FF), Color(0xFF7B5CFF))
+    val selected = Dnz.theme == theme && (Dnz.custom == null || Dnz.accent != null)
+    val preview = if (theme == LauncherTheme.Mono) listOf(Color(0xFF050505), Color(0xFFF2F2F2)) else listOf(Color(0xFFFF8A3D), Color(0xFFFF6A1A))
     Row(
         Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) Dnz.Accent else Dnz.SurfaceHigh)
-            .dnzClickable { Dnz.theme = theme; Dnz.custom = null }.padding(horizontal = 14.dp, vertical = 10.dp),
+            .dnzClickable { Dnz.pickAccent(null); Dnz.theme = theme }.padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

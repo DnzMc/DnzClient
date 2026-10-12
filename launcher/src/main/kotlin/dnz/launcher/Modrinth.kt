@@ -12,6 +12,8 @@ object Modrinth {
     data class Hit(
         val id: String, val slug: String, val title: String, val author: String, val description: String,
         val downloads: Long, val follows: Long, val iconUrl: String?, val categories: List<String>,
+        /** A texture pack (not a mod). */
+        val pack: Boolean = false,
     )
 
     data class SearchPage(val hits: List<Hit>, val total: Int)
@@ -38,8 +40,10 @@ object Modrinth {
         val sourceUrl: String?, val issuesUrl: String?, val wikiUrl: String?, val discordUrl: String?,
         val gallery: List<GalleryImage>,
         val pageUrl: String = "https://modrinth.com/mod/$slug",
-        /** Author, when the project itself says it (Modrinth needs a separate request). */
+        /** Author known from the project itself (CurseForge); Modrinth needs a separate request. */
         val author: String? = null,
+        /** A texture pack (not a mod). */
+        val pack: Boolean = false,
     )
 
     data class ProjectBrief(val id: String, val slug: String, val title: String, val iconUrl: String?)
@@ -57,8 +61,12 @@ object Modrinth {
 
     // ------------------------------------------------------------------ requests
 
-    fun search(query: String, mc: String, sort: Sort, category: String?, offset: Int, limit: Int = 20): SearchPage {
-        val facets = buildList {
+    /**
+     * [packs]: texture packs instead of mods. They are not tied to a Minecraft version like mods (most PvP packs are
+     * made for older versions and still work, the game only shows a note), so they are not filtered by version.
+     */
+    fun search(query: String, mc: String, sort: Sort, category: String?, offset: Int, limit: Int = 20, packs: Boolean = false): SearchPage {
+        val facets = if (packs) "[[\"project_type:resourcepack\"]]" else buildList {
             add("[\"categories:fabric\"]")
             add("[\"versions:$mc\"]")
             add("[\"project_type:mod\"]")
@@ -73,6 +81,7 @@ object Modrinth {
                 o.str("project_id")!!, o.str("slug") ?: "", o.str("title") ?: "", o.str("author") ?: "",
                 o.str("description") ?: "", o.long("downloads"), o.long("follows"), o.str("icon_url").nonBlank(),
                 o.strings("display_categories").ifEmpty { o.strings("categories") },
+                pack = packs,
             )
         }
         return SearchPage(hits, root["total_hits"]?.asInt ?: hits.size)
@@ -94,6 +103,8 @@ object Modrinth {
             },
             o.str("source_url").nonBlank(), o.str("issues_url").nonBlank(), o.str("wiki_url").nonBlank(), o.str("discord_url").nonBlank(),
             gallery,
+            pageUrl = "https://modrinth.com/${if (o.str("project_type") == "resourcepack") "resourcepack" else "mod"}/${o.str("slug")}",
+            pack = o.str("project_type") == "resourcepack",
         )
     }
 
@@ -114,8 +125,10 @@ object Modrinth {
     }
 
     /** Versions of a project that work with Fabric on [mc], newest first. */
-    fun versions(projectId: String, mc: String): List<Version> {
-        val url = "$API/project/${enc(projectId)}/version?loaders=${enc("[\"fabric\"]")}&game_versions=${enc("[\"$mc\"]")}"
+    fun versions(projectId: String, mc: String, packs: Boolean = false): List<Version> {
+        // Texture packs: every version (see search).
+        val url = if (packs) "$API/project/${enc(projectId)}/version"
+        else "$API/project/${enc(projectId)}/version?loaders=${enc("[\"fabric\"]")}&game_versions=${enc("[\"$mc\"]")}"
         return Net.json(url).asJsonArray.map { version(it.asJsonObject) }
     }
 

@@ -52,10 +52,25 @@ fun LauncherApp(
     onClose: () -> Unit,
 ) {
     // Save preferences shortly after they change (not on every step of a slider).
-    // Signed in with Microsoft before: sign in again quietly (no window).
+    // Signed in with Microsoft before: the player shows at once, and the sign-in is renewed quietly (no window).
+    // The launcher often starts with Windows before the internet is up, so it keeps trying until it works.
     LaunchedEffect(Unit) {
-        if (state.account == null) withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.restore() }.getOrNull() }?.let { state.account = it }
+        if (state.account == null) MicrosoftAuth.lastAccount()?.let { state.account = it }
+        var wait = 5_000L
+        while (MicrosoftAuth.hasSaved && state.account.let { it == null || (!it.offline && it.accessToken.isEmpty()) }) {
+            val result = withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.restore() } }
+            // Signed in or out by hand in the meantime: leave it.
+            if (state.account.let { it != null && (it.offline || it.accessToken.isNotEmpty()) }) break
+            result.onSuccess { account ->
+                state.account = account // null: Microsoft no longer accepts the saved sign-in
+                return@LaunchedEffect
+            }
+            delay(wait)
+            wait = (wait * 2).coerceAtMost(120_000L)
+        }
     }
+    // CurseForge in the mod library only when DNZ Cloud can reach it.
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { CurseForge.check() } }
     // Mac, first start: AUTO once by itself, so the game starts with settings made for this Mac (it can be undone).
     LaunchedEffect(Unit) {
         if (Platform.isMac && !state.macAutoDone) {
@@ -63,10 +78,14 @@ fun LauncherApp(
             runAuto(state)
         }
     }
-    // A few seconds after start: look for a new launcher version (downloaded in the background).
+    // A few seconds after start, then every hour while the launcher stays open (it can wait in the background for
+    // days with "start with the computer"): look for a new launcher version (downloaded in the background).
     LaunchedEffect(Unit) {
         delay(5000)
-        withContext(Dispatchers.IO) { Updater.check() }
+        while (Updater.ready == null) {
+            withContext(Dispatchers.IO) { Updater.check() }
+            delay(60 * 60 * 1000L)
+        }
     }
     LaunchedEffect(state) {
         snapshotFlow { Settings.snapshot(state) }.drop(1).collectLatest { saved ->

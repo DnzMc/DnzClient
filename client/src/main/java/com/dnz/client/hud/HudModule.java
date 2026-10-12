@@ -62,6 +62,11 @@ public abstract class HudModule {
 		return true;
 	}
 
+	/** Shows a free-form value field in the HUD editor's settings popup. */
+	public boolean editableValue() {
+		return false;
+	}
+
 	public DnzConfig.HudPos pos() {
 		return DnzConfig.get().hud.computeIfAbsent(this.id, k -> this.defaultPos());
 	}

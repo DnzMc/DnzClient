@@ -90,6 +90,19 @@ object Accounts {
      */
     fun head(uuid: String): ImageBitmap? {
         synchronized(heads) { if (heads.containsKey(uuid)) return heads[uuid] }
+        val image = runCatching { face(ImageIO.read(skinFile(uuid))) }.getOrNull()
+        synchronized(heads) { heads[uuid] = image }
+        return image
+    }
+
+    /** The whole skin (64x64 or old 64x32) and whether it has slim arms; null if it can't be had. */
+    fun skin(uuid: String): Pair<BufferedImage, Boolean>? = runCatching {
+        val file = skinFile(uuid)
+        ImageIO.read(file) to File(headDir, "$uuid.slim").exists()
+    }.getOrNull()
+
+    /** ~/.dnzlauncher/skins/<uuid>.png, downloaded from Mojang once a day (and "<uuid>.slim" for slim arms). */
+    private fun skinFile(uuid: String): File {
         val file = File(headDir, "$uuid.png")
         val fresh = file.exists() && System.currentTimeMillis() - file.lastModified() < 24 * 3600 * 1000L
         if (!fresh) {
@@ -97,14 +110,15 @@ object Accounts {
                 val profile = Net.json("https://sessionserver.mojang.com/session/minecraft/profile/$uuid").asJsonObject
                 val textures = profile.getAsJsonArray("properties").map { it.asJsonObject }.first { it["name"].asString == "textures" }
                 val decoded = JsonParser.parseString(String(Base64.getDecoder().decode(textures["value"].asString))).asJsonObject
-                val url = decoded.getAsJsonObject("textures").getAsJsonObject("SKIN")["url"].asString
+                val skin = decoded.getAsJsonObject("textures").getAsJsonObject("SKIN")
+                val url = skin["url"].asString
                 check(url.startsWith("https://textures.minecraft.net/") || url.startsWith("http://textures.minecraft.net/"))
                 file.writeBytes(Net.bytes(url.replace("http://", "https://")))
+                val slim = skin.getAsJsonObject("metadata")?.get("model")?.asString == "slim"
+                File(headDir, "$uuid.slim").let { if (slim) it.writeText("") else it.delete() }
             }
         }
-        val image = runCatching { face(ImageIO.read(file)) }.getOrNull()
-        synchronized(heads) { heads[uuid] = image }
-        return image
+        return file
     }
 
     private fun face(skin: BufferedImage): ImageBitmap {

@@ -47,27 +47,83 @@ object Updater {
 
     private val stageDir: File? get() = libDir?.let { File(it.parentFile, "update") }
 
+    /** What the "Check for updates" button in Settings shows. */
+    enum class Status { Idle, Checking, UpToDate, Ready, Failed, NotInstalled }
+
+    var status by mutableStateOf(Status.Idle)
+        private set
+
+    /** This launcher's version ("1.0.12"), or null in development. */
+    val current: String? get() = Updater::class.java.`package`.implementationVersion
+
+    private val lock = Any()
+
     /** Looks for a new version and downloads it. Runs in the background; problems only mean "no update now". */
     fun check() {
-        val lib = libDir ?: return
-        val stage = stageDir ?: return
-        runCatching {
-            val json = fetch(BASE + MANIFEST + "?t=" + System.currentTimeMillis())
-            val sig = String(fetch(BASE + "$MANIFEST.sig?t=" + System.currentTimeMillis())).trim()
-            if (!verify(json, sig)) return
-            val manifest = JsonParser.parseString(String(json)).asJsonObject
-            val version = manifest["version"].asString
-            // Never back to an older (or the same) version, e.g. while a newer build is installed by hand.
-            if (!newer(version, Updater::class.java.`package`.implementationVersion ?: return)) return
-            val files = manifest["files"].asJsonArray.map { it.asJsonObject }.associate { it["name"].asString to it["sha256"].asString }
-            if (files.keys.any { it.contains('/') || it.contains('\\') || !it.endsWith(".jar") }) return
+        if (libDir == null) {
+            status = Status.NotInstalled
+            return
+        }
+        status = Status.Checking
+        synchronized(lock) { runCatching { newVersion(Duration.ofSeconds(30))?.let { download(it) } }.onFailure { lastCheckFailed = true } }
+        status = when {
+            ready != null -> Status.Ready
+            lastCheckFailed -> Status.Failed
+            else -> Status.UpToDate
+        }
+    }
 
-            val changed = files.filter { (name, sha) -> !File(lib, name).isFile || sha256(File(lib, name)) != sha }
-            val removed = lib.listFiles().orEmpty().filter { it.name.endsWith(".jar") && it.name !in files }.map { it.name }
-            if (changed.isEmpty() && removed.isEmpty()) {
-                stage.deleteRecursively()
-                return
-            }
+    /**
+     * At start, before any window: a waiting update is swapped in, and a newer version on the server (a fresh install
+     * from an older setup file, or an update that came out while the launcher was closed) is downloaded first, with
+     * the "Updating your launcher" window. Returns true when the launcher must quit (UpdateApply starts it again).
+     */
+    fun updateAtStart(args: Array<String>): Boolean {
+        if (applyPendingAtStart(args)) return true
+        libDir ?: return false
+        // A quick look only: without internet the launcher simply starts as it is.
+        val update = runCatching { newVersion(Duration.ofSeconds(4)) }.getOrNull() ?: return false
+        val splash = if ("--background" in args) null else UpdateSplash.show("Updating your launcher...")
+        val ok = synchronized(lock) { runCatching { download(update) }.getOrDefault(false) }
+        if (ok && startApply(args)) return true // the splash stays until this process ends
+        splash?.close()
+        return false
+    }
+
+    private var lastCheckFailed = false
+
+    /** A newer, correctly signed version on the server whose files differ from ours, or null. */
+    private class Update(val version: String, val json: ByteArray, val sig: String, val changed: Map<String, String>, val removed: List<String>)
+
+    private fun newVersion(timeout: Duration): Update? {
+        val lib = libDir ?: return null
+        lastCheckFailed = true
+        val json = fetch(BASE + MANIFEST + "?t=" + System.currentTimeMillis(), timeout)
+        val sig = String(fetch(BASE + "$MANIFEST.sig?t=" + System.currentTimeMillis(), timeout)).trim()
+        if (!verify(json, sig)) return null
+        lastCheckFailed = false
+        val manifest = JsonParser.parseString(String(json)).asJsonObject
+        val version = manifest["version"].asString
+        // Never back to an older (or the same) version, e.g. while a newer build is installed by hand.
+        if (!newer(version, current ?: return null)) return null
+        val files = manifest["files"].asJsonArray.map { it.asJsonObject }.associate { it["name"].asString to it["sha256"].asString }
+        if (files.keys.any { it.contains('/') || it.contains('\\') || !it.endsWith(".jar") }) return null
+        val changed = files.filter { (name, sha) -> !File(lib, name).isFile || sha256(File(lib, name)) != sha }
+        val removed = lib.listFiles().orEmpty().filter { it.name.endsWith(".jar") && it.name !in files }.map { it.name }
+        if (changed.isEmpty() && removed.isEmpty()) return null
+        return Update(version, json, sig, changed, removed)
+    }
+
+    /** Downloads [update] into the update folder; true when it is complete. */
+    private fun download(update: Update): Boolean {
+        val stage = stageDir ?: return false
+        if (ready == update.version && File(stage, MANIFEST).isFile) return true // already waiting
+        val json = update.json
+        val sig = update.sig
+        val version = update.version
+        val changed = update.changed
+        val removed = update.removed
+        return runCatching {
             stage.deleteRecursively()
             stage.mkdirs()
             for ((name, sha) in changed) {
@@ -85,7 +141,12 @@ object Updater {
             File(stage, MANIFEST).writeBytes(json)
             File(stage, "$MANIFEST.sig").writeText(sig)
             ready = version
-        }.onFailure { stage.deleteRecursively() }
+            true
+        }.getOrElse {
+            stage.deleteRecursively()
+            lastCheckFailed = true
+            false
+        }
     }
 
     /**
@@ -137,8 +198,8 @@ object Updater {
         return false
     }
 
-    private fun fetch(url: String): ByteArray {
-        val response = http.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(30)).build(), HttpResponse.BodyHandlers.ofByteArray())
+    private fun fetch(url: String, timeout: Duration): ByteArray {
+        val response = http.send(HttpRequest.newBuilder(URI.create(url)).timeout(timeout).build(), HttpResponse.BodyHandlers.ofByteArray())
         check(response.statusCode() == 200) { "HTTP ${response.statusCode()}" }
         return response.body()
     }

@@ -84,6 +84,26 @@ object Dnz {
     var custom by mutableStateOf<ThemeColors?>(null)
     private val mono get() = custom == null && theme == LauncherTheme.Mono
 
+    /** The accent color picked in Settings (null: the theme's own orange). */
+    var accent by mutableStateOf<Long?>(null)
+        private set
+
+    /** Accent colors offered in Settings; the first is DNZ orange. */
+    val ACCENTS = listOf(0xFFFF8A3D, 0xFFFF4D5E, 0xFFFF5FA8, 0xFF9D6BFF, 0xFF4F8BFF, 0xFF2FD3E0, 0xFF3DDC84, 0xFFFFC83D)
+
+    /** Uses [color] for buttons, highlights and gradients (in the colorful theme); null goes back to orange. */
+    fun pickAccent(color: Long?) {
+        val c = color?.takeIf { it != ACCENTS[0] }
+        accent = c
+        if (c != null) theme = LauncherTheme.Colorful
+        custom = c?.let { ThemeColors.DEFAULT.copy(name = "Accent", accent = it, accent2 = darker(it)) }
+    }
+
+    private fun darker(c: Long): Long {
+        fun ch(shift: Int) = (((c shr shift) and 0xFF) * 0.8).toLong() shl shift
+        return 0xFF000000 or ch(16) or ch(8) or ch(0)
+    }
+
     private fun pick(color: Long, mono: Long) = Color(if (this.mono) mono else color)
     private inline fun pick(color: Long, mono: Long, fromCustom: (ThemeColors) -> Long) = custom?.let { Color(fromCustom(it)) } ?: pick(color, mono)
 

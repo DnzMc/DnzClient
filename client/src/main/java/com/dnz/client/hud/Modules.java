@@ -38,16 +38,44 @@ public final class Modules {
 		DnzConfig c = DnzConfig.get();
 		List<HudModule> list = new ArrayList<>();
 		// ---- Info
-		list.add(new TextModule("fps", Category.INFO, 0.005F, 0.01F, true, mc -> Integer.toString(mc.getFps())));
-		list.add(new TextModule("ping", Category.INFO, 0.005F, 0.055F, true, Modules::ping));
+		list.add(new TextModule("fps", Category.INFO, 0.005F, 0.01F, true, mc -> Integer.toString(mc.getFps())) {
+			@Override public List<String> options() { return List.of("average", "median", "percentile", "consistency"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) { return ExtraModules.fpsText(this, mc); }
+		});
+		list.add(new TextModule("ping", Category.INFO, 0.005F, 0.055F, true, Modules::ping) {
+			@Override public List<String> options() { return List.of("average", "highest"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) { return ExtraModules.pingText(this, mc); }
+		});
 		list.add(new CoordsModule());
 		list.add(new CompassModule());
 		list.add(new TextModule("biome", Category.INFO, 0.84F, 0.01F, false, Modules::biome));
 		list.add(new TextModule("clock", Category.INFO, 0.84F, 0.055F, false,
 			mc -> String.format("%02d:%02d", LocalTime.now().getHour(), LocalTime.now().getMinute())));
 		list.add(new TextModule("gametime", Category.INFO, 0.84F, 0.10F, false, Modules::gameTime));
-		list.add(new TextModule("speed", Category.INFO, 0.84F, 0.145F, false, mc -> String.format("%.1f b/s", CombatTracker.speed())));
-		list.add(new TextModule("memory", Category.INFO, 0.84F, 0.19F, false, Modules::memory));
+		list.add(new TextModule("speed", Category.INFO, 0.84F, 0.145F, false, mc -> String.format("%.1f b/s", CombatTracker.speed())) {
+			@Override public List<String> options() { return List.of("kmh", "mph", "knots", "smoothing"); }
+			@Override public boolean defaultOption(String key) { return key.equals("smoothing"); }
+			@Override protected String value(Minecraft mc) {
+				double speed = this.opt("smoothing") ? CombatTracker.speed() : CombatTracker.rawSpeed();
+				return this.opt("kmh") ? String.format("%.1f km/h", speed * 3.6)
+					: this.opt("mph") ? String.format("%.1f mph", speed * 2.236936)
+					: this.opt("knots") ? String.format("%.1f kn", speed * 1.943844)
+					: String.format("%.1f b/s", speed);
+			}
+		});
+		list.add(new TextModule("memory", Category.INFO, 0.84F, 0.19F, false, Modules::memory) {
+			@Override public List<String> options() { return List.of("gigabytes", "percent"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) {
+				Runtime rt = Runtime.getRuntime();
+				long used = rt.totalMemory() - rt.freeMemory(), max = rt.maxMemory();
+				if (this.opt("gigabytes")) return String.format("%.2f / %.2f GB", used / 1073741824.0, max / 1073741824.0);
+				if (this.opt("percent")) return Math.round(used * 100.0 / max) + "%";
+				return Modules.memory(mc);
+			}
+		});
 		list.add(new TextModule("server", Category.INFO, 0.84F, 0.235F, false, Modules::server));
 		list.add(new TextModule("players", Category.INFO, 0.84F, 0.28F, false,
 			mc -> mc.getConnection() == null ? "-" : Integer.toString(mc.getConnection().getOnlinePlayers().size())));
@@ -57,9 +85,21 @@ public final class Modules {
 		list.add(new TextModule("rotation", Category.INFO, 0.84F, 0.46F, false,
 			mc -> mc.player == null ? "-" : String.format("%.1f / %.1f", Mth.wrapDegrees(mc.player.getYRot()), mc.player.getXRot())));
 		list.add(new TextModule("dimension", Category.INFO, 0.84F, 0.505F, false, Modules::dimension));
-		list.add(new TextModule("tps", Category.INFO, 0.84F, 0.55F, false, Modules::tps));
+		list.add(new TextModule("tps", Category.INFO, 0.84F, 0.55F, false, Modules::tps) {
+			@Override public List<String> options() { return List.of("average", "lowest"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) { return ExtraModules.tpsText(this, mc); }
+		});
 		list.add(new TextModule("frametime", Category.INFO, 0.84F, 0.595F, false, mc -> String.format("%.1f ms", 1000.0 / Math.max(1, mc.getFps()))));
-		list.add(new TextModule("entities", Category.INFO, 0.84F, 0.64F, false, mc -> mc.level == null ? "-" : Integer.toString(mc.level.getEntityCount())));
+		list.add(new TextModule("entities", Category.INFO, 0.84F, 0.64F, false, mc -> "-") {
+			@Override public List<String> options() { return List.of("total"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) {
+				if (mc.level == null) return "-";
+				int rendered = mc.gameRenderer.gameRenderState().levelRenderState.entityRenderStates.size();
+				return this.opt("total") ? rendered + " / " + mc.level.getEntityCount() : Integer.toString(rendered);
+			}
+		});
 		list.add(new TextModule("chunks", Category.INFO, 0.84F, 0.685F, false,
 			mc -> mc.level == null ? "-" : Integer.toString(mc.level.getChunkSource().getLoadedChunksCount())));
 		list.add(new TextModule("date", Category.INFO, 0.84F, 0.73F, false, mc -> java.time.LocalDate.now().toString()));
@@ -68,11 +108,20 @@ public final class Modules {
 		list.add(new TextModule("block", Category.INFO, 0.84F, 0.82F, false, Modules::targetBlock));
 		list.add(new LookAt());
 		list.add(new Minimap());
+		list.addAll(ExtraModules.all());
 
 		// ---- PvP
 		list.add(new KeystrokesModule());
 		list.add(new TextModule("cps", Category.PVP, 0.005F, 0.10F, true,
-			mc -> DnzHud.leftCps() + " | " + DnzHud.rightCps()));
+			mc -> DnzHud.leftCps() + " | " + DnzHud.rightCps()) {
+			@Override public List<String> options() { return List.of("combined", "leftonly", "rightonly"); }
+			@Override public boolean defaultOption(String key) { return false; }
+			@Override protected String value(Minecraft mc) {
+				int left = DnzHud.leftCps(), right = DnzHud.rightCps();
+				return this.opt("combined") ? Integer.toString(left + right) : this.opt("leftonly") ? Integer.toString(left)
+					: this.opt("rightonly") ? Integer.toString(right) : left + " | " + right;
+			}
+		});
 		list.add(new TextModule("reach", Category.PVP, 0.20F, 0.01F, false, mc -> {
 			double r = CombatTracker.reach();
 			return r < 0 ? "-" : String.format("%.2f", r);
@@ -110,6 +159,7 @@ public final class Modules {
 		list.add(new HudModule.Feature("cleanhotbar", Category.VISUAL, false));
 		list.add(new HudModule.Feature("fullbright", Category.VISUAL, false, () -> DnzConfig.get().fullbright, v -> DnzConfig.get().fullbright = v));
 		list.add(new HudModule.Feature("streamer", Category.VISUAL, false, () -> DnzConfig.get().streamerMode, v -> DnzConfig.get().streamerMode = v));
+		list.add(new HudModule.Feature("discord", Category.VISUAL, true, () -> DnzConfig.get().discordPresence, v -> DnzConfig.get().discordPresence = v));
 		list.add(new HudModule.Feature("turbo", Category.PERFORMANCE, true, () -> DnzConfig.get().turbo, v -> DnzConfig.get().turbo = v));
 		return list;
 	}
@@ -414,7 +464,14 @@ public final class Modules {
 
 		@Override
 		public List<String> options() {
-			return List.of("mouse", "space");
+			return List.of("mouse", "space", "sprint", "sneak");
+		}
+
+		@Override public boolean editableValue() { return true; }
+
+		@Override
+		public boolean defaultOption(String key) {
+			return key.equals("mouse") || key.equals("space");
 		}
 
 		@Override
@@ -427,6 +484,8 @@ public final class Modules {
 			if (this.opt("space")) {
 				h += GAP + 12;
 			}
+			if (this.opt("sprint") || this.opt("sneak")) h += GAP + K;
+			if (this.pos().value != null && !this.pos().value.isBlank()) h += GAP + K;
 			if (r.measure) {
 				return new int[] {w, h};
 			}
@@ -445,6 +504,21 @@ public final class Modules {
 			if (this.opt("space")) {
 				key(r, 0, y, w, 12, "", o.keyJump.isDown(), null);
 				r.fill(w / 2 - 12, y + 5, w / 2 + 12, y + 7, o.keyJump.isDown() ? 0xFF10141C : 0xFFFFFFFF);
+				y += 12 + GAP;
+			}
+			if (this.opt("sprint") || this.opt("sneak")) {
+				int half = (w - GAP) / 2;
+				if (this.opt("sprint")) key(r, 0, y, this.opt("sneak") ? half : w, K, "SPR", o.keySprint.isDown(), null);
+				if (this.opt("sneak")) key(r, this.opt("sprint") ? half + GAP : 0, y,
+					this.opt("sprint") ? w - half - GAP : w, K, "SNK", o.keyShift.isDown(), null);
+				y += K + GAP;
+			}
+			if (this.pos().value != null && !this.pos().value.isBlank()) {
+				try {
+					var custom = com.mojang.blaze3d.platform.InputConstants.getKey(this.pos().value.trim());
+					key(r, 0, y, w, K, custom.getDisplayName().getString(),
+						com.dnz.client.compat.Compat.customKeyDown(r.mc, custom.getValue()), null);
+				} catch (IllegalArgumentException ex) { key(r, 0, y, w, K, "?", false, null); }
 			}
 			return new int[] {w, h};
 		}
@@ -539,12 +613,12 @@ public final class Modules {
 
 		@Override
 		public List<String> options() {
-			return List.of("durability", "horizontal", "warn");
+			return List.of("durability", "horizontal", "warn", "helditems");
 		}
 
 		@Override
 		public boolean defaultOption(String key) {
-			return !key.equals("horizontal");
+			return !key.equals("horizontal") && !key.equals("helditems");
 		}
 
 		@Override
@@ -552,17 +626,19 @@ public final class Modules {
 			boolean text = this.opt("durability");
 			boolean horizontal = this.opt("horizontal");
 			int cell = text ? (horizontal ? 36 : 18) : 18;
-			int w = horizontal ? SLOTS.length * (text ? 40 : 18) + 4 : (text ? 22 + r.width("100%") + 4 : 22);
-			int h = horizontal ? 22 : SLOTS.length * 18 + 4;
+			int count = SLOTS.length + (this.opt("helditems") ? 2 : 0);
+			int w = horizontal ? count * (text ? 40 : 18) + 4 : (text ? 22 + r.width("100%") + 4 : 22);
+			int h = horizontal ? 22 : count * 18 + 4;
 			if (r.measure) {
 				return new int[] {w, h};
 			}
 			r.panel(w, h);
 			boolean blink = (System.currentTimeMillis() / 300) % 2 == 0;
-			for (int i = 0; i < SLOTS.length; i++) {
+			for (int i = 0; i < count; i++) {
 				int x = horizontal ? 3 + i * (text ? 40 : 18) : 3;
 				int y = horizontal ? 3 : 2 + i * 18;
-				ItemStack stack = r.mc.player == null ? ItemStack.EMPTY : r.mc.player.getItemBySlot(SLOTS[i]);
+				ItemStack stack = r.mc.player == null ? ItemStack.EMPTY : i < SLOTS.length
+					? r.mc.player.getItemBySlot(SLOTS[i]) : i == SLOTS.length ? r.mc.player.getMainHandItem() : r.mc.player.getOffhandItem();
 				if (stack.isEmpty()) {
 					r.fill(x + 2, y + 5, x + 14, y + 11, 0x30FFFFFF);
 					continue;
@@ -623,13 +699,18 @@ public final class Modules {
 		private List<MobEffectInstance> effects = List.of();
 		private long effectsAt;
 
+		@Override public List<String> options() { return List.of("icons", "names", "durations", "sortduration", "horizontal"); }
+		@Override public boolean defaultOption(String key) { return !key.equals("sortduration") && !key.equals("horizontal"); }
+
 		@Override
 		public int[] render(HudRender r) {
 			long now = System.nanoTime();
 			if (now - this.effectsAt > 250_000_000L) {
 				this.effectsAt = now;
 				this.effects = r.mc.player == null ? List.of()
-					: r.mc.player.getActiveEffects().stream().filter(MobEffectInstance::showIcon).sorted().toList();
+					: r.mc.player.getActiveEffects().stream()
+						.sorted(this.opt("sortduration") ? java.util.Comparator.comparingInt(MobEffectInstance::getDuration)
+							: java.util.Comparator.naturalOrder()).toList();
 			}
 			List<MobEffectInstance> effects = this.effects;
 			if (effects.isEmpty()) {
@@ -642,21 +723,25 @@ public final class Modules {
 				r.text(this.label(), 26, 8, 0xFFFFFFFF);
 				return new int[] {w, h};
 			}
-			int w = 0;
+			boolean icons = this.opt("icons"), names = this.opt("names"), durations = this.opt("durations"), horizontal = this.opt("horizontal");
+			int cellW = 20;
 			for (MobEffectInstance e : effects) {
-				w = Math.max(w, 26 + Math.max(r.width(name(e)), r.width(time(e))) + 6);
+				int textW = Math.max(names ? r.width(name(e)) : 0, durations ? r.width(time(e)) : 0);
+				cellW = Math.max(cellW, (icons ? 24 : 4) + textW + 4);
 			}
-			int h = effects.size() * 22 + 2;
+			int w = horizontal ? effects.size() * cellW + 2 : cellW;
+			int h = horizontal ? 24 : effects.size() * 22 + 2;
 			r.panel(w, h);
 			for (int i = 0; i < effects.size(); i++) {
 				MobEffectInstance e = effects.get(i);
-				int ry = 2 + i * 22;
-				if (!r.measure) {
-					r.g.blitSprite(RenderPipelines.GUI_TEXTURED, net.minecraft.client.gui.Hud.getMobEffectSprite(e.getEffect()), 4, ry + 1, 18, 18);
+				int rx = horizontal ? i * cellW : 0, ry = horizontal ? 2 : 2 + i * 22;
+				if (icons && !r.measure) {
+					r.g.blitSprite(RenderPipelines.GUI_TEXTURED, net.minecraft.client.gui.Hud.getMobEffectSprite(e.getEffect()), rx + 4, ry + 1, 18, 18);
 				}
-				r.text(name(e), 26, ry + 1, 0xFFFFFFFF);
+				int tx = rx + (icons ? 26 : 4);
+				if (names) r.text(name(e), tx, ry + 1, 0xFFFFFFFF);
 				boolean ending = !e.isInfiniteDuration() && e.getDuration() < 200;
-				r.text(time(e), 26, ry + 11, ending ? 0xFFFF6B6B : HudRender.accent());
+				if (durations) r.text(time(e), tx, ry + (names ? 11 : 6), ending ? 0xFFFF6B6B : HudRender.accent());
 			}
 			return new int[] {w, h};
 		}

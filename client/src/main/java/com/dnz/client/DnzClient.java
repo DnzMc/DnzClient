@@ -48,6 +48,7 @@ public class DnzClient implements ClientModInitializer {
 			}
 		});
 		CombatTracker.register();
+		com.dnz.client.hud.ExtraModules.register();
 		FoodOverlay.register();
 		com.dnz.client.hud.ShulkerPreview.register();
 		com.dnz.client.hud.CleanHotbar.register();
@@ -59,6 +60,9 @@ public class DnzClient implements ClientModInitializer {
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> CloudSync.start());
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> com.dnz.client.mods.ModMenuTitleCount.hide());
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> CloudSync.stop());
+		// Discord shows "Playing DNZ Client" (local pipe to the Discord app, see DiscordPresence).
+		ClientLifecycleEvents.CLIENT_STARTED.register(client -> DiscordPresence.start());
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> DiscordPresence.stop());
 
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
 			DnzConfig config = DnzConfig.get();
@@ -82,6 +86,8 @@ public class DnzClient implements ClientModInitializer {
 				}
 			}
 			CombatTracker.tick(client);
+			com.dnz.client.hud.ExtraModules.tick(client);
+			DiscordPresence.tick(client);
 			toggleSprint(client);
 			// Our fonts follow the window's pixel size (resized window, new GUI scale, menu closed).
 			SharpFonts.update(client, client.gui.screen());

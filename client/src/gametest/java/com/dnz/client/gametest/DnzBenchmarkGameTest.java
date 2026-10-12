@@ -31,8 +31,8 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
 		String bench = System.getProperty("dnz.bench", "");
-		if (bench.isEmpty()) {
-			return;
+		if (bench.isEmpty() || bench.equals("trailer")) {
+			return; // -Pbench=trailer films the trailer footage instead (DnzTrailerGameTest)
 		}
 		LevelRenderEvents.START_MAIN.register(ctx -> {
 			if (!recording) {

@@ -1,6 +1,9 @@
 package com.dnz.client.compat;
 
 import java.nio.file.Path;
+import java.io.IOException;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MultiplayerOptionsScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -23,5 +26,17 @@ public final class Compat {
 
 	public static void openFolder(Path path) {
 		Util.getPlatform().openPath(path);
+	}
+
+	public static boolean customKeyDown(Minecraft mc, int key) {
+		return InputConstants.isKeyDown(mc.getWindow(), key);
+	}
+
+	public static byte[] packIcon(Pack pack) throws IOException {
+		try (var resources = pack.open()) {
+			var supplier = resources.getRootResource("pack.png");
+			if (supplier == null) return null;
+			try (var input = supplier.get()) { return input.readNBytes(2_000_001); }
+		}
 	}
 }
