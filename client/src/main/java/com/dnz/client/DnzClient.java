@@ -98,6 +98,10 @@ public class DnzClient implements ClientModInitializer {
 			if (!(screen instanceof DnzMenuScreen)) {
 				SharpFonts.update(client, screen); // the DNZ menu does this itself, at its own scale
 			}
+			if (screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class && DnzConfig.get().testTitle) {
+				client.execute(() -> client.gui.setScreen(new com.dnz.client.gui.DnzTitleScreen()));
+				return;
+			}
 			if (screen instanceof OptionsScreen) {
 				Screens.getWidgets(screen).add(new DnzButton(6, 6, 64, 20, Component.literal("Visual"),
 					() -> client.gui.setScreen(new DnzVisualScreen(screen))));

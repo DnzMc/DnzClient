@@ -91,8 +91,21 @@ object Dnz {
     /** Accent colors offered in Settings; the first is DNZ orange. */
     val ACCENTS = listOf(0xFFFF8A3D, 0xFFFF4D5E, 0xFFFF5FA8, 0xFF9D6BFF, 0xFF4F8BFF, 0xFF2FD3E0, 0xFF3DDC84, 0xFFFFC83D)
 
+    /** Id of the DNZ Workshop theme the launcher wears (Mods → Workshop → My library → Install), or null. */
+    var workshopId by mutableStateOf<String?>(null)
+        private set
+
+    /** Puts on a Workshop theme: all 8 launcher colors come from it (until another theme or accent is picked). */
+    fun useWorkshopTheme(id: String, colors: ThemeColors) {
+        accent = null
+        theme = LauncherTheme.Colorful
+        custom = colors
+        workshopId = id
+    }
+
     /** Uses [color] for buttons, highlights and gradients (in the colorful theme); null goes back to orange. */
     fun pickAccent(color: Long?) {
+        workshopId = null
         val c = color?.takeIf { it != ACCENTS[0] }
         accent = c
         if (c != null) theme = LauncherTheme.Colorful

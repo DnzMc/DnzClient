@@ -11,6 +11,7 @@
 //   BUCKET  R2 bucket for the settings files (private, e.g. "dnz-cloud")
 //   SECRET  secret text, a long random value (signs the challenges and the short-lived session tokens)
 //   CURSEFORGE_KEY  secret text, DNZ's CurseForge API key (console.curseforge.com → API keys)
+//   WORKSHOP_CLIENT_IDS  text, see "DNZ Workshop library" at the end
 //
 // CurseForge relay (/cf/...): DNZ Launcher's mod library asks this worker, and the worker asks CurseForge with DNZ's
 // key, so the key is never inside the launcher. Only reading Minecraft mods is passed on; answers are cached briefly.
@@ -30,6 +31,9 @@ export default {
 		try {
 			if (url.pathname.startsWith("/cf/")) {
 				return await curseforge(request, url, env);
+			}
+			if (url.pathname === "/workshop/library") {
+				return await workshopLibrary(request, env);
 			}
 			if (url.pathname === "/challenge" && request.method === "GET") {
 				const nonce = b64url(new TextEncoder().encode(JSON.stringify({ t: Math.floor(Date.now() / 1000), r: b64url(crypto.getRandomValues(new Uint8Array(16))) })));
@@ -179,4 +183,81 @@ function fromB64url(text) {
 
 function json(data, status = 200) {
 	return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+}
+
+// ------------------------------------------------------------------ DNZ Workshop library
+// The Workshop items a player added (theme ids), the same list on dnzclient.com and in DNZ Launcher. The player is
+// known by their Microsoft account: both send a Microsoft ID token, checked here with Microsoft's public keys.
+// Stored in BUCKET as workshop/library/<Microsoft account id>.json. Setting:
+//   WORKSHOP_CLIENT_IDS  text: the Application (client) IDs allowed to sign in, comma separated (website, launcher)
+
+const MS_ISSUER = "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"; // personal accounts
+const MS_KEYS = "https://login.microsoftonline.com/consumers/discovery/v2.0/keys";
+const WORKSHOP_ORIGINS = ["https://dnzclient.com", "https://www.dnzclient.com", "http://localhost:8765"];
+let msKeys = null; // { at, keys }
+
+async function workshopLibrary(request, env) {
+	const origin = request.headers.get("Origin") || "";
+	const cors = {
+		"Access-Control-Allow-Origin": WORKSHOP_ORIGINS.includes(origin) ? origin : WORKSHOP_ORIGINS[0],
+		"Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+		"Access-Control-Allow-Headers": "Authorization, Content-Type",
+		Vary: "Origin",
+	};
+	const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...cors, "Content-Type": "application/json" } });
+	if (request.method === "OPTIONS") {
+		return new Response(null, { status: 204, headers: cors });
+	}
+	const id = await microsoftAccount(request, env);
+	if (!id) {
+		return reply({ error: "not signed in" }, 401);
+	}
+	const key = `workshop/library/${id}.json`;
+	if (request.method === "GET") {
+		const object = await env.BUCKET.get(key);
+		return reply(object ? await object.json() : { items: [] });
+	}
+	if (request.method === "PUT") {
+		const body = await request.json();
+		const items = Array.isArray(body.items) ? body.items.filter((x) => typeof x === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(x)) : null;
+		if (!items || items.length > 300) {
+			return reply({ error: "bad list" }, 400);
+		}
+		const data = { items: [...new Set(items)], updated: Date.now() };
+		await env.BUCKET.put(key, JSON.stringify(data), { httpMetadata: { contentType: "application/json" } });
+		return reply(data);
+	}
+	return reply({ error: "not allowed" }, 405);
+}
+
+/** The Microsoft account id ("oid") of a valid ID token in the Authorization header, or null. */
+async function microsoftAccount(request, env) {
+	const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+	const parts = token.split(".");
+	if (parts.length !== 3) {
+		return null;
+	}
+	const header = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
+	const claims = JSON.parse(new TextDecoder().decode(fromB64url(parts[1])));
+	const allowed = String(env.WORKSHOP_CLIENT_IDS || "").split(",").map((s) => s.trim()).filter(Boolean);
+	const now = Math.floor(Date.now() / 1000);
+	if (header.alg !== "RS256" || claims.iss !== MS_ISSUER || !allowed.includes(claims.aud) || !(claims.exp > now) || (claims.nbf && claims.nbf > now + 300) || !claims.oid) {
+		return null;
+	}
+	const jwk = await microsoftKey(header.kid);
+	if (!jwk) {
+		return null;
+	}
+	const key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+	const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, fromB64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
+	return ok ? String(claims.oid).replace(/[^A-Za-z0-9-]/g, "") : null;
+}
+
+/** Microsoft's signing key [kid] (the list is kept for an hour). */
+async function microsoftKey(kid) {
+	if (!msKeys || Date.now() - msKeys.at > 3600_000 || !msKeys.keys.some((k) => k.kid === kid)) {
+		const res = await fetch(MS_KEYS);
+		msKeys = { at: Date.now(), keys: (await res.json()).keys || [] };
+	}
+	return msKeys.keys.find((k) => k.kid === kid) || null;
 }

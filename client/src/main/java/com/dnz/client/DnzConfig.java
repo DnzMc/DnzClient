@@ -46,6 +46,8 @@ public final class DnzConfig {
 	public int menuLook = 0;
 	/** DNZ menu colors: false = dark, true = white. */
 	public boolean menuLight = false;
+	/** Test only (set by hand in the file): the new DNZ title screen in place of Minecraft's. */
+	public boolean testTitle = false;
 	/** HUD elements by id; positions are fractions (0..1) of the screen size. */
 	public java.util.Map<String, HudPos> hud = new java.util.LinkedHashMap<>();
 	/** DNZ Script mods the player turned off (by mod id). */

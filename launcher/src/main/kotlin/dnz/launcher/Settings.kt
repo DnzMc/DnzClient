@@ -20,16 +20,17 @@ object Settings {
         /** Mac: AUTO already ran once by itself on the first start. */
         val macAutoDone: Boolean? = null,
         val mojangNoticeHidden: Boolean? = null,
-        /** Theme from the old Workshop (not used any more; kept so older settings files still load). */
+        /** Colors of the DNZ Workshop theme in use (theme file JSON), with its id below; null when none. */
         val workshopTheme: String? = null,
         /** Accent color picked in Settings (ARGB), null for DNZ orange. */
         val accent: Long? = null,
         val skinAnimation: Boolean? = null,
+        val workshopThemeId: String? = null,
     )
 
     fun snapshot(state: LauncherState) = Saved(
         state.language, state.ramGb, state.launchMode, state.profiles.toList(), state.selectedProfile, Dnz.theme, state.macAutoDone, state.mojangNoticeHidden,
-        null, Dnz.accent, state.skinAnimation,
+        Dnz.workshopId?.let { Dnz.custom?.toJson() }, Dnz.accent, state.skinAnimation, Dnz.workshopId,
     )
 
     fun load(state: LauncherState) {
@@ -39,6 +40,9 @@ object Settings {
         saved.launchMode?.let { state.launchMode = it }
         saved.theme?.let { Dnz.theme = it }
         saved.accent?.let { Dnz.pickAccent(it) }
+        // A Workshop theme wins over the accent color (installing one clears the accent).
+        val workshopColors = saved.workshopTheme?.let { ThemeColors.fromJson(it) }
+        if (saved.workshopThemeId != null && workshopColors != null) Dnz.useWorkshopTheme(saved.workshopThemeId, workshopColors)
         saved.skinAnimation?.let { state.skinAnimation = it }
         saved.macAutoDone?.let { state.macAutoDone = it }
         saved.mojangNoticeHidden?.let { state.mojangNoticeHidden = it }

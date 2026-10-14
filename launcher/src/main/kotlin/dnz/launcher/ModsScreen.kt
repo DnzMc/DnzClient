@@ -1,6 +1,7 @@
 package dnz.launcher
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -13,6 +14,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -21,6 +25,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,7 +51,7 @@ import java.awt.Desktop
 import java.io.File
 import java.net.URI
 
-enum class LibraryTab { Discover, Installed }
+enum class LibraryTab { Discover, Installed, Workshop }
 
 /** Where the Discover list searches. */
 enum class ModSource { Modrinth, CurseForge }
@@ -79,6 +84,14 @@ class LibraryState {
     val installed = mutableStateListOf<Library.Installed>()
     var scanning by mutableStateOf(false)
     var scannedFor by mutableStateOf<String?>(null)
+
+    // DNZ Workshop tab: the themes (loaded once), the player's library (null: not signed in / no identity) and what shows.
+    val wsItems = mutableStateListOf<Workshop.Item>()
+    var wsLoad by mutableStateOf(0) // 0 loading, 1 done, 2 failed
+    var wsLibrary by mutableStateOf<List<String>?>(null)
+    var wsLibLoad by mutableStateOf(0) // 0 loading, 1 done, 2 failed
+    var wsShowLibrary by mutableStateOf(false)
+    var wsQuery by mutableStateOf("")
 
     /** Project id -> progress text while it installs. */
     val busy = mutableStateMapOf<String, String>()
@@ -119,6 +132,7 @@ fun ModsScreen(state: LauncherState) {
             listOf(
                 state.t("lib.discover"),
                 state.t("lib.installed_tab") + if (lib.installed.isNotEmpty()) " (${lib.installed.size})" else "",
+                state.t("lib.workshop"),
             ),
             lib.tab.ordinal,
         ) { lib.tab = LibraryTab.entries[it] }
@@ -126,6 +140,7 @@ fun ModsScreen(state: LauncherState) {
         when (lib.tab) {
             LibraryTab.Discover -> DiscoverView(state, mc)
             LibraryTab.Installed -> InstalledView(state, profile)
+            LibraryTab.Workshop -> WorkshopView(state)
         }
     }
 }
@@ -882,5 +897,189 @@ private fun Loading(text: String) {
         CircularProgressIndicator(Modifier.size(18.dp), color = Dnz.Accent, strokeWidth = 2.dp)
         Spacer(Modifier.width(10.dp))
         Text(text, color = Dnz.Muted, fontSize = 13.sp)
+    }
+}
+
+// ------------------------------------------------------------------ DNZ Workshop
+
+/**
+ * Mods → Workshop: DNZ themes for the launcher, listed like the mods. Search and filters on top, My library and Upload
+ * on the right. The library is the same as on dnzclient.com/workshop (DNZ Cloud, Microsoft account); a theme in the
+ * library is put on with Install.
+ */
+@Composable
+private fun WorkshopView(state: LauncherState) {
+    val lib = state.library
+    LaunchedEffect(Unit) {
+        if (lib.wsLoad != 1) {
+            lib.wsLoad = 0
+            runCatching { withContext(Dispatchers.IO) { Workshop.catalog() } }
+                .onSuccess { lib.wsItems.clear(); lib.wsItems.addAll(it); lib.wsLoad = 1 }
+                .onFailure { lib.wsLoad = 2 }
+        }
+        if (Workshop.canSync) {
+            lib.wsLibLoad = 0
+            runCatching { withContext(Dispatchers.IO) { Workshop.library() } }
+                .onSuccess { lib.wsLibrary = it; lib.wsLibLoad = 1 }
+                .onFailure { lib.wsLibLoad = 2 }
+        } else {
+            lib.wsLibrary = null
+            lib.wsLibLoad = 1
+        }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Dnz.Surface).border(1.dp, Dnz.Border, RoundedCornerShape(12.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Search, null, tint = Dnz.Muted, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+            Box(Modifier.weight(1f)) {
+                if (lib.wsQuery.isEmpty()) Text(state.t("ws.search"), color = Dnz.Muted, fontSize = 14.sp)
+                BasicTextField(
+                    lib.wsQuery, { lib.wsQuery = it }, singleLine = true,
+                    textStyle = TextStyle(color = Dnz.Text, fontSize = 14.sp), cursorBrush = SolidColor(Dnz.Accent), modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Chip(state.t("ws.all"), false) {}
+        Spacer(Modifier.width(6.dp))
+        Chip(state.t("ws.themes"), true) {}
+        Spacer(Modifier.width(16.dp))
+        val count = lib.wsLibrary?.size?.let { " ($it)" } ?: ""
+        if (lib.wsShowLibrary) {
+            SmallButton(state.t("ws.browse"), icon = Icons.Filled.Search) { lib.wsShowLibrary = false }
+        } else {
+            SmallButton(state.t("ws.library") + count, icon = Icons.Outlined.List, accent = true) { lib.wsShowLibrary = true }
+        }
+        Spacer(Modifier.width(8.dp))
+        SmallButton(state.t("ws.upload"), icon = Icons.Filled.Add) { state.dialog = state.t("ws.upload_title") to state.t("ws.upload_soon") }
+    }
+    Spacer(Modifier.height(14.dp))
+
+    val query = lib.wsQuery.trim().lowercase()
+    val library = lib.wsLibrary
+    val shown = lib.wsItems.filter { item ->
+        (!lib.wsShowLibrary || (library != null && item.id in library)) &&
+            (query.isEmpty() || (item.name + " " + item.author + " " + item.tags.joinToString(" ")).lowercase().contains(query))
+    }.let { list -> if (lib.wsShowLibrary && library != null) list.sortedBy { library.indexOf(it.id) } else list }
+
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        when {
+            lib.wsLoad == 0 -> item { Loading(state.t("ws.loading")) }
+            lib.wsLoad == 2 -> item { Text(state.t("ws.error"), color = Dnz.Danger, fontSize = 13.sp) }
+            lib.wsShowLibrary && lib.wsLibLoad == 0 -> item { Loading(state.t("ws.loading")) }
+            lib.wsShowLibrary && lib.wsLibLoad == 2 -> item { Text(state.t("ws.lib_error"), color = Dnz.Danger, fontSize = 13.sp) }
+            lib.wsShowLibrary && library == null -> item {
+                Card(Modifier.fillMaxWidth()) {
+                    Text(state.t(if (Workshop.canSync) "ws.relogin" else "ws.signin"), color = Dnz.Muted, fontSize = 13.sp, lineHeight = 19.sp)
+                }
+            }
+            shown.isEmpty() -> item { Text(state.t(if (lib.wsShowLibrary) "ws.empty_lib" else "ws.empty"), color = Dnz.Muted, fontSize = 13.sp) }
+        }
+        if (lib.wsLoad == 1 && (!lib.wsShowLibrary || (lib.wsLibLoad == 1 && library != null))) {
+            if (lib.wsShowLibrary && Dnz.workshopId != null) {
+                item {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                        SmallButton(state.t("ws.default")) { Dnz.pickAccent(null) }
+                    }
+                }
+            }
+            items(shown, key = { it.id }) { item -> WorkshopRow(state, item) }
+        }
+    }
+}
+
+@Composable
+private fun WorkshopRow(state: LauncherState, item: Workshop.Item) {
+    val lib = state.library
+    val inLibrary = lib.wsLibrary?.contains(item.id) == true
+    val inUse = Dnz.workshopId == item.id
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Dnz.Surface).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        item.colors?.let { ThemePreview(it, Modifier.width(112.dp).height(72.dp).clip(RoundedCornerShape(9.dp))) }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(item.name, color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false))
+                Spacer(Modifier.width(8.dp))
+                Text(state.t("ws.by").replace("%s", item.author), color = Dnz.Muted, fontSize = 12.sp, maxLines = 1)
+            }
+            Spacer(Modifier.height(3.dp))
+            val text = if (state.language == Lang.TR) item.descriptionTr ?: item.description else item.description
+            Text(text, color = Dnz.Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(7.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Tag(if (state.language == Lang.TR) "Tema" else "Theme", Dnz.Accent)
+                item.tags.take(3).forEach { Tag(it) }
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(item.created, color = Dnz.Muted, fontSize = 11.sp)
+            when {
+                lib.wsShowLibrary && inUse -> SmallButton(state.t("ws.installed"), accent = true) {}
+                lib.wsShowLibrary -> Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SmallButton(state.t("ws.remove")) { changeLibrary(state, (lib.wsLibrary ?: emptyList()) - item.id) }
+                    DnzButton(state.t("ws.install")) {
+                        item.colors?.let { Dnz.useWorkshopTheme(item.id, it) }
+                        state.toast = state.t("ws.applied").replace("%s", item.name)
+                    }
+                }
+                inLibrary -> SmallButton(state.t("ws.in_library"), accent = true) { lib.wsShowLibrary = true }
+                else -> DnzButton(state.t("ws.add")) {
+                    val current = lib.wsLibrary
+                    if (current == null) state.dialog = state.t("ws.library") to state.t(if (Workshop.canSync) "ws.relogin" else "ws.signin")
+                    else changeLibrary(state, listOf(item.id) + current.filter { it != item.id })
+                }
+            }
+        }
+    }
+}
+
+/** Shows [ids] at once and saves them to DNZ Cloud; goes back if that fails. */
+private fun changeLibrary(state: LauncherState, ids: List<String>) {
+    val lib = state.library
+    val before = lib.wsLibrary
+    lib.wsLibrary = ids
+    state.scope.launch {
+        if (!withContext(Dispatchers.IO) { Workshop.saveLibrary(ids) }) {
+            lib.wsLibrary = before
+            state.toast = state.t("ws.not_saved")
+        }
+    }
+}
+
+/** A small picture of the launcher in a theme's colors: sidebar, title, cards and a button. */
+@Composable
+private fun ThemePreview(c: ThemeColors, modifier: Modifier) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val u = w / 112f
+        val r = CornerRadius(3 * u)
+        fun col(v: Long, a: Float = 1f) = Color(v).copy(alpha = a)
+        drawRect(col(c.background))
+        drawRect(col(c.sidebar), size = Size(18 * u, h))
+        drawRoundRect(col(c.accent), Offset(5 * u, 6 * u), Size(8 * u, 8 * u), r)
+        for (i in 0 until 3) drawRoundRect(col(c.muted, 0.45f), Offset(6 * u, (22 + i * 11) * u), Size(6 * u, 6 * u), r)
+        drawRoundRect(col(c.text), Offset(24 * u, 6 * u), Size(26 * u, 5 * u), r)
+        val gw = (w - 24 * u - 6 * u - 8 * u) / 3
+        for (row in 0 until 2) for (k in 0 until 3) {
+            val x = 24 * u + k * (gw + 4 * u)
+            val y = (16 + row * 22) * u
+            drawRoundRect(col(c.surface), Offset(x, y), Size(gw, 18 * u), r)
+            drawRoundRect(if ((row * 3 + k) % 2 == 0) col(c.accent) else col(c.surfaceHigh), Offset(x + 3 * u, y + 3 * u), Size(6 * u, 6 * u), r)
+        }
+        drawRoundRect(
+            Brush.horizontalGradient(listOf(col(c.accent), col(c.accent2)), startX = w - 38 * u, endX = w - 6 * u),
+            Offset(w - 38 * u, h - 13 * u), Size(32 * u, 8 * u), CornerRadius(4 * u),
+        )
     }
 }

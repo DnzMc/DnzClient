@@ -66,7 +66,7 @@ object MicrosoftAuth {
                 val o = postForm(
                     "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
                     mapOf("client_id" to CLIENT_ID, "grant_type" to "authorization_code", "code" to code, "redirect_uri" to redirect,
-                        "code_verifier" to verifier, "scope" to "XboxLive.signin offline_access"),
+                        "code_verifier" to verifier, "scope" to "XboxLive.signin openid profile offline_access"),
                     allowError = true,
                 )
                 if (o.has("error")) throw AuthException(Reason.OTHER, o["error_description"]?.asString ?: o["error"].asString)
@@ -110,7 +110,7 @@ object MicrosoftAuth {
 
         fun enc(s: String) = URLEncoder.encode(s, Charsets.UTF_8)
         val url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?client_id=$CLIENT_ID&response_type=code" +
-            "&redirect_uri=${enc(redirect)}&scope=${enc("XboxLive.signin offline_access")}&code_challenge=$challenge" +
+            "&redirect_uri=${enc(redirect)}&scope=${enc("XboxLive.signin openid profile offline_access")}&code_challenge=$challenge" +
             "&code_challenge_method=S256&state=$stateToken&prompt=select_account"
         return BrowserLogin(url, server, result, redirect, verifier)
     }
@@ -127,7 +127,7 @@ object MicrosoftAuth {
     fun startDeviceCode(): DeviceCode {
         val o = postForm(
             "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode",
-            mapOf("client_id" to CLIENT_ID, "scope" to "XboxLive.signin offline_access"),
+            mapOf("client_id" to CLIENT_ID, "scope" to "XboxLive.signin openid profile offline_access"),
         )
         return DeviceCode(
             o["user_code"].asString, o["verification_uri"].asString, o["device_code"].asString,
@@ -198,6 +198,35 @@ object MicrosoftAuth {
         saved.delete()
         profileFile.delete()
         Secret.forget()
+        idToken = null
+    }
+
+    @Volatile
+    private var idToken: Pair<String, Long>? = null
+
+    /**
+     * A Microsoft ID token (who the player is) for DNZ Cloud's Workshop library, the same Microsoft account the
+     * website signs in with. A separate request with the saved refresh token, so the Minecraft sign-in is never
+     * touched; null when nobody is signed in or Microsoft says no (the library then just isn't shown).
+     */
+    fun idToken(): String? {
+        idToken?.let { (token, expires) -> if (System.currentTimeMillis() < expires - 120_000) return token }
+        if (!hasSaved) return null
+        val refresh = runCatching { Secret.decrypt(saved.readText()) }.getOrNull() ?: return null
+        val o = runCatching {
+            postForm(
+                "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
+                mapOf("client_id" to CLIENT_ID, "grant_type" to "refresh_token", "refresh_token" to refresh, "scope" to "openid profile offline_access"),
+                allowError = true,
+            )
+        }.getOrNull() ?: return null
+        val token = o["id_token"]?.asString ?: return null
+        val expires = runCatching {
+            val payload = String(java.util.Base64.getUrlDecoder().decode(token.split('.')[1]))
+            JsonParser.parseString(payload).asJsonObject["exp"].asLong * 1000
+        }.getOrDefault(System.currentTimeMillis() + 30 * 60_000)
+        idToken = token to expires
+        return token
     }
 
     private fun loginWithMicrosoft(msToken: String, refreshToken: String): Account {
