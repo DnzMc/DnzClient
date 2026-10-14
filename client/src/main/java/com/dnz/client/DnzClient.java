@@ -37,6 +37,7 @@ public class DnzClient implements ClientModInitializer {
 		DnzConfig.get();
 		ScriptManager.init();
 		KeyMappingHelper.registerKeyMapping(Zoom.KEY);
+		KeyMappingHelper.registerKeyMapping(com.dnz.client.hud.Freelook.KEY);
 		KeyMappingHelper.registerKeyMapping(MENU_KEY);
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("dnzclient", "hud"), DnzHud::render);
 		// Custom crosshair when its module is on, Minecraft's own otherwise.
@@ -86,6 +87,7 @@ public class DnzClient implements ClientModInitializer {
 				}
 			}
 			CombatTracker.tick(client);
+			com.dnz.client.hud.Freelook.tick(client);
 			com.dnz.client.hud.ExtraModules.tick(client);
 			DiscordPresence.tick(client);
 			toggleSprint(client);

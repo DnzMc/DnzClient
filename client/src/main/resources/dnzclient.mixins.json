@@ -8,6 +8,8 @@
 		"EntityNameBadgeMixin",
 		"OwnNameTagMixin",
 		"ShieldHandMixin",
+		"FreelookCameraMixin",
+		"FreelookTurnMixin",
 		"GuiTextStateAccessor",
 		"GuiRenderStateNvgMixin",
 		"ScreenNvgMixin",

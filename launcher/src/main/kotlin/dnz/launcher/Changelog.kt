@@ -27,6 +27,21 @@ object Changelog {
     /** Newest first. Add the new version here before every launcher release. */
     private val RELEASES = listOf(
         Release(
+            "1.0.15",
+            tr = listOf(
+                "Birden fazla Microsoft hesabı: Hesap sayfasında \"Başka hesap ekle\", sağ üstteki menüden tek tıkla hesap değiştir.",
+                "DNZ Client 1.39.0: Serbest Bakış (Freelook). Sol Alt'a basılı tut, karakterin etrafına bak. Sadece tek oyunculu dünyada çalışır, sunucularda kilitli.",
+            ),
+            en = listOf(
+                "Several Microsoft accounts: \"Add another account\" on the Account page, switch with one click in the top-right menu.",
+                "DNZ Client 1.39.0: Freelook. Hold Left Alt to look around your player. Single player only, locked on servers.",
+            ),
+            de = listOf(
+                "Mehrere Microsoft-Konten: \"Weiteres Konto hinzufügen\" auf der Kontoseite, Wechsel mit einem Klick oben rechts.",
+                "DNZ Client 1.39.0: Freelook. Linke Alt-Taste halten, um dich umzusehen. Nur im Einzelspieler, auf Servern gesperrt.",
+            ),
+        ),
+        Release(
             "1.0.14",
             tr = listOf(
                 "DNZ Client 1.38.0: DNZ kullanan oyuncuların isminin önünde D logosu (başlarının üstünde ve Tab listesinde).",

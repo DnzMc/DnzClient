@@ -96,6 +96,7 @@
 
 	"key.category.dnzclient.main": "DNZ Client",
 	"key.dnzclient.zoom": "Zoom",
+	"key.dnzclient.freelook": "Freelook",
 	"dnzclient.hud.fps": "FPS",
 	"dnzclient.hud.ping": "Ping",
 	"dnzclient.hud.cps": "CPS",
@@ -294,6 +295,8 @@
 	"dnzclient.hud.minimap": "Minimap",
 	"dnzclient.hud.crosshair": "Custom Crosshair",
 	"dnzclient.hud.hitboxes": "Hitboxes",
+	"dnzclient.hud.freelook": "Freelook",
+	"dnzclient.freelook.locked": "Freelook works only in single player (locked on servers).",
 	"dnzclient.hud.daycount": "Day",
 	"dnzclient.hud.weather": "Weather",
 	"dnzclient.hud.battery": "Battery",

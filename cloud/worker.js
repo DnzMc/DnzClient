@@ -12,6 +12,7 @@
 //   SECRET  secret text, a long random value (signs the challenges and the short-lived session tokens)
 //   CURSEFORGE_KEY  secret text, DNZ's CurseForge API key (console.curseforge.com → API keys)
 //   WORKSHOP_CLIENT_IDS  text, see "DNZ Workshop library" below
+//   GOOGLE_CLIENT_ID  text, the Google sign-in client id of dnzclient.com (Google Cloud → Credentials)
 //   DB  D1 database, see "DNZ badge" at the end
 //
 // CurseForge relay (/cf/...): DNZ Launcher's mod library asks this worker, and the worker asks CurseForge with DNZ's
@@ -35,6 +36,9 @@ export default {
 			}
 			if (url.pathname === "/online" && request.method === "POST") {
 				return await online(request, env);
+			}
+			if (url.pathname === "/account/profile") {
+				return await accountProfile(request, env);
 			}
 			if (url.pathname === "/workshop/library") {
 				return await workshopLibrary(request, env);
@@ -212,7 +216,7 @@ async function workshopLibrary(request, env) {
 	if (request.method === "OPTIONS") {
 		return new Response(null, { status: 204, headers: cors });
 	}
-	const id = await microsoftAccount(request, env);
+	const id = await webAccount(request, env);
 	if (!id) {
 		return reply({ error: "not signed in" }, 401);
 	}
@@ -255,6 +259,90 @@ async function microsoftAccount(request, env) {
 	const key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
 	const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, fromB64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
 	return ok ? String(claims.oid).replace(/[^A-Za-z0-9-]/g, "") : null;
+}
+
+/**
+ * Who signed in on the website or in DNZ Launcher: a Microsoft account id ("oid", as before) or "g-" + a Google
+ * account id. Both are checked with the provider's public keys; null when the token is missing or not valid.
+ */
+async function webAccount(request, env) {
+	return (await microsoftAccount(request, env)) || (await googleAccount(request, env));
+}
+
+const GOOGLE_KEYS = "https://www.googleapis.com/oauth2/v3/certs";
+let googleKeys = null; // { at, keys }
+
+/** "g-" + the Google account id ("sub") of a valid Google ID token for dnzclient.com, or null. */
+async function googleAccount(request, env) {
+	const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+	const parts = token.split(".");
+	if (parts.length !== 3 || !env.GOOGLE_CLIENT_ID) {
+		return null;
+	}
+	const header = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
+	const claims = JSON.parse(new TextDecoder().decode(fromB64url(parts[1])));
+	const now = Math.floor(Date.now() / 1000);
+	if (header.alg !== "RS256" || !["accounts.google.com", "https://accounts.google.com"].includes(claims.iss)
+		|| claims.aud !== env.GOOGLE_CLIENT_ID || !(claims.exp > now) || !claims.sub) {
+		return null;
+	}
+	if (!googleKeys || Date.now() - googleKeys.at > 3600_000 || !googleKeys.keys.some((k) => k.kid === header.kid)) {
+		googleKeys = { at: Date.now(), keys: (await (await fetch(GOOGLE_KEYS)).json()).keys || [] };
+	}
+	const jwk = googleKeys.keys.find((k) => k.kid === header.kid);
+	if (!jwk) {
+		return null;
+	}
+	const key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+	const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, fromB64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
+	return ok ? "g-" + String(claims.sub).replace(/[^0-9]/g, "") : null;
+}
+
+// ------------------------------------------------------------------ dnzclient.com account profile
+// The username and profile picture a player picked on dnzclient.com, so they come back on every sign-in and on every
+// device. Stored in BUCKET as account/profile/<account id>.json. Nothing else about the player is kept.
+
+const PROFILE_PICTURE_MAX = 200 * 1024; // characters of the picture's data URL
+
+async function accountProfile(request, env) {
+	const origin = request.headers.get("Origin") || "";
+	const cors = {
+		"Access-Control-Allow-Origin": WORKSHOP_ORIGINS.includes(origin) ? origin : WORKSHOP_ORIGINS[0],
+		"Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+		"Access-Control-Allow-Headers": "Authorization, Content-Type",
+		Vary: "Origin",
+	};
+	const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...cors, "Content-Type": "application/json" } });
+	if (request.method === "OPTIONS") {
+		return new Response(null, { status: 204, headers: cors });
+	}
+	const id = await webAccount(request, env);
+	if (!id) {
+		return reply({ error: "not signed in" }, 401);
+	}
+	const key = `account/profile/${id}.json`;
+	if (request.method === "GET") {
+		const object = await env.BUCKET.get(key);
+		return reply(object ? await object.json() : {});
+	}
+	if (request.method === "PUT") {
+		const text = await request.text();
+		if (text.length > PROFILE_PICTURE_MAX + 2000) {
+			return reply({ error: "too big" }, 413);
+		}
+		const body = JSON.parse(text);
+		const name = typeof body.name === "string" && /^[A-Za-z0-9_]{3,16}$/.test(body.name) ? body.name : null;
+		const avatar = body.avatar === null ? null
+			: typeof body.avatar === "string" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(body.avatar) && body.avatar.length <= PROFILE_PICTURE_MAX ? body.avatar
+			: undefined;
+		if (!name || avatar === undefined) {
+			return reply({ error: "bad profile" }, 400);
+		}
+		const data = { name, avatar, updated: Date.now() };
+		await env.BUCKET.put(key, JSON.stringify(data), { httpMetadata: { contentType: "application/json" } });
+		return reply(data);
+	}
+	return reply({ error: "not allowed" }, 405);
 }
 
 /** Microsoft's signing key [kid] (the list is kept for an hour). */

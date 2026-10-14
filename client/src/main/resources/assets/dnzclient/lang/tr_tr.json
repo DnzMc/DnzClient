@@ -96,6 +96,7 @@
 
 	"key.category.dnzclient.main": "DNZ Client",
 	"key.dnzclient.zoom": "Yakınlaştır (Zoom)",
+	"key.dnzclient.freelook": "Serbest Bakış (Freelook)",
 	"dnzclient.hud.fps": "FPS",
 	"dnzclient.hud.ping": "Ping",
 	"dnzclient.hud.cps": "CPS",
@@ -294,6 +295,8 @@
 	"dnzclient.hud.minimap": "Mini Harita",
 	"dnzclient.hud.crosshair": "Özel Nişangah",
 	"dnzclient.hud.hitboxes": "Hitbox",
+	"dnzclient.hud.freelook": "Serbest Bakış",
+	"dnzclient.freelook.locked": "Serbest bakış sadece tek oyunculu dünyada çalışır (sunucularda kilitli).",
 	"dnzclient.hud.daycount": "Gün",
 	"dnzclient.hud.weather": "Hava Durumu",
 	"dnzclient.hud.battery": "Pil",

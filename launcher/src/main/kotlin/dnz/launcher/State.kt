@@ -74,17 +74,39 @@ class LauncherState {
     private val dnzAccount: McAccount?
         get() = account?.let { McAccount(it.name, it.uuid.replace("-", ""), null, null) }
 
+    /** DNZ's other Microsoft accounts (signed in before, waiting to be switched to); localId "dnz:<id>". */
+    var dnzOthers by mutableStateOf(emptyList<McAccount>())
+
     val switchableAccounts: List<McAccount>
-        get() = officialAccounts + listOfNotNull(dnzAccount.takeIf { launchMode == LaunchMode.Direct })
+        get() = officialAccounts + listOfNotNull(dnzAccount.takeIf { launchMode == LaunchMode.Direct }) + dnzOthers
 
     suspend fun refreshAccounts() {
         val official = withContext(Dispatchers.IO) { Accounts.readOfficial() }
         officialAccounts = official.accounts
         activeOfficialId = official.activeLocalId
+        dnzOthers = withContext(Dispatchers.IO) { MicrosoftAuth.otherAccounts() }.map { McAccount(it.name, it.uuid.replace("-", ""), "dnz:" + it.uuid, null) }
     }
 
     suspend fun switchAccount(target: McAccount) {
         if (target.localId == null) return // DNZ's own sign-in is already the one in use
+        if (target.localId.startsWith("dnz:")) {
+            val id = target.localId.removePrefix("dnz:")
+            val signedIn = withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.switchTo(id) } }
+            refreshAccounts()
+            signedIn.onSuccess { acc ->
+                if (acc != null) {
+                    account = acc
+                    launchMode = LaunchMode.Direct
+                    library.wsLibrary = null
+                    library.wsLibLoad = 0
+                    toast = t("acc.switched").replace("%s", acc.name)
+                } else {
+                    account = null
+                    dialog = t("acc.switch_failed.title") to t("acc.relogin")
+                }
+            }.onFailure { dialog = t("acc.switch_failed.title") to (it.message ?: it.toString()) }
+            return
+        }
         val ok = withContext(Dispatchers.IO) { Accounts.switchOfficial(target) }
         if (ok) {
             refreshAccounts()
@@ -185,7 +207,7 @@ object Strings {
         "account.safe1" to "Şifren sadece Microsoft'un resmi sayfasına girilir.",
         "account.safe2" to "DNZ sadece Microsoft'un verdiği giriş anahtarını saklar, şifreli olarak.",
         "account.safe3" to "İstediğin zaman account.microsoft.com'dan izni kaldırabilirsin.",
-        "ok" to "Tamam", "changelog.title" to "Değişiklikler", "changelog.updated" to "Launcher %1 sürümünden %2 sürümüne güncellendi. Yenilikler:", "changelog.now" to "Launcher %s sürümüne güncellendi. Yenilikler:",
+        "ok" to "Tamam", "acc.relogin" to "Bu hesabın girişi artık geçerli değil. Hesap sayfasından tekrar giriş yap.", "acc.add_another" to "Başka hesap ekle", "acc.others" to "Diğer hesapların", "acc.remove" to "Kaldır", "acc.use" to "Bu hesaba geç", "changelog.title" to "Değişiklikler", "changelog.updated" to "Launcher %1 sürümünden %2 sürümüne güncellendi. Yenilikler:", "changelog.now" to "Launcher %s sürümüne güncellendi. Yenilikler:",
         "need_account.title" to "Önce giriş yap",
         "need_account.body" to "Oynamak için Hesap sayfasından Microsoft ile giriş yap.",
         "signin.no_internet" to "Microsoft'a bağlanılamadı, bu yüzden girişin yenilenemedi. İnternet bağlantını kontrol edip tekrar Oyna'ya bas.",
@@ -239,7 +261,7 @@ object Strings {
         "account.safe1" to "Your password is only entered on Microsoft's official page.",
         "account.safe2" to "DNZ only keeps the sign-in key Microsoft gives it, encrypted.",
         "account.safe3" to "You can remove access anytime at account.microsoft.com.",
-        "ok" to "OK", "changelog.title" to "Changelog", "changelog.updated" to "The launcher was updated from %1 to %2. What's new:", "changelog.now" to "The launcher was updated to %s. What's new:",
+        "ok" to "OK", "acc.relogin" to "This account's sign-in is no longer valid. Sign in again on the Account page.", "acc.add_another" to "Add another account", "acc.others" to "Your other accounts", "acc.remove" to "Remove", "acc.use" to "Switch to this account", "changelog.title" to "Changelog", "changelog.updated" to "The launcher was updated from %1 to %2. What's new:", "changelog.now" to "The launcher was updated to %s. What's new:",
         "need_account.title" to "Sign in first",
         "need_account.body" to "Sign in with Microsoft on the Account page to play.",
         "signin.no_internet" to "Couldn't reach Microsoft to renew your sign-in. Check your internet connection and press Play again.",

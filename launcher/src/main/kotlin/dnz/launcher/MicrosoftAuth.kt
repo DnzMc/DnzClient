@@ -16,6 +16,8 @@ import java.time.Duration
  * The player signs in on Microsoft's own page (microsoft.com/link, device code), DNZ never sees the password.
  * Chain: Microsoft token -> Xbox Live -> XSTS -> Minecraft token -> Minecraft profile.
  * Only the Microsoft refresh token is kept, encrypted with Windows (DPAPI, only this Windows user can read it).
+ * Several accounts: the one in use is microsoft.dat; the others wait in microsoft-accounts/<id>.dat (same encryption)
+ * and can be switched to without signing in again.
  *
  * Needs an Azure app registration (CLIENT_ID) that Mojang has approved for Minecraft; until then the last step
  * answers 403 and the player is told the approval is still pending.
@@ -161,6 +163,54 @@ object MicrosoftAuth {
     /** Name and id of the last signed-in player (nothing secret), so the launcher shows them at once on start. */
     private val profileFile = File(GameLauncher.root, "microsoft-profile.json")
 
+    /** Other Microsoft accounts signed in to DNZ (not the one in use), waiting to be switched to. */
+    private val storeDir = File(GameLauncher.root, "microsoft-accounts")
+
+    /** Profile id of the account in use, or null. */
+    private fun activeId(): String? = runCatching { JsonParser.parseString(profileFile.readText()).asJsonObject["id"].asString }.getOrNull()
+
+    /** The other signed-in accounts (name and id only, no token), by name. */
+    fun otherAccounts(): List<Account> = storeDir.listFiles { f -> f.name.endsWith(".json") }.orEmpty().mapNotNull { f ->
+        runCatching {
+            val o = JsonParser.parseString(f.readText()).asJsonObject
+            Account(o["name"].asString, o["id"].asString, "", offline = false)
+        }.getOrNull()
+    }.filter { File(storeDir, it.uuid + ".dat").isFile }.sortedBy { it.name.lowercase() }
+
+    /** Moves the account in use to the waiting list (before another one takes its place). */
+    private fun stashCurrent() {
+        if (!hasSaved) return
+        val profile = runCatching { profileFile.readText() }.getOrNull() ?: return
+        val id = activeId() ?: return
+        val refresh = runCatching { Secret.decrypt(saved.readText()) }.getOrNull() ?: return
+        storeDir.mkdirs()
+        File(storeDir, "$id.dat").writeText(Secret.encrypt(refresh, id))
+        File(storeDir, "$id.json").writeText(profile)
+    }
+
+    /** Switches to a waiting account: it becomes the one in use and the current one waits. Returns it signed in. */
+    fun switchTo(id: String): Account? {
+        val dat = File(storeDir, "$id.dat")
+        val json = File(storeDir, "$id.json")
+        val refresh = Secret.decrypt(dat.readText(), id)
+        val profile = json.readText()
+        stashCurrent()
+        saved.writeText(Secret.encrypt(refresh))
+        profileFile.writeText(profile)
+        dat.delete()
+        json.delete()
+        Secret.forget(id)
+        idToken = null
+        return restore()
+    }
+
+    /** Removes a waiting account from this computer. */
+    fun removeOther(id: String) {
+        File(storeDir, "$id.dat").delete()
+        File(storeDir, "$id.json").delete()
+        Secret.forget(id)
+    }
+
     /** A sign-in is saved (it may still need renewing). */
     val hasSaved: Boolean get() = ready && saved.isFile
 
@@ -275,6 +325,13 @@ object MicrosoftAuth {
         check(profile.statusCode() == 200) { "Minecraft profile: HTTP ${profile.statusCode()}" }
         val p = JsonParser.parseString(profile.body()).asJsonObject
 
+        // Signing in with another account keeps the one in use in the list (adding an account).
+        val newId = p["id"].asString
+        if (activeId().let { it != null && it != newId }) {
+            stashCurrent()
+            idToken = null
+        }
+        if (File(storeDir, "$newId.dat").isFile) removeOther(newId)
         saved.writeText(Secret.encrypt(refreshToken))
         if (!Platform.isWindows) {
             saved.setReadable(false, false)
@@ -310,9 +367,11 @@ object MicrosoftAuth {
         private const val SERVICE = "DNZ Launcher Microsoft"
 
         /** Mac: the macOS Keychain keeps it (the file only says so). Linux: the file itself, readable by this user only. */
-        fun encrypt(text: String): String = when {
+        private fun who(slot: String) = if (slot.isEmpty()) "DNZ" else "DNZ-$slot"
+
+        fun encrypt(text: String, slot: String = ""): String = when {
             Platform.isMac -> {
-                val process = ProcessBuilder("security", "add-generic-password", "-U", "-a", "DNZ", "-s", SERVICE, "-w", text).start()
+                val process = ProcessBuilder("security", "add-generic-password", "-U", "-a", who(slot), "-s", SERVICE, "-w", text).start()
                 check(process.waitFor() == 0) { "keychain failed" }
                 KEYCHAIN
             }
@@ -320,15 +379,15 @@ object MicrosoftAuth {
             else -> windowsEncrypt(text)
         }
 
-        fun decrypt(saved: String): String = when {
-            saved.trim() == KEYCHAIN -> Platform.run("security", "find-generic-password", "-a", "DNZ", "-s", SERVICE, "-w")
+        fun decrypt(saved: String, slot: String = ""): String = when {
+            saved.trim() == KEYCHAIN -> Platform.run("security", "find-generic-password", "-a", who(slot), "-s", SERVICE, "-w")
                 ?.takeIf { it.isNotEmpty() } ?: error("not in keychain")
             saved.startsWith("plain:") -> String(java.util.Base64.getDecoder().decode(saved.removePrefix("plain:").trim()))
             else -> windowsDecrypt(saved)
         }
 
-        fun forget() {
-            if (Platform.isMac) Platform.run("security", "delete-generic-password", "-a", "DNZ", "-s", SERVICE)
+        fun forget(slot: String = "") {
+            if (Platform.isMac) Platform.run("security", "delete-generic-password", "-a", who(slot), "-s", SERVICE)
         }
 
         private fun windowsEncrypt(text: String): String = run(

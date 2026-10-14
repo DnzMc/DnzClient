@@ -166,6 +166,7 @@ public final class Modules {
 
 		// ---- Visual and performance (existing settings, now switchable here too)
 		list.add(new HudModule.Feature("zoom", Category.VISUAL, true));
+		list.add(new HudModule.Feature("freelook", Category.VISUAL, true));
 		list.add(new HudModule.Feature("cleanhotbar", Category.VISUAL, false));
 		list.add(new HudModule.Feature("fullbright", Category.VISUAL, false, () -> DnzConfig.get().fullbright, v -> DnzConfig.get().fullbright = v));
 		list.add(new HudModule.Feature("streamer", Category.VISUAL, false, () -> DnzConfig.get().streamerMode, v -> DnzConfig.get().streamerMode = v));

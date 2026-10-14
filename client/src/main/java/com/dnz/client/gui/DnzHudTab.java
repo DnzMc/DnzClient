@@ -425,6 +425,7 @@ public class DnzHudTab extends DnzMenuScreen {
 			case "tps" -> '\ue01b';
 			case "xp" -> '\ue8d0';
 			case "shield" -> '\ue32a';
+			case "freelook" -> '\ue577';
 			case "daycount" -> '\ue935';
 			case "weather" -> '\uf172';
 			case "battery" -> '\ue1a5';

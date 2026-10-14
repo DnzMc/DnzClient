@@ -644,6 +644,32 @@ fun AccountScreen(state: LauncherState) {
                         }.padding(12.dp),
                     contentAlignment = Alignment.Center,
                 ) { Text(state.t("sign_out"), color = Dnz.Danger, fontWeight = FontWeight.SemiBold) }
+                if (state.account?.offline == false && MicrosoftAuth.approved && MicrosoftAuth.ready) {
+                    Spacer(Modifier.height(10.dp))
+                    DnzButton("+ " + state.t("acc.add_another"), Modifier.fillMaxWidth()) { signInWithMicrosoft(state) }
+                }
+            }
+            val others = state.dnzOthers
+            LaunchedEffect(state.account) { state.refreshAccounts() }
+            if (others.isNotEmpty()) {
+                Spacer(Modifier.height(18.dp))
+                Text(state.t("acc.others"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                for (other in others) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(10.dp)).background(Dnz.SurfaceHigh).padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SkinHead(other, 28.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(other.name, color = Dnz.Text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        SmallButton(state.t("acc.use"), accent = true) { state.scope.launch { state.switchAccount(other) } }
+                        Spacer(Modifier.width(6.dp))
+                        SmallButton(state.t("acc.remove")) {
+                            MicrosoftAuth.removeOther(other.localId!!.removePrefix("dnz:"))
+                            state.scope.launch { state.refreshAccounts() }
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(18.dp))
             listOf("account.safe1", "account.safe2", "account.safe3").forEach {
