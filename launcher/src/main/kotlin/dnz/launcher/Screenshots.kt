@@ -41,6 +41,8 @@ fun main(args: Array<String>) {
             autoResult = AutoTune.Result(AutoTune.plan(PcScan.scan()), AutoTune.targets(profiles.toList()).map { it.name }, emptyList(), ramGb)
         },
         Shot("account") { screen = Screen.Account },
+        Shot("changelog") { screen = Screen.Home; changelogTo = "1.0.14"; changelogFrom = "1.0.12" },
+        Shot("changelog-tr", 2000) { screen = Screen.Home; language = Lang.TR; changelogTo = "1.0.14"; changelogFrom = "?" },
         // Black & white theme
         Shot("mono-home") { Dnz.theme = LauncherTheme.Mono; screen = Screen.Home },
         Shot("mono-settings") { Dnz.theme = LauncherTheme.Mono; screen = Screen.Settings },

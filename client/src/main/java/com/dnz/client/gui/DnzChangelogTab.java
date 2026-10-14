@@ -10,6 +10,13 @@ public class DnzChangelogTab extends DnzMenuScreen {
 	}
 
 	private static final List<Release> RELEASES = List.of(
+		new Release("1.38.0", List.of(
+			"DNZ badge: a DNZ logo next to the names of players who also play with DNZ Client (above the head and in Tab).",
+			"Your own name with the DNZ logo shows above your head in third person (F5).",
+			"Turn it off in Visual → DNZ Badge; nothing is sent while it is off or in single player.",
+			"New Shield module (Combat): lower and shrink the shield in first person so it covers less of the screen.",
+			"Every module card has its own icon.",
+			"New HUD modules: Day, Weather, Battery, Shader and Session Stats (kills, deaths, K/D).")),
 		new Release("1.36.0", List.of(
 			"New DNZ menu look: icon rail, orange accent, dark cards (click to switch, gear for settings).",
 			"Right Shift opens a quick screen: DNZ CLIENT, a big MODS button, Profiles, Themes and Settings.",

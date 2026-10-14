@@ -117,6 +117,12 @@ class LauncherState {
     var mojangNoticeClosed by mutableStateOf(false)
     /** Home page: the player's skin as a moving 3D character (off: the pixel scene). */
     var skinAnimation by mutableStateOf(true)
+    /** Launcher version of the last run (saved) and whether launcher.json existed: for the Changelog popup. */
+    var lastVersion by mutableStateOf<String?>(null)
+    var hadSettings = false
+    /** Changelog popup open: the version updated from ("?" when unknown), or null. */
+    var changelogFrom by mutableStateOf<String?>(null)
+    var changelogTo: String? = null
 
     /** Install / launch progress shown on the Home screen. */
     var busy by mutableStateOf(false)
@@ -179,7 +185,7 @@ object Strings {
         "account.safe1" to "Şifren sadece Microsoft'un resmi sayfasına girilir.",
         "account.safe2" to "DNZ sadece Microsoft'un verdiği giriş anahtarını saklar, şifreli olarak.",
         "account.safe3" to "İstediğin zaman account.microsoft.com'dan izni kaldırabilirsin.",
-        "ok" to "Tamam",
+        "ok" to "Tamam", "changelog.title" to "Değişiklikler", "changelog.updated" to "Launcher %1 sürümünden %2 sürümüne güncellendi. Yenilikler:", "changelog.now" to "Launcher %s sürümüne güncellendi. Yenilikler:",
         "need_account.title" to "Önce giriş yap",
         "need_account.body" to "Oynamak için Hesap sayfasından Microsoft ile giriş yap.",
         "signin.no_internet" to "Microsoft'a bağlanılamadı, bu yüzden girişin yenilenemedi. İnternet bağlantını kontrol edip tekrar Oyna'ya bas.",
@@ -233,7 +239,7 @@ object Strings {
         "account.safe1" to "Your password is only entered on Microsoft's official page.",
         "account.safe2" to "DNZ only keeps the sign-in key Microsoft gives it, encrypted.",
         "account.safe3" to "You can remove access anytime at account.microsoft.com.",
-        "ok" to "OK",
+        "ok" to "OK", "changelog.title" to "Changelog", "changelog.updated" to "The launcher was updated from %1 to %2. What's new:", "changelog.now" to "The launcher was updated to %s. What's new:",
         "need_account.title" to "Sign in first",
         "need_account.body" to "Sign in with Microsoft on the Account page to play.",
         "signin.no_internet" to "Couldn't reach Microsoft to renew your sign-in. Check your internet connection and press Play again.",

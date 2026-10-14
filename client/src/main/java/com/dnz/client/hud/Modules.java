@@ -81,6 +81,15 @@ public final class Modules {
 			mc -> mc.getConnection() == null ? "-" : Integer.toString(mc.getConnection().getOnlinePlayers().size())));
 		list.add(new TextModule("light", Category.INFO, 0.84F, 0.325F, false, Modules::light));
 		list.add(new TextModule("session", Category.INFO, 0.84F, 0.37F, false, mc -> duration(CombatTracker.sessionMillis())));
+		list.add(new TextModule("daycount", Category.INFO, 0.84F, 0.60F, false,
+			mc -> mc.level == null ? "-" : L.t("hud.day", mc.level.getOverworldClockTime() / 24000 + 1)));
+		list.add(new TextModule("weather", Category.INFO, 0.84F, 0.645F, false, Modules::weather));
+		list.add(new TextModule("battery", Category.INFO, 0.84F, 0.69F, false, mc -> Battery.text()));
+		list.add(new TextModule("shader", Category.INFO, 0.84F, 0.735F, false, mc -> ShaderName.text()));
+		list.add(new TextModule("stats", Category.PVP, 0.84F, 0.78F, false, mc -> {
+			int k = CombatTracker.kills(), d = CombatTracker.deaths();
+			return "K " + k + "  D " + d + "  K/D " + String.format(java.util.Locale.ROOT, "%.2f", d == 0 ? (double) k : (double) k / d);
+		}));
 		list.add(new TextModule("direction", Category.INFO, 0.84F, 0.415F, false, Modules::direction));
 		list.add(new TextModule("rotation", Category.INFO, 0.84F, 0.46F, false,
 			mc -> mc.player == null ? "-" : String.format("%.1f / %.1f", Mth.wrapDegrees(mc.player.getYRot()), mc.player.getXRot())));
@@ -130,6 +139,7 @@ public final class Modules {
 		list.add(new TargetModule());
 		list.add(new HudModule.Feature("togglesprint", Category.PVP, false));
 		list.add(new HudModule.Feature("crosshair", Category.PVP, false));
+		list.add(new HudModule.Feature("shield", Category.PVP, false));
 		list.add(new HudModule.Feature("hitboxes", Category.PVP, false, Modules::hitboxes, Modules::setHitboxes));
 
 		// ---- Items
@@ -160,6 +170,7 @@ public final class Modules {
 		list.add(new HudModule.Feature("fullbright", Category.VISUAL, false, () -> DnzConfig.get().fullbright, v -> DnzConfig.get().fullbright = v));
 		list.add(new HudModule.Feature("streamer", Category.VISUAL, false, () -> DnzConfig.get().streamerMode, v -> DnzConfig.get().streamerMode = v));
 		list.add(new HudModule.Feature("discord", Category.VISUAL, true, () -> DnzConfig.get().discordPresence, v -> DnzConfig.get().discordPresence = v));
+		list.add(new HudModule.Feature("dnzbadge", Category.VISUAL, true, () -> DnzConfig.get().dnzBadge, v -> DnzConfig.get().dnzBadge = v));
 		list.add(new HudModule.Feature("turbo", Category.PERFORMANCE, true, () -> DnzConfig.get().turbo, v -> DnzConfig.get().turbo = v));
 		return list;
 	}
@@ -249,6 +260,13 @@ public final class Modules {
 		return mc.level.getBiome(mc.player.blockPosition()).unwrapKey()
 			.map(k -> Component.translatable("biome." + k.identifier().getNamespace() + "." + k.identifier().getPath()).getString())
 			.orElse("-");
+	}
+
+	private static String weather(Minecraft mc) {
+		if (mc.level == null) {
+			return "-";
+		}
+		return L.t(mc.level.isThundering() ? "hud.weather.thunder" : mc.level.isRaining() ? "hud.weather.rain" : "hud.weather.clear");
 	}
 
 	private static String gameTime(Minecraft mc) {

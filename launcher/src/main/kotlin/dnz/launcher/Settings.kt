@@ -26,15 +26,19 @@ object Settings {
         val accent: Long? = null,
         val skinAnimation: Boolean? = null,
         val workshopThemeId: String? = null,
+        /** Launcher version of the last run (Changelog popup after an update). */
+        val lastVersion: String? = null,
     )
 
     fun snapshot(state: LauncherState) = Saved(
         state.language, state.ramGb, state.launchMode, state.profiles.toList(), state.selectedProfile, Dnz.theme, state.macAutoDone, state.mojangNoticeHidden,
-        Dnz.workshopId?.let { Dnz.custom?.toJson() }, Dnz.accent, state.skinAnimation, Dnz.workshopId,
+        Dnz.workshopId?.let { Dnz.custom?.toJson() }, Dnz.accent, state.skinAnimation, Dnz.workshopId, state.lastVersion,
     )
 
     fun load(state: LauncherState) {
         val saved = runCatching { gson.fromJson(file.readText(), Saved::class.java) }.getOrNull() ?: return
+        state.hadSettings = true
+        state.lastVersion = saved.lastVersion
         saved.language?.let { state.language = it }
         saved.ramGb?.let { state.ramGb = it.coerceIn(2f, 16f) }
         saved.launchMode?.let { state.launchMode = it }

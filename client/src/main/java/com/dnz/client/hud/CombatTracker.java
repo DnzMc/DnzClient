@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Numbers the PvP modules show: reach of the last hit, combo (hits in a row without getting hit),
- * the last target, movement speed and time played this session.
+ * the last target, movement speed, time played this session, and kills / deaths since the game started.
  */
 public final class CombatTracker {
 	/** Reach and target stay visible this long after the last hit. */
@@ -29,6 +29,13 @@ public final class CombatTracker {
 	private static Vec3 lastPos;
 	private static long sessionStart;
 	private static Object sessionLevel;
+
+	/** Players killed (died within a few seconds of our last hit) and own deaths since the game started. */
+	private static int kills;
+	private static int deaths;
+	private static Entity killTarget;
+	private static long killTargetTime;
+	private static boolean wasDead;
 
 	private CombatTracker() {
 	}
@@ -54,6 +61,10 @@ public final class CombatTracker {
 		lastAttackTime = now;
 		lastTarget = target;
 		hitCounted = false;
+		if (target instanceof net.minecraft.world.entity.player.Player) {
+			killTarget = target;
+			killTargetTime = now;
+		}
 	}
 
 	public static void tick(Minecraft mc) {
@@ -81,6 +92,18 @@ public final class CombatTracker {
 			combo = 0;
 		}
 		lastOwnHurtTime = hurt;
+		// Kill: the player we hit last died within 5 seconds. Death: our own player started dying.
+		if (killTarget instanceof LivingEntity victim && victim.isDeadOrDying()) {
+			if (now - killTargetTime < 5000) {
+				kills++;
+			}
+			killTarget = null;
+		}
+		boolean dead = mc.player.isDeadOrDying();
+		if (dead && !wasDead) {
+			deaths++;
+		}
+		wasDead = dead;
 		if (now - lastAttackTime > SHOW_MS) {
 			combo = 0;
 		}
@@ -122,6 +145,14 @@ public final class CombatTracker {
 
 	public static double rawSpeed() {
 		return rawSpeed;
+	}
+
+	public static int kills() {
+		return kills;
+	}
+
+	public static int deaths() {
+		return deaths;
 	}
 
 	public static long sessionMillis() {

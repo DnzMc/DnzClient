@@ -37,7 +37,7 @@ internal val germanStrings = mapOf(
     "account.safe1" to "Dein Passwort gibst du nur auf der offiziellen Microsoft-Seite ein.",
     "account.safe2" to "DNZ speichert nur den Anmeldeschlüssel von Microsoft, verschlüsselt.",
     "account.safe3" to "Du kannst den Zugriff jederzeit auf account.microsoft.com entfernen.",
-    "ok" to "OK",
+    "ok" to "OK", "changelog.title" to "Änderungen", "changelog.updated" to "Der Launcher wurde von %1 auf %2 aktualisiert. Neu:", "changelog.now" to "Der Launcher wurde auf %s aktualisiert. Neu:",
     "need_account.title" to "Zuerst anmelden",
     "need_account.body" to "Melde dich auf der Konto-Seite mit Microsoft an, um zu spielen.",
     "signin.no_internet" to "Microsoft war nicht erreichbar, deine Anmeldung konnte nicht erneuert werden. Prüfe deine Internetverbindung und drücke erneut auf Spielen.",

@@ -182,7 +182,7 @@ public class DnzHudTab extends DnzMenuScreen {
 			}
 		}
 		if (chip == Chip.ALL || chip == Chip.OTHER) {
-			list.add(new Card("page.mods", "Installed Mods", '\ue87b', null, Tab.MODS));
+			list.add(new Card("page.mods", "Installed Mods", '\uf720', null, Tab.MODS));
 			list.add(new Card("page.scripts", "Scripts", '\ue86f', null, Tab.SCRIPTS));
 			if (Tab.SCHEMATIC.available()) {
 				list.add(new Card("page.schematic", "Schematic", '\uea3b', null, Tab.SCHEMATIC));
@@ -391,6 +391,45 @@ public class DnzHudTab extends DnzMenuScreen {
 			case "fullbright" -> '\ue1ac';
 			case "streamer" -> '\ue04b';
 			case "turbo" -> '\ueb9b';
+			case "analogclock" -> '\ue8b5';
+			case "blockabove" -> '\ue25a';
+			case "blockplacecount" -> '\ue146';
+			case "block" -> '\uefc9';
+			case "chunks" -> '\ue3ec';
+			case "crosshair" -> '\ue762';
+			case "customimage" -> '\ue3f4';
+			case "customtext" -> '\ue262';
+			case "date" -> '\ue935';
+			case "dimension" -> '\uea07';
+			case "direction" -> '\ue55d';
+			case "discord" -> '\ue8af';
+			case "dnzbadge" -> '\uef76';
+			case "durability" -> '\uf8cd';
+			case "entities" -> '\ue91d';
+			case "frametime" -> '\ue922';
+			case "hitboxes" -> '\ue835';
+			case "inventory" -> '\uf19c';
+			case "itemcount" -> '\ue242';
+			case "itemcounter" -> '\ue800';
+			case "itemlore" -> '\ue873';
+			case "itemtracker" -> '\ue8e1';
+			case "lookat" -> '\ue8f4';
+			case "minimap" -> '\ue55b';
+			case "mousestrokes" -> '\ue323';
+			case "playerhead" -> '\uf008';
+			case "playerpreview" -> '\uf0d3';
+			case "resourcepack" -> '\ue421';
+			case "rotation" -> '\ue84d';
+			case "saturation" -> '\ue561';
+			case "shape" -> '\ue72c';
+			case "tps" -> '\ue01b';
+			case "xp" -> '\ue8d0';
+			case "shield" -> '\ue32a';
+			case "daycount" -> '\ue935';
+			case "weather" -> '\uf172';
+			case "battery" -> '\ue1a5';
+			case "shader" -> '\ue3ae';
+			case "stats" -> '\uf889';
 			default -> '\ue87b';
 		};
 	}

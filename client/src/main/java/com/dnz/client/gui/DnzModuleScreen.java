@@ -104,6 +104,15 @@ public class DnzModuleScreen extends DnzMenuScreen {
 				save.run();
 			}));
 		}
+		if (m.id.equals("shield")) {
+			DnzConfig c = DnzConfig.get();
+			Runnable save = () -> DnzConfig.get().save();
+			rows.add(new HeaderOption(L.t("shield.look")));
+			rows.add(new SliderOption(L.t("shield.lower"), 0, 100, 5, () -> c.shieldLower, v -> c.shieldLower = v, v -> v + "%").onRelease(save)
+				.tooltip(Component.literal(L.t("shield.note"))));
+			rows.add(new SliderOption(L.t("shield.size"), 50, 100, 5, () -> c.shieldSize, v -> c.shieldSize = v, v -> v + "%").onRelease(save)
+				.tooltip(Component.literal(L.t("shield.note"))));
+		}
 		this.addRenderableWidget(new OptionList(this.cx, this.cy, this.cw, this.ch).set(rows));
 	}
 }

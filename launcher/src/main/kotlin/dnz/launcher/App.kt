@@ -69,6 +69,8 @@ fun LauncherApp(
             wait = (wait * 2).coerceAtMost(120_000L)
         }
     }
+    // First start after the launcher updated itself: the Changelog popup.
+    LaunchedEffect(Unit) { Changelog.checkAtStart(state) }
     // CurseForge in the mod library only when DNZ Cloud can reach it.
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { CurseForge.check() } }
     // Mac, first start: AUTO once by itself, so the game starts with settings made for this Mac (it can be undone).
@@ -114,6 +116,7 @@ fun LauncherApp(
             }
         }
         MicrosoftLoginDialog(state)
+        ChangelogDialog(state)
         state.dialog?.let { (title, body) ->
             AlertDialog(
                 onDismissRequest = { state.dialog = null },

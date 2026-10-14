@@ -22,7 +22,7 @@ group = "dnz.launcher"
 version = "0.1.0"
 
 /** DNZ Launcher's released version (installer, Mac app, Windows "Installed apps"). */
-val launcherVersion = "1.0.13"
+val launcherVersion = "1.0.14"
 
 dependencies {
     implementation(compose.desktop.currentOs)

@@ -30,6 +30,11 @@ public final class DnzConfig {
 	public boolean serverCards = true;
 	/** Discord profile shows "Playing DNZ Client" (see DiscordPresence). */
 	public boolean discordPresence = true;
+	/** DNZ logo next to the names of players who also play with DNZ Client (see DnzBadges). */
+	public boolean dnzBadge = true;
+	/** Shield module: how far the shield is lowered in first person (0-100 %) and its size (50-100 %), see ShieldView. */
+	public int shieldLower = 30;
+	public int shieldSize = 80;
 	/** Which one-time FPS defaults were applied (1 = VSync off + unlimited FPS). Never applied twice. */
 	public int fpsDefaults = 0;
 	/** DNZ Turbo: far decorations/drops/signs not drawn, particle cap (see Turbo). */

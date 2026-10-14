@@ -11,7 +11,8 @@
 //   BUCKET  R2 bucket for the settings files (private, e.g. "dnz-cloud")
 //   SECRET  secret text, a long random value (signs the challenges and the short-lived session tokens)
 //   CURSEFORGE_KEY  secret text, DNZ's CurseForge API key (console.curseforge.com → API keys)
-//   WORKSHOP_CLIENT_IDS  text, see "DNZ Workshop library" at the end
+//   WORKSHOP_CLIENT_IDS  text, see "DNZ Workshop library" below
+//   DB  D1 database, see "DNZ badge" at the end
 //
 // CurseForge relay (/cf/...): DNZ Launcher's mod library asks this worker, and the worker asks CurseForge with DNZ's
 // key, so the key is never inside the launcher. Only reading Minecraft mods is passed on; answers are cached briefly.
@@ -31,6 +32,9 @@ export default {
 		try {
 			if (url.pathname.startsWith("/cf/")) {
 				return await curseforge(request, url, env);
+			}
+			if (url.pathname === "/online" && request.method === "POST") {
+				return await online(request, env);
 			}
 			if (url.pathname === "/workshop/library") {
 				return await workshopLibrary(request, env);
@@ -260,4 +264,37 @@ async function microsoftKey(kid) {
 		msKeys = { at: Date.now(), keys: (await res.json()).keys || [] };
 	}
 	return msKeys.keys.find((k) => k.kid === kid) || null;
+}
+
+// ------------------------------------------------------------------ DNZ badge (who plays with DNZ Client)
+// While a player is on a server, DNZ Client sends (every few minutes) the ids of the players it sees, signed in as
+// above. The worker notes that this player uses DNZ Client right now and answers which of the sent players did too,
+// so the game can draw the DNZ badge next to their names. Kept in the D1 database DB, table "online" (one row per
+// player: id and last time seen). Binding:
+//   DB  D1 database (e.g. "dnz-db")
+
+const ONLINE_TIME = 10 * 60; // seconds: a player counts as using DNZ Client this long after their last report
+const ONLINE_MAX = 300; // ids per request
+let onlineTable = false;
+
+async function online(request, env) {
+	const uuid = await session(request, env);
+	if (!uuid) {
+		return json({ error: "not signed in" }, 401);
+	}
+	if (!env.DB) {
+		return json({ error: "no database" }, 503);
+	}
+	const body = await request.json();
+	const ids = (Array.isArray(body.players) ? body.players : []).filter((p) => /^[0-9a-f]{32}$/.test(p)).slice(0, ONLINE_MAX);
+	const now = Math.floor(Date.now() / 1000);
+	if (!onlineTable) {
+		await env.DB.prepare("CREATE TABLE IF NOT EXISTS online (uuid TEXT PRIMARY KEY, seen INTEGER NOT NULL)").run();
+		onlineTable = true;
+	}
+	const [, found] = await env.DB.batch([
+		env.DB.prepare("INSERT INTO online (uuid, seen) VALUES (?1, ?2) ON CONFLICT(uuid) DO UPDATE SET seen = ?2").bind(uuid, now),
+		env.DB.prepare("SELECT o.uuid FROM json_each(?1) j JOIN online o ON o.uuid = j.value WHERE o.seen > ?2").bind(JSON.stringify(ids), now - ONLINE_TIME),
+	]);
+	return json({ dnz: found.results.map((r) => r.uuid) });
 }
