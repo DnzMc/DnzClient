@@ -19,8 +19,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Lets a TrueType font render its glyphs again at another size (see SharpFonts): the same FreeType setup Minecraft
- * does when the font loads, with the new detail, and the glyphs made so far are forgotten.
+ * Lets a TrueType font render its glyphs again at another size (see SharpFonts): the same FreeType setup
+ * Minecraft does when the font loads, with the new detail, and the glyphs made so far are forgotten.
  */
 @Mixin(TrueTypeGlyphProvider.class)
 public abstract class TrueTypeProviderMixin implements SharpFonts.Sharp {

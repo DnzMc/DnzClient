@@ -9,8 +9,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Numbers the PvP modules show: reach of the last hit, combo (hits in a row without getting hit),
- * the last target, movement speed, time played this session, and kills / deaths since the game started.
+ * Numbers the PvP modules show: reach of the last hit, combo (hits in a row without getting hit), the last
+ * target, movement speed, time played this session, and kills / deaths since the game started.
  */
 public final class CombatTracker {
 	/** Reach and target stay visible this long after the last hit. */

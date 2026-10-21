@@ -6,7 +6,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-/** On/off setting: a sliding switch on the right. A click anywhere on the row flips it. */
+/** On/off setting: a sliding switch on the right. */
 public class SwitchOption extends Option {
 	private static final float W = 22;
 	private static final float H = 12;

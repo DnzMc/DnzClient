@@ -29,9 +29,7 @@ import net.minecraft.client.multiplayer.ServerData;
 
 /**
  * Discord Rich Presence: the player's Discord profile shows "Playing DNZ Client", with where they are (menu,
- * singleplayer, server) and for how long. Talks to the Discord app on this computer through its local IPC pipe
- * (Windows: \\.\pipe\discord-ipc-N, macOS/Linux: a Unix socket); nothing goes over the internet from here.
- * Off in config (discordPresence = false); streamer mode hides the server address.
+ * singleplayer, server) and for how long.
  */
 public final class DiscordPresence {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("DNZ Discord");
@@ -183,7 +181,7 @@ public final class DiscordPresence {
 		sent = null;
 	}
 
-	/** One Discord IPC connection. Frames: opcode and length (little-endian ints), then JSON. */
+	/** One Discord IPC connection. */
 	private static final class Pipe {
 		private final InputStream in;
 		private final OutputStream out;

@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
 
-/** A card with a name on the left and a sliding on/off switch on the right. Changes right away, no rebuild. */
+/** A card with a name on the left and a sliding on/off switch on the right. */
 public class DnzToggle extends AbstractButton {
 	private final Consumer<Boolean> onChange;
 	private boolean on;

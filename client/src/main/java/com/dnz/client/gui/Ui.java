@@ -11,7 +11,7 @@ import net.minecraft.util.FormattedCharSequence;
 
 /**
  * Look of the DNZ menu ("DNZ Config"): dark glass colors, Poppins text in four weights and the shared
- * controls (switch, slider track, option rows). Everything is drawn with smooth shapes and fonts, no pixel art.
+ * controls (switch, slider track, option rows).
  */
 public final class Ui {
 	/** Page and sidebar glass, see-through over the blurred game. */

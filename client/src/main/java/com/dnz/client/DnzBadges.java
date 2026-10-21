@@ -21,10 +21,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 
 /**
- * DNZ badge: a small DNZ logo next to the names of players who also play with DNZ Client (above their head and in
- * the player list). While on a server, every few minutes the ids of the players there go to DNZ Cloud (signed in like
- * Cloud Save, see CloudSync); it notes that this player uses DNZ Client and answers which of the others do too.
- * Nothing is sent in single player or with the option off (DNZ menu → Visual → DNZ Badge).
+ * DNZ badge: a small DNZ logo next to the names of players who also play with DNZ Client (above their head
+ * and in the player list).
  */
 public final class DnzBadges {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("DNZ Badge");
@@ -82,9 +80,10 @@ public final class DnzBadges {
 				break;
 			}
 		}
+		String name = mc.getUser().getName();
 		Thread.ofVirtual().name("DNZ Badge").start(() -> {
 			try {
-				report(players);
+				report(players, name);
 				failures = 0;
 			} catch (Exception e) {
 				failures++;
@@ -95,9 +94,11 @@ public final class DnzBadges {
 		});
 	}
 
-	private static void report(JsonArray players) throws Exception {
+	private static void report(JsonArray players, String name) throws Exception {
 		JsonObject body = new JsonObject();
 		body.add("players", players);
+		// Own name, for the owner's list of DNZ players (cloud.dnzclient.com/admin).
+		body.addProperty("name", name);
 		HttpResponse<String> answer = send(body.toString());
 		if (answer.statusCode() == 401) {
 			CloudSync.forgetToken();

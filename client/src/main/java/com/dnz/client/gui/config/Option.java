@@ -14,9 +14,8 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 
 /**
- * One setting of a DNZ Config page: a glass row with the name (and a short gray note) on the left and its control
- * on the right. Rows are laid out, scrolled and clicked by {@link OptionList}; everything is in menu units.
- * Values are read through suppliers every frame, so a row always shows the current setting.
+ * One setting of a DNZ Config page: a glass row with the name (and a short gray note) on the left and its
+ * control on the right.
  */
 public abstract class Option {
 	protected final String name;

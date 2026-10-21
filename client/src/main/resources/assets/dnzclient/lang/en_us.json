@@ -297,6 +297,7 @@
 	"dnzclient.hud.hitboxes": "Hitboxes",
 	"dnzclient.hud.freelook": "Freelook",
 	"dnzclient.freelook.locked": "Freelook works only in single player (locked on servers).",
+	"dnzclient.freelook.locked_short": "Locked on servers",
 	"dnzclient.hud.daycount": "Day",
 	"dnzclient.hud.weather": "Weather",
 	"dnzclient.hud.battery": "Battery",
@@ -400,5 +401,15 @@
 	"dnzclient.hud.customimage": "Custom Image",
 	"dnzclient.hud.opt.lowest": "Lowest",
 	"dnzclient.hud.opt.smoothing": "Smooth speed",
-	"dnzclient.hud.opt.total": "Show total entities"
+	"dnzclient.hud.opt.total": "Show total entities",
+	"dnzclient.hud.blockoutline": "Block Outline",
+	"dnzclient.hud.chatheads": "Chat Heads",
+	"dnzclient.outline.look": "Outline",
+	"dnzclient.outline.chroma": "Rainbow",
+	"dnzclient.outline.chroma.note": "The color keeps changing",
+	"dnzclient.outline.opacity": "Line opacity",
+	"dnzclient.outline.thickness": "Line width",
+	"dnzclient.outline.fill": "Fill",
+	"dnzclient.outline.fill.note": "See-through color on the block faces",
+	"dnzclient.outline.fillopacity": "Fill opacity"
 }

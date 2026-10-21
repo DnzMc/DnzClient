@@ -28,11 +28,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
-/**
- * The Java side of the DNZ Script API: the "__n" object that prelude.js builds the friendly API on.
- * Every function checks its input and has limits, so a mod can't spam chat or slow the game down.
- * Scripts only get information the player can already see (no other players' positions, no x-ray...).
- */
+/** The Java side of the DNZ Script API: the "__n" object that prelude.js builds the friendly API on. */
 final class ScriptApi {
 	static final List<String> EVENTS = List.of("tick", "join", "leave", "death", "respawn", "damage", "chat");
 

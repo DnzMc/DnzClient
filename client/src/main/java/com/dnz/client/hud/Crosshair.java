@@ -7,8 +7,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
- * Custom crosshair (module "crosshair"): style, size, gap, thickness, color, outline and center dot, in real screen
- * pixels (the same at every GUI scale). Off, in third person or with the F3 screen open, Minecraft's own is drawn.
+ * Custom crosshair (module "crosshair"): style, size, gap, thickness, color, outline and center dot, in real
+ * screen pixels (the same at every GUI scale).
  */
 public final class Crosshair {
 	public static final String[] STYLES = {"cross", "crossdot", "dot", "t", "box", "circle"};

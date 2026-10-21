@@ -8,8 +8,8 @@ import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
 /**
- * What Right Shift opens: the game stays visible behind a light blur, with "DNZ CLIENT", a big orange MODS button
- * (the DNZ menu) and small Profiles, Themes and Settings buttons under it.
+ * What Right Shift opens: the game stays visible behind a light blur, with "DNZ CLIENT", a big orange MODS
+ * button (the DNZ menu) and small Profiles, Themes and Settings buttons under it.
  */
 public class DnzShiftScreen extends Screen {
 	static final int ORANGE = 0xFFFF8A3D;

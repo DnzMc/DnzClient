@@ -14,10 +14,10 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 /**
- * FPS benchmark (only with gradlew runClientGameTest -Pbench=base|full): the same busy scene every time — a big leaf
- * block (forest), about 1900 chests with signs (block entities, like on a market/spawner server), 200 armor stands,
- * 80 animals — at 1600x900, render distance 12, unlimited FPS. Measures average FPS and the 1% lows (stutters) for
- * DNZ defaults, all DNZ HUD modules on, and DNZ Turbo off. Results go to dnz-benchmark-<base|full>.txt.
+ * FPS benchmark (only with gradlew runClientGameTest -Pbench=base|full): the same busy scene every time — a
+ * big leaf block (forest), about 1900 chests with signs (block entities, like on a market/spawner server),
+ * 200 armor stands, 80 animals — at 1600x900, render distance 12, unlimited FPS. Measures average FPS and the
+ * 1% lows (stutters) for DNZ defaults, all DNZ HUD modules on, and DNZ Turbo off.
  */
 public class DnzBenchmarkGameTest implements FabricClientGameTest {
 	private static final int WARMUP_TICKS = 200;

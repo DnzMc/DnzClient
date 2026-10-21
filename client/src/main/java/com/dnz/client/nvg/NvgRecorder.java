@@ -9,7 +9,6 @@ import org.joml.Matrix3x2fc;
 /**
  * NanoVG menus: while a DNZ menu builds its frame, its shapes and texts are recorded here instead of going to
  * Minecraft's renderer; right before the frame is shown, NanoVG draws them on the graphics card (NvgOverlay).
- * Anything else (item icons, pictures) still goes through Minecraft.
  */
 public final class NvgRecorder {
 	/** Recording this frame (render thread only). */
@@ -34,7 +33,7 @@ public final class NvgRecorder {
 		fresh = true;
 	}
 
-	/** One recorded drawing step. Positions are GUI units; m = the 2D transform (a, b, c, d, e, f). */
+	/** One recorded drawing step. */
 	public sealed interface Cmd permits Shape, Text, Image {
 	}
 

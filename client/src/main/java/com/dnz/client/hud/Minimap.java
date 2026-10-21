@@ -15,9 +15,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.MapColor;
 
 /**
- * Minimap (module "minimap"): the land around the player seen from above in map colors, redrawn twice a second
- * (cheap: one block lookup per pixel), with the player arrow, other players and monsters as dots and the
- * direction letters. North is up.
+ * Minimap (module "minimap"): the land around the player seen from above in map colors, redrawn twice a
+ * second (cheap: one block lookup per pixel), with the player arrow, other players and monsters as dots and
+ * the direction letters.
  */
 final class Minimap extends HudModule {
 	private static final int SIZE = 64; // blocks across = texture pixels

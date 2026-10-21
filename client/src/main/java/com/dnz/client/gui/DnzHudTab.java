@@ -18,10 +18,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /**
- * DNZ menu "Mods" tab: every module (HUD panels and features like zoom or turbo) can be switched
- * on and off here, filtered by category. The HUD editor opens from the sidebar / the button at the bottom.
- * DNZ style: a scrolling grid of cards (line icon, name bar that lights up when on) with search; installed mods,
- * scripts and the schematic mod open from cards of their own.
+ * DNZ menu "Mods" tab: every module (HUD panels and features like zoom or turbo) can be switched on and off
+ * here, filtered by category.
  */
 public class DnzHudTab extends DnzMenuScreen {
 	private static final int ROW_H = 22;
@@ -314,9 +312,11 @@ public class DnzHudTab extends DnzMenuScreen {
 			}
 			// Dark card, its edge orange when on; icon top left, name and On / Off at the bottom, gear top right.
 			boolean page = c.module() == null;
-			int edge = page ? Theme.lerp(0xFF1B212C, 0xFF2A3342, st[0]) : Theme.lerp(Theme.lerp(0xFF1B212C, 0xFF2A3342, st[0]), Theme.withAlpha(accent, 0.6F), st[1]);
-			Smooth.rect(g, x - 0.75F, y - 0.75F, w + 1.5F, ch + 1.5F, 8.75F, edge);
-			Smooth.rect(g, x, y, w, ch, 8, Theme.lerp(0xFF121821, 0xFF161D28, st[0]));
+			int hoverEdge = 0xFF000000 | Theme.lighter(GameTheme.cardEdge);
+			int edge = page ? Theme.lerp(GameTheme.cardEdge, hoverEdge, st[0]) : Theme.lerp(Theme.lerp(GameTheme.cardEdge, hoverEdge, st[0]), Theme.withAlpha(accent, 0.6F), st[1]);
+			float cr = GameTheme.cardRadius;
+			Smooth.rect(g, x - 0.75F, y - 0.75F, w + 1.5F, ch + 1.5F, cr + 0.75F, edge);
+			Smooth.rect(g, x, y, w, ch, cr, Theme.lerp(GameTheme.card, GameTheme.cardHover, st[0]));
 			int iconColor = page ? 0xFFC3C9D6 : Theme.lerp(0xFF6F7787, accent, st[1]);
 			Icon.draw(g, c.icon(), x + 8, y + 8, 12, iconColor);
 			if (!page) {
@@ -331,13 +331,14 @@ public class DnzHudTab extends DnzMenuScreen {
 			g.pose().pushMatrix();
 			g.pose().translate(x + 8, y + ch - (page ? 15 : 22));
 			g.pose().scale(s, s);
-			g.text(this.font, name, 0, 0, 0xFFF1F3F7, false);
+			g.text(this.font, name, 0, 0, GameTheme.text, false);
 			g.pose().popMatrix();
 			if (!page) {
 				g.pose().pushMatrix();
 				g.pose().translate(x + 8, y + ch - 11);
 				g.pose().scale(0.6F, 0.6F);
-				g.text(this.font, Ui.regular(c.module().enabled() ? "On" : "Off"), 0, 0, 0xFF8A93A6, false);
+				g.text(this.font, Ui.regular(c.id().equals("freelook") && com.dnz.client.hud.Freelook.lockedHere() ? L.t("freelook.locked_short")
+					: c.module().enabled() ? "On" : "Off"), 0, 0, GameTheme.muted, false);
 				g.pose().popMatrix();
 			}
 		}
@@ -387,6 +388,8 @@ public class DnzHudTab extends DnzMenuScreen {
 			case "foodtooltip" -> '\ue88e';
 			case "shulkerpreview" -> '\ue1a1';
 			case "cleanhotbar" -> '\ue8f3';
+			case "blockoutline" -> '\uefc9';
+			case "chatheads" -> '\ue0c9';
 			case "zoom" -> '\ue8ff';
 			case "fullbright" -> '\ue1ac';
 			case "streamer" -> '\ue04b';

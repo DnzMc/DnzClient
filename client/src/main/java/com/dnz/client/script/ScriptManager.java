@@ -46,13 +46,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Finds, runs and reloads DNZ Script mods from "dnzclient/scripts" in the game folder:
- * <ul>
- *   <li>a folder with dnzmod.json + main.js,</li>
- *   <li>a ".dnzmod" file (the same, zipped; used for sharing),</li>
- *   <li>or a single ".js" file for quick tests.</li>
- * </ul>
- * Saving a file reloads the mods right away. Scripts only run while the player is in a world.
+ * Finds, runs and reloads DNZ Script mods from "dnzclient/scripts" in the game folder: <ul> <li>a folder with
+ * dnzmod.json + main.js,</li> <li>a ".dnzmod" file (the same, zipped; used for sharing),</li> <li>or a single
+ * ".js" file for quick tests.</li> </ul> Saving a file reloads the mods right away.
  */
 public final class ScriptManager {
 	static final Logger LOGGER = LoggerFactory.getLogger("DNZ Script");
@@ -67,7 +63,7 @@ public final class ScriptManager {
 	private static final Set<Path> WATCHED = new HashSet<>();
 	private static String prelude;
 	private static WatchService watcher;
-	/** When a script file last changed (0 = nothing to reload). Set by the watcher thread. */
+	/** When a script file last changed (0 = nothing to reload). */
 	private static volatile long changedAt;
 	private static boolean dead;
 	private static float lastHealth = -1;
@@ -413,7 +409,7 @@ public final class ScriptManager {
 		emitAll("tick", null);
 	}
 
-	/** A key went down (from KeyboardHandlerMixin). Only counts while playing, not while typing in chat or a menu. */
+	/** A key went down (from KeyboardHandlerMixin). */
 	public static void onKeyPress(int keyCode) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.gui.screen() != null) {
@@ -484,10 +480,7 @@ public final class ScriptManager {
 		return invokeWith(mod, fn, ScriptEngine.CALL_BUDGET_MS, cx -> args, false);
 	}
 
-	/**
-	 * Calls a script function with a time limit and catches its errors.
-	 * With [asText] the result is turned into text inside the script context (for HUD values).
-	 */
+	/** Calls a script function with a time limit and catches its errors. */
 	private static Object invokeWith(ScriptMod mod, Function fn, long budgetMs, java.util.function.Function<Context, Object[]> args, boolean asText) {
 		if (mod.scope == null) {
 			return null;

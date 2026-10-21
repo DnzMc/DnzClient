@@ -7,8 +7,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
- * Button labels and the title screen's yellow text are drawn through Minecraft's text collector, not GuiGraphics.text;
- * while the smooth look is on (DNZ menu, title screen) they get the smooth font and no drop shadow there too.
+ * Button labels and the title screen's yellow text are drawn through Minecraft's text collector, not
+ * GuiGraphics.text; while the smooth look is on (DNZ menu, title screen) they get the smooth font and no drop
+ * shadow there too.
  */
 @Mixin(targets = "net.minecraft.client.gui.GuiGraphicsExtractor$RenderingTextCollector")
 public abstract class TextCollectorSmoothMixin {

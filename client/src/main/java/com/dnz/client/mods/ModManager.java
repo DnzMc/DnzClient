@@ -30,7 +30,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import net.fabricmc.loader.api.FabricLoader;
 
-/** Lists, toggles and installs mods (Modrinth API). Changes apply after a restart. */
+/** Lists, toggles and installs mods (Modrinth API). */
 public final class ModManager {
 	private static final String API = "https://api.modrinth.com/v2";
 	private static final String USER_AGENT = "DNZClient (modrinth.com)";
@@ -96,7 +96,7 @@ public final class ModManager {
 		return mods;
 	}
 
-	/** Enables/disables a mod by renaming it. Returns null on success or an error message. */
+	/** Enables/disables a mod by renaming it. */
 	public static String toggle(LocalMod mod) {
 		if (mod.locked()) {
 			return L.t("mods.locked");
@@ -135,7 +135,7 @@ public final class ModManager {
 		});
 	}
 
-	/** Installs the newest compatible version plus required dependencies. Completes with null or an error message. */
+	/** Installs the newest compatible version plus required dependencies. */
 	public static CompletableFuture<String> install(RemoteMod mod) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {

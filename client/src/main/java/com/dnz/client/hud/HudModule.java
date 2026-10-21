@@ -7,8 +7,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * One module of the DNZ Modules list: either something drawn on the HUD (movable, scalable)
- * or a feature without a panel (zoom, turbo, food overlay...). Every module can be turned on and off.
+ * One module of the DNZ Modules list: either something drawn on the HUD (movable, scalable) or a feature
+ * without a panel (zoom, turbo, food overlay...).
  */
 public abstract class HudModule {
 	public enum Category {
@@ -90,10 +90,10 @@ public abstract class HudModule {
 		return value == null ? this.defaultOption(key) : value;
 	}
 
-	/** Draws the module with its top-left corner at 0,0 (the caller moves and scales). Returns {width, height}; 0 width = nothing to show. */
+	/** Draws the module with its top-left corner at 0,0 (the caller moves and scales). */
 	public abstract int[] render(HudRender r);
 
-	/** A feature that is only switched on/off (no panel). Its state can live in an existing config field. */
+	/** A feature that is only switched on/off (no panel). */
 	public static final class Feature extends HudModule {
 		private final Supplier<Boolean> getter;
 		private final Consumer<Boolean> setter;

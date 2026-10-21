@@ -19,9 +19,9 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.minecraft.client.gui.screens.DeathScreen;
 
 /**
- * Plays through the DNZ Script features in a real game (gradlew runClientGameTest):
- * the example mods load, every event fires, commands and keys work, broken or endless mods are stopped
- * without freezing the game, and errors show up in the DNZ menu. Screenshots go to the run folder.
+ * Plays through the DNZ Script features in a real game (gradlew runClientGameTest): the example mods load,
+ * every event fires, commands and keys work, broken or endless mods are stopped without freezing the game,
+ * and errors show up in the DNZ menu.
  */
 public class DnzScriptGameTest implements FabricClientGameTest {
 	/** Records every event it gets in a HUD element, so the test can read what happened. */

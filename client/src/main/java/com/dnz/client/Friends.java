@@ -17,11 +17,7 @@ import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 
-/**
- * DNZ friends, without any server: the friend list is kept on this computer (config/dnzclient-friends.json). On the
- * server you play on, friends get a star in the player list, and a note shows when one joins or leaves.
- * Nothing is sent anywhere.
- */
+/** DNZ friends, without any server: the friend list is kept on this computer (config/dnzclient-friends.json). */
 public final class Friends {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("dnzclient-friends.json");
 	private static List<String> names;
@@ -121,6 +117,7 @@ public final class Friends {
 	}
 
 	private static void toast(String name, String text) {
+		Notifications.add(name, text);
 		Minecraft mc = Minecraft.getInstance();
 		SystemToast.addOrUpdate(mc.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(name), Component.literal(text));
 	}

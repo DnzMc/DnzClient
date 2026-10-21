@@ -7,7 +7,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
-/** Just the sliding on/off switch of an option row. Changes right away, no rebuild. */
+/** Just the sliding on/off switch of an option row. */
 public class DnzSwitch extends AbstractButton {
 	private final Consumer<Boolean> onChange;
 	private boolean on;

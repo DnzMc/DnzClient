@@ -23,9 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 
 /**
- * DNZ server cards: each saved server becomes a rounded card with its icon, name, message of the day, the ping in
- * milliseconds (colored) and the player count. Vanilla still runs first (it starts the ping and loads the icon);
- * the card is drawn over it.
+ * DNZ server cards: each saved server becomes a rounded card with its icon, name, message of the day, the
+ * ping in milliseconds (colored) and the player count.
  */
 @Mixin(targets = "net.minecraft.client.gui.screens.multiplayer.ServerSelectionList$OnlineServerEntry")
 public abstract class ServerEntryMixin {

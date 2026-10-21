@@ -3,12 +3,7 @@ package com.dnz.client.gui;
 import com.dnz.client.DnzConfig;
 import com.mojang.blaze3d.platform.Window;
 
-/**
- * Size of the DNZ menu on the screen. The menu is laid out in its own units (the panel is always
- * {@link #PANEL_W} x {@link #PANEL_H}) and drawn scaled, so it keeps the same proportions at every window size,
- * resolution and Minecraft GUI scale: about two thirds of the window, like a desktop app. Small windows get a
- * bigger share so the text stays readable.
- */
+/** Size of the DNZ menu on the screen. */
 public final class MenuScale {
 	public static final int PANEL_W = 560;
 	public static final int PANEL_H = 340;

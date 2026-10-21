@@ -6,7 +6,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
-/** A JavaScript function written in Java. Only plain values (text, numbers, true/false, functions) go in and out. */
+/** A JavaScript function written in Java. */
 final class JsFunction extends BaseFunction {
 	interface Body {
 		/** Return {@link #VOID} for "no result". */

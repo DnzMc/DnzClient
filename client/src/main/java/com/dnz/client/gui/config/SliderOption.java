@@ -9,10 +9,7 @@ import java.util.function.IntSupplier;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
-/**
- * Whole-number setting (min..max in steps): the name and the value on top, a thin track with a round knob below.
- * Drag the knob or click the track; the knob glides to a clicked spot.
- */
+/** Whole-number setting (min..max in steps): the name and the value on top, a thin track with a round knob below. */
 public class SliderOption extends Option {
 	private final int min;
 	private final int max;

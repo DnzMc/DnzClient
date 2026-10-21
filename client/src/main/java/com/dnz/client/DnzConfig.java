@@ -35,15 +35,17 @@ public final class DnzConfig {
 	/** Shield module: how far the shield is lowered in first person (0-100 %) and its size (50-100 %), see ShieldView. */
 	public int shieldLower = 30;
 	public int shieldSize = 80;
-	/** Which one-time FPS defaults were applied (1 = VSync off + unlimited FPS). Never applied twice. */
+	/** Which one-time FPS defaults were applied (1 = VSync off + unlimited FPS). */
 	public int fpsDefaults = 0;
 	/** DNZ Turbo: far decorations/drops/signs not drawn, particle cap (see Turbo). */
 	public boolean turbo = true;
+	/** Freelook switch (only works in single player; on servers it shows Off and can't be turned on, see Freelook). */
+	public boolean freelook = true;
 	/** Cool mode: FPS capped at twice the screen refresh rate (less heat, steadier frames on laptops). */
 	public boolean coolMode = false;
 	/** DNZ menus drawn by NanoVG on the graphics card (OpenGL only; off = DNZ's own drawing). */
 	public boolean nanoVg = true;
-	/** macOS: draw at full Retina resolution (sharper, much lower FPS). Off = normal resolution, like most Mac games. */
+	/** macOS: draw at full Retina resolution (sharper, much lower FPS). */
 	public boolean macRetina = false;
 	/** Size of the DNZ menu in percent (100 = about two thirds of the window, at any resolution and GUI scale). */
 	public int menuSize = 100;
@@ -71,6 +73,26 @@ public final class DnzConfig {
 		public boolean dot = false;
 	}
 
+	/** Block outline settings (module "blockoutline"). */
+	public BlockOutline blockOutline = new BlockOutline();
+
+	public static class BlockOutline {
+		public int color = 0xFFFFFFFF;
+		/** Outline opacity in percent. */
+		public int opacity = 100;
+		/** Line width; 2 = vanilla. */
+		public float thickness = 2;
+		/** Rainbow color that keeps changing. */
+		public boolean chroma = false;
+		/** Fills the block faces with the color too. */
+		public boolean fill = false;
+		/** Fill opacity in percent. */
+		public int fillOpacity = 20;
+	}
+
+	/** Shows the sender's skin head before chat messages (module "chatheads"). */
+	public boolean chatHeads = true;
+
 	/** A module's saved state (the name stays HudPos so older config files keep working). */
 	public static class HudPos {
 		public boolean enabled = true;
@@ -80,7 +102,7 @@ public final class DnzConfig {
 		public float scale = 1.0F;
 		/** Dark panel behind the element (off = text only, with shadow). */
 		public boolean bg = true;
-		/** Module specific on/off options (e.g. coords: "nether"). Missing = the module's default. */
+		/** Module specific on/off options (e.g. coords: "nether"). */
 		public java.util.Map<String, Boolean> opts = new java.util.HashMap<>();
 		/** Text before the value ("FPS" in "FPS 240"); empty = the module's own name. */
 		public String label = "";

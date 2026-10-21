@@ -10,8 +10,8 @@ import java.util.function.IntSupplier;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
- * One of a few named values: a pill with the chosen value and an arrow; clicking it unfolds a list to pick from
- * (below the pill, or above it near the bottom of the page). The list is drawn over the other rows by OptionList.
+ * One of a few named values: a pill with the chosen value and an arrow; clicking it unfolds a list to pick
+ * from (below the pill, or above it near the bottom of the page).
  */
 public class ChoiceOption extends Option {
 	private static final float PILL_H = 15;

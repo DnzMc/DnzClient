@@ -25,15 +25,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.joml.Vector2f;
 
-/**
- * The DNZ menu: tab sidebar on the left, the selected tab's content on the right.
- * Each tab is its own screen extending this class; switching tabs keeps the original parent.
- * <p>
- * In the DNZ style the whole menu is laid out in its own units and drawn scaled (see {@link MenuScale}), so it has
- * the same proportions at every resolution and GUI scale. {@link #width} and {@link #height} are then the screen
- * size in those units, and the mouse comes in the same units: pages override {@link #clicked}, {@link #scrolled}
- * and friends instead of the mouse methods.
- */
+/** The DNZ menu: tab sidebar on the left, the selected tab's content on the right. */
 public abstract class DnzMenuScreen extends Screen {
 	public enum Tab {
 		HUD("menu.hud", DnzHudTab::new),
@@ -144,7 +136,8 @@ public abstract class DnzMenuScreen extends Screen {
 			boolean before = Theme.smoothAll;
 			Theme.smoothAll = true;
 			try {
-				this.initDnz();
+				GameTheme.refresh();
+			this.initDnz();
 				this.initContent();
 			} finally {
 				Theme.smoothAll = before;
@@ -353,9 +346,24 @@ public abstract class DnzMenuScreen extends Screen {
 	private void extractDnzFrame(GuiGraphicsExtractor g) {
 		int accent = Theme.menuAccent();
 		// Panel: near-black, big soft shadow; the icon rail on the left is part of it (no separate color).
-		Smooth.shadow(g, this.px, this.py + 5, this.panelW, this.panelH, 10, 16, 0x99000000);
-		Smooth.rect(g, this.px - 0.5F, this.py - 0.5F, this.panelW + 1, this.panelH + 1, 10.5F, 0xFF1B212C);
-		Smooth.rect(g, this.px, this.py, this.panelW, this.panelH, 10, 0xFA0A0D12);
+		float r = GameTheme.radius;
+		if (GameTheme.glow > 0) {
+			// Theme glow: a soft light in the accent color around the panel.
+			Smooth.shadow(g, this.px, this.py, this.panelW, this.panelH, r, 22, Theme.withAlpha(accent, 0.6F * GameTheme.glow));
+		}
+		Smooth.shadow(g, this.px, this.py + 5, this.panelW, this.panelH, r, 16, 0x99000000);
+		Smooth.rect(g, this.px - 0.5F, this.py - 0.5F, this.panelW + 1, this.panelH + 1, r + 0.5F, GameTheme.panelEdge);
+		Smooth.rect(g, this.px, this.py, this.panelW, this.panelH, r, GameTheme.panel);
+		int inset = Math.round(r);
+		if (GameTheme.panelGradient != 0) {
+			// Theme gradient: from the panel color at the top to panelGradient at the bottom (corners keep the panel color).
+			g.fillGradient(this.px, this.py + inset, this.px + this.panelW, this.py + this.panelH - inset,
+				GameTheme.panel, (GameTheme.panel & 0xFF000000) | (GameTheme.panelGradient & 0xFFFFFF));
+		}
+		if (GameTheme.pattern != null) {
+			GameTheme.cover(g, GameTheme.pattern, this.px + inset / 2, this.py + inset / 2, this.panelW - inset, this.panelH - inset, GameTheme.patternOpacity);
+		}
+		this.extractStickers(g);
 		// Logo: an orange square at the top of the rail.
 		Smooth.rect(g, this.px + 9, this.py + 9, 16, 16, 4, accent);
 		g.pose().pushMatrix();
@@ -378,15 +386,36 @@ public abstract class DnzMenuScreen extends Screen {
 		g.pose().pushMatrix();
 		g.pose().translate(this.cx - 0.5F, this.py + 24);
 		g.pose().scale(2.1F, 2.1F);
-		g.text(this.font, bold(this.pageTitle()), 0, 0, 0xFFF1F3F7, false);
+		g.text(this.font, bold(this.pageTitle()), 0, 0, GameTheme.text, false);
 		g.pose().popMatrix();
 		// Search box frame.
 		int sw = this.searchWidth();
 		int sx = this.searchX();
 		boolean focused = this.search != null && this.search.isFocused();
-		Smooth.rect(g, sx - 0.5F, this.py + 18.5F, sw + 1, 19, 6.5F, focused ? Theme.withAlpha(accent, 0.7F) : 0xFF1B212C);
-		Smooth.rect(g, sx, this.py + 19, sw, 18, 6, 0xFF151B25);
+		Smooth.rect(g, sx - 0.5F, this.py + 18.5F, sw + 1, 19, 6.5F, focused ? Theme.withAlpha(accent, 0.7F) : GameTheme.panelEdge);
+		Smooth.rect(g, sx, this.py + 19, sw, 18, 6, GameTheme.search);
 		Icon.draw(g, Icon.SEARCH, sx + 5, this.py + 24, 8, 0xFF6F7787);
+	}
+
+	/** Theme stickers at the panel's corners (floating ones bob gently). */
+	private void extractStickers(GuiGraphicsExtractor g) {
+		double t = System.nanoTime() / 1e9;
+		for (int i = 0; i < GameTheme.stickers.size(); i++) {
+			GameTheme.Sticker s = GameTheme.stickers.get(i);
+			float size = s.size();
+			float x = s.anchor().endsWith("left") ? this.px + s.x() : this.px + this.panelW - size + s.x();
+			float y = s.anchor().startsWith("top") ? this.py + s.y() : this.py + this.panelH - size + s.y();
+			if (s.floating()) {
+				y += (float) Math.sin(t * 2 + i) * 2.5F;
+			}
+			g.pose().pushMatrix();
+			g.pose().translate(x + size / 2, y + size / 2);
+			g.pose().rotate((float) Math.toRadians(s.spin()));
+			int w = Math.round(size);
+			int h = Math.round(size * s.picture().height() / (float) s.picture().width());
+			GameTheme.draw(g, s.picture(), -w / 2, -h / 2, w, h);
+			g.pose().popMatrix();
+		}
 	}
 
 	/** The player's face at the bottom of the icon rail. */
@@ -516,6 +545,11 @@ public abstract class DnzMenuScreen extends Screen {
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
 		this.extractBlurredBackground(g);
 		Theme.screenBackground(g, this.guiWidth, this.guiHeight);
+		if (Theme.dnzStyle() && GameTheme.background != null) {
+			// Theme picture behind the menu, darkened a little.
+			GameTheme.cover(g, GameTheme.background, 0, 0, this.guiWidth, this.guiHeight, 1);
+			g.fill(0, 0, this.guiWidth, this.guiHeight, Math.round(GameTheme.backgroundDim * 255) << 24);
+		}
 	}
 
 	@Override

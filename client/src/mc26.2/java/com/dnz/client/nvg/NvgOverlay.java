@@ -28,7 +28,7 @@ import org.lwjgl.opengl.GL33;
 
 /**
  * NanoVG menus: draws the recorded DNZ menu (NvgRecorder) on the graphics card, on top of the finished frame,
- * right before it is shown. Minecraft's OpenGL state is saved and put back (GlState).
+ * right before it is shown.
  */
 public final class NvgOverlay {
 	private static long vg;

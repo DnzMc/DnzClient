@@ -10,15 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
 
-/**
- * Keeps DNZ text and icons sharp and smooth at any size. Minecraft samples font atlases pixel by pixel ("nearest"),
- * which makes scaled text and icons look blocky; our fonts are drawn with smooth (linear) sampling instead, and their
- * glyphs are rendered for the screen's real pixel size, so they are never stretched up (blurry) or squeezed down.
- * <p>
- * The pixel size changes when the window is resized, the GUI scale changes or the DNZ menu opens (it has its own
- * scale, see {@link MenuScale}); then our glyphs are rendered again for the new size. That only re-renders the
- * letters on screen (a few milliseconds, once), nothing is loaded from disk.
- */
+/** Keeps DNZ text and icons sharp and smooth at any size. */
 public final class SharpFonts {
 	/** One of our TrueType fonts (see TrueTypeProviderMixin). */
 	public interface Sharp {
@@ -41,8 +33,8 @@ public final class SharpFonts {
 	}
 
 	/**
-	 * How big each of our fonts is drawn at most: the title screen logo up to about 3.2 times the text size, icons
-	 * up to 2.2 (module cards), other text up to 1.35 (titles).
+	 * How big each of our fonts is drawn at most: the title screen logo up to about 3.2 times the text size,
+	 * icons up to 2.2 (module cards), other text up to 1.35 (titles).
 	 */
 	private static float biggestScale(Identifier location) {
 		String path = location.getPath();
@@ -89,7 +81,7 @@ public final class SharpFonts {
 
 	/**
 	 * Renders our glyphs again when what is on screen needs a different pixel size (more than 12% off, so small
-	 * window drags don't re-render every time). Call between frames only (ticks, screen setup), never while drawing.
+	 * window drags don't re-render every time).
 	 */
 	public static void update(Minecraft mc, Screen screen) {
 		float want = wanted(mc, screen);

@@ -8,11 +8,11 @@ import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
 /**
- * Glass menu button (Simple style ESC menu): translucent gray glass with a thin light border,
- * round corners and spaced-out bold capitals. [accent] buttons are translucent in the DNZ accent color.
+ * Glass menu button (Simple style ESC menu): translucent gray glass with a thin light border, round corners
+ * and spaced-out bold capitals. [accent] buttons are translucent in the DNZ accent color.
  */
 public class GlassButton extends AbstractButton {
-	/** GLASS: gray glass. ACCENT: accent-colored glass. GHOST: invisible until hovered (menu tabs). */
+	/** GLASS: gray glass. */
 	public enum Look { GLASS, ACCENT, GHOST }
 
 	private final Runnable action;

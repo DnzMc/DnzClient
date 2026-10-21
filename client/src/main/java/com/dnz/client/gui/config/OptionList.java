@@ -18,10 +18,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /**
- * The scrolling page of a DNZ Config screen: setting rows in two columns (section titles and wide rows take the
- * whole width), smooth scrolling with the mouse wheel or the thin scrollbar, rows clipped to the area. Open
- * dropdown lists are drawn over everything by the menu through {@link #extractOverlay}.
- * Everything is in menu units.
+ * The scrolling page of a DNZ Config screen: setting rows in two columns (section titles and wide rows take
+ * the whole width), smooth scrolling with the mouse wheel or the thin scrollbar, rows clipped to the area.
  */
 public class OptionList implements GuiEventListener, Renderable, NarratableEntry {
 	private static final int GAP = 6;
@@ -57,7 +55,7 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 		this.height = height;
 	}
 
-	/** Shows [rows]. Rows that were already there (same kind and name) keep their animations, and the scroll stays. */
+	/** Shows [rows]. */
 	public OptionList set(List<? extends Option> rows) {
 		Map<String, Option> before = new HashMap<>();
 		for (Option o : this.options) {
@@ -208,8 +206,8 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 	}
 
 	/**
-	 * A click somewhere else on the screen: closes an open dropdown (true = the click is used up by that) and stops
-	 * typing in a text box.
+	 * A click somewhere else on the screen: closes an open dropdown (true = the click is used up by that) and
+	 * stops typing in a text box.
 	 */
 	public boolean clickedElsewhere(double mouseX, double mouseY) {
 		if (this.isMouseOver(mouseX, mouseY)) {

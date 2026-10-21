@@ -15,10 +15,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * The DNZ Modules: HUD panels (movable, scalable) and switchable features, plus the panels DNZ Script mods add.
- * Positions are fractions of the screen size, so they fit any window size.
- */
+/** The DNZ Modules: HUD panels (movable, scalable) and switchable features, plus the panels DNZ Script mods add. */
 public final class DnzHud {
 	private static final List<HudModule> BUILT_IN = Modules.all();
 	private static final Map<String, HudModule> BY_ID = new LinkedHashMap<>();
@@ -174,7 +171,7 @@ public final class DnzHud {
 	public static final Map<String, long[]> PROFILE = new LinkedHashMap<>();
 	public static volatile boolean profiling;
 
-	/** Draws every enabled panel. In the editor, panels with nothing to show draw an example instead. */
+	/** Draws every enabled panel. */
 	public static void renderAll(GuiGraphicsExtractor g, boolean editor) {
 		Minecraft mc = Minecraft.getInstance();
 		int w = g.guiWidth();

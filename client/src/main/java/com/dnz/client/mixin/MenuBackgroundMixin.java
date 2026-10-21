@@ -15,9 +15,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Title, Singleplayer and Multiplayer screens: DNZ pictures instead of the panorama (a sunset on the title screen,
- * another picture behind the world and server lists). The pictures are already blurred, so Minecraft's own menu blur
- * is skipped there, and they are drawn with smooth sampling so they never look blocky on big screens.
+ * Title, Singleplayer and Multiplayer screens: DNZ pictures instead of the panorama (a sunset on the title
+ * screen, another picture behind the world and server lists).
  */
 @Mixin(Screen.class)
 public abstract class MenuBackgroundMixin {

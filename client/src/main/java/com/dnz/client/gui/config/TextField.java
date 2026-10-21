@@ -14,8 +14,7 @@ import net.minecraft.util.StringUtil;
 
 /**
  * Single-line text editing for DNZ Config: blinking caret, selection (shift + arrows, mouse drag, Ctrl+A),
- * clipboard (Ctrl+C / X / V), word jumps with Ctrl and sideways scrolling for long text. Drawn with the smooth
- * menu font into a box given by its owner.
+ * clipboard (Ctrl+C / X / V), word jumps with Ctrl and sideways scrolling for long text.
  */
 public class TextField {
 	private static final float SCALE = 0.75F;

@@ -18,8 +18,8 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Food info on the vanilla hunger bar: saturation drawn as golden drumsticks, and while holding food,
- * the drumsticks it would fill blink. Food items also show their hunger and saturation in the tooltip.
+ * Food info on the vanilla hunger bar: saturation drawn as golden drumsticks, and while holding food, the
+ * drumsticks it would fill blink.
  */
 public final class FoodOverlay {
 	private static final Identifier FULL = Identifier.withDefaultNamespace("hud/food_full");

@@ -21,12 +21,11 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
 
 /**
- * Experiment: Skia (the engine browsers use) draws on top of the finished frame, on the graphics card, in Minecraft's
- * own OpenGL window, right before the frame is shown. Minecraft's OpenGL state is saved before and put back after,
- * so the game does not notice. OpenGL only (Minecraft's Vulkan mode keeps the normal menus).
+ * Experiment: Skia (the engine browsers use) draws on top of the finished frame, on the graphics card, in
+ * Minecraft's own OpenGL window, right before the frame is shown.
  */
 public final class SkiaOverlay {
-	/** What to draw this frame (set by a screen while it is open), or null. Called on the render thread. */
+	/** What to draw this frame (set by a screen while it is open), or null. */
 	public static volatile Consumer<Canvas> painter;
 	/** NanoVG comparison: draws with the NanoVG context handle this frame, or null. */
 	public static volatile java.util.function.LongConsumer nanoPainter;

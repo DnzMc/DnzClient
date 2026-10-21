@@ -34,12 +34,8 @@ import net.minecraft.world.entity.player.ProfileKeyPair;
 import net.minecraft.world.entity.player.ProfilePublicKey;
 
 /**
- * DNZ Cloud (opt-in): key bindings, a few control options and the DNZ Client settings follow the player's Minecraft
- * account to other computers. Stored by cloud.dnzclient.com (see cloud/worker.js); turned on in DNZ Launcher
- * (Settings) or in the DNZ menu (Preferences), saved in ~/.dnzlauncher/cloud.json.
- *
- * Sign-in: the game signs a challenge from the DNZ server with its Mojang-signed player certificate (the key used
- * for chat); the access token stays on this computer. Nothing is sent while the option is off.
+ * DNZ Cloud (opt-in): key bindings, a few control options and the DNZ Client settings follow the player's
+ * Minecraft account to other computers.
  */
 public final class CloudSync {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("DNZ Cloud");
@@ -139,10 +135,7 @@ public final class CloudSync {
 		}
 	}
 
-	/**
-	 * Game closing: the only time settings are sent, so playing never waits for the cloud. While it runs, DNZ Launcher
-	 * shows "Don't close, saving settings to the cloud" (it watches the marker file).
-	 */
+	/** Game closing: the only time settings are sent, so playing never waits for the cloud. */
 	public static void stop() {
 		if (!ready || !dirty || !enabled()) {
 			return;

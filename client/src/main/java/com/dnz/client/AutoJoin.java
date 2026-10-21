@@ -14,7 +14,7 @@ import net.minecraft.client.multiplayer.resolver.ServerAddress;
 
 /**
  * "Join" from the DNZ Launcher's server list: the launcher leaves config/dnzclient-join.json in the profile,
- * and when the title screen first shows up the game connects to that server. The note is used once and deleted.
+ * and when the title screen first shows up the game connects to that server.
  */
 public final class AutoJoin {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("dnzclient-join.json");
@@ -35,7 +35,7 @@ public final class AutoJoin {
 		});
 	}
 
-	/** Joins the server of the launcher's note, if there is a fresh one. Returns true when it started connecting. */
+	/** Joins the server of the launcher's note, if there is a fresh one. */
 	public static boolean tryJoin(Minecraft mc, net.minecraft.client.gui.screens.Screen screen) {
 		{
 			JsonObject note = read();

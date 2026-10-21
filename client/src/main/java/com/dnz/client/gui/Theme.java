@@ -10,7 +10,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
-/** Shared colors and drawing helpers. Colors follow the player's Visual settings. */
+/** Shared colors and drawing helpers. */
 public final class Theme {
 	public record Accent(String name, int rgb) {
 		public String label() {
@@ -144,7 +144,7 @@ public final class Theme {
 
 	/** Selection blue of the DNZ menu (the accent color when another one is chosen). */
 	public static int menuAccent() {
-		return DnzConfig.get().accent == 0 ? 0xFFFF8A3D : 0xFF000000 | accentInfo().rgb(); // default: DNZ orange
+		return GameTheme.accent(DnzConfig.get().accent == 0 ? 0xFFFF8A3D : 0xFF000000 | accentInfo().rgb()); // default: DNZ orange
 	}
 
 	/** Button text: smooth in the Simple style, the normal Minecraft font otherwise. */
@@ -250,10 +250,7 @@ public final class Theme {
 		spacedText(g, font, text, centerX, y, scale, spacing, color, 0.6F);
 	}
 
-	/**
-	 * [weight] thickens the letters by drawing them again shifted by fractions of a pixel (screen pixels).
-	 * Minecraft's own bold shifts a whole (scaled) pixel, which looks like a blurry double on the smooth font.
-	 */
+	/** [weight] thickens the letters by drawing them again shifted by fractions of a pixel (screen pixels). */
 	public static void spacedText(GuiGraphicsExtractor g, Font font, String text, int centerX, int y, float scale, int spacing, int color, float weight) {
 		int total = 0;
 		int[] widths = new int[text.length()];
@@ -280,8 +277,8 @@ public final class Theme {
 	public static final FontDescription TITLE_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("dnzclient", "title"));
 
 	/**
-	 * Title screen logo of the Modern look: "DNZ CLIENT" in sharp bold capitals with some room between the letters,
-	 * "DNZ" in the accent color. [scale] 1 = normal text size.
+	 * Title screen logo of the Modern look: "DNZ CLIENT" in sharp bold capitals with some room between the
+	 * letters, "DNZ" in the accent color. [scale] 1 = normal text size.
 	 */
 	public static void logo(GuiGraphicsExtractor g, Font font, int centerX, int y, float scale, float alpha) {
 		String text = "DNZ CLIENT";
@@ -319,7 +316,7 @@ public final class Theme {
 		return Component.literal(String.valueOf(c)).withStyle(style -> style.withFont(BOLD_FONT));
 	}
 
-	/** Text at x,y. In the Simple style without Minecraft's drop shadow (it looks like a blurry double on the smooth font). */
+	/** Text at x,y. */
 	public static void text(GuiGraphicsExtractor g, Font font, Component text, int x, int y, int color) {
 		boolean simple = simpleStyle();
 		g.text(font, simple ? smooth(text) : text, x, y, color, !simple);

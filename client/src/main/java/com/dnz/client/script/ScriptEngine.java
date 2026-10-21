@@ -5,13 +5,10 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 
 /**
- * Rhino (JavaScript) set up for DNZ Script mods:
- * <ul>
- *   <li>no Java access at all (every Java class is hidden from scripts, no Packages/java objects),</li>
- *   <li>a time limit per call, so an endless loop stops instead of freezing the game,</li>
- *   <li>modern syntax (let/const, arrow functions, template strings).</li>
- * </ul>
- * All script code runs on the game (render) thread.
+ * Rhino (JavaScript) set up for DNZ Script mods: <ul> <li>no Java access at all (every Java class is hidden
+ * from scripts, no Packages/java objects),</li> <li>a time limit per call, so an endless loop stops instead
+ * of freezing the game,</li> <li>modern syntax (let/const, arrow functions, template strings).</li> </ul> All
+ * script code runs on the game (render) thread.
  */
 final class ScriptEngine {
 	/** Loading a mod (running its top-level code). */
@@ -26,7 +23,7 @@ final class ScriptEngine {
 	private ScriptEngine() {
 	}
 
-	/** Thrown when a script runs too long. It is an Error so script code can't catch it. */
+	/** Thrown when a script runs too long. */
 	static final class Timeout extends Error {
 		Timeout() {
 			super("time limit", null, false, false);

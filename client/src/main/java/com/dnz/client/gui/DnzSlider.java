@@ -6,7 +6,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
-/** Whole-number slider (min..max in steps). Styled by AbstractSliderButtonMixin like every DNZ slider. */
+/** Whole-number slider (min..max in steps). */
 public class DnzSlider extends AbstractSliderButton {
 	private final int min;
 	private final int max;

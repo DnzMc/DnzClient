@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Streamer mode: every block uses the same model variant, so randomly rotated textures
- * (grass, stone, sand, ...) can no longer reveal coordinates in screenshots or streams.
+ * Streamer mode: every block uses the same model variant, so randomly rotated textures (grass, stone, sand,
+ * ...) can no longer reveal coordinates in screenshots or streams.
  */
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public class BlockSeedMixin {

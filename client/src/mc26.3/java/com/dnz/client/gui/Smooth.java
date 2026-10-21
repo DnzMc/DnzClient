@@ -14,9 +14,8 @@ import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fc;
 
 /**
- * Smooth interface shapes drawn by DNZ's own shader (assets/dnzclient/shaders/core/rounded): rounded rectangles
- * with soft, anti-aliased corners at any GUI scale, outlines, gradients and blurred shadows. One quad per shape,
- * batched with the rest of the interface, so they cost about as much as a plain rectangle.
+ * Smooth interface shapes drawn by DNZ's own shader (assets/dnzclient/shaders/core/rounded): rounded
+ * rectangles with soft, anti-aliased corners at any GUI scale, outlines, gradients and blurred shadows.
  */
 public final class Smooth {
 	/** Minecraft's interface pipeline with DNZ's shader and a vertex format that carries the shape. */

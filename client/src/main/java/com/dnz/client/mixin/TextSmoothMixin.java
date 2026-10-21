@@ -15,8 +15,9 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * While the DNZ menu draws: every text in Minecraft's pixel font is drawn with the menu font (all text goes through
- * here), colors follow the menu theme, and in the Minecraft look the pixel font is put on whole screen pixels.
+ * While the DNZ menu draws: every text in Minecraft's pixel font is drawn with the menu font (all text goes
+ * through here), colors follow the menu theme, and in the Minecraft look the pixel font is put on whole
+ * screen pixels.
  */
 @Mixin(GuiGraphicsExtractor.class)
 public abstract class TextSmoothMixin {

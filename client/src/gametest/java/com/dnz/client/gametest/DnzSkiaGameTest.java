@@ -16,8 +16,8 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 /**
- * Skia menus experiment (only with -Pskia): FPS of the same world with no menu, the DNZ menu, and the Skia-drawn
- * menu; saves a picture of the Skia menu (dnz-skia.png). Results: dnz-skia.txt.
+ * Skia menus experiment (only with -Pskia): FPS of the same world with no menu, the DNZ menu, and the
+ * Skia-drawn menu; saves a picture of the Skia menu (dnz-skia.png).
  */
 public class DnzSkiaGameTest implements FabricClientGameTest {
 	private static volatile boolean recording;

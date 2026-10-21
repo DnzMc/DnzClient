@@ -12,10 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 
-/**
- * Finds a mod's settings screen through the Mod Menu API (the standard way Fabric mods expose settings).
- * Uses reflection so DNZ Client still works when Mod Menu is not installed.
- */
+/** Finds a mod's settings screen through the Mod Menu API (the standard way Fabric mods expose settings). */
 public final class ModConfigScreens {
 	private static Map<String, Object> factories;
 	private static Method createMethod;

@@ -56,8 +56,6 @@ public class DnzClient implements ClientModInitializer {
 		AutoJoin.register();
 
 		// Once per install: VSync off and no FPS cap (they hold FPS back and add input delay in PvP).
-		// After that the player's own choice is kept.
-		// DNZ Cloud (opt-in): settings from the player's account at start, the last changes at exit.
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> CloudSync.start());
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> com.dnz.client.mods.ModMenuTitleCount.hide());
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> CloudSync.stop());
@@ -100,8 +98,14 @@ public class DnzClient implements ClientModInitializer {
 			if (!(screen instanceof DnzMenuScreen)) {
 				SharpFonts.update(client, screen); // the DNZ menu does this itself, at its own scale
 			}
-			if (screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class && DnzConfig.get().testTitle) {
-				client.execute(() -> client.gui.setScreen(new com.dnz.client.gui.DnzTitleScreen()));
+			if (screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class && DnzConfig.get().testTitle
+				&& !DnzConfig.get().javaStyle) {
+				// Only if nothing else took over meanwhile (e.g. the launcher's "join this server" note).
+				client.execute(() -> {
+					if (client.gui.screen() == screen) {
+						client.gui.setScreen(new com.dnz.client.gui.DnzTitleScreen());
+					}
+				});
 				return;
 			}
 			if (screen instanceof OptionsScreen) {

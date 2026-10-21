@@ -3,7 +3,7 @@ package com.dnz.client.hud;
 import com.dnz.client.L;
 import java.lang.reflect.Method;
 
-/** Shader module: the name of the shader pack Iris uses, or "Off" (also without Iris). Iris is read by reflection. */
+/** Shader module: the name of the shader pack Iris uses, or "Off" (also without Iris). */
 final class ShaderName {
 	private static boolean looked;
 	private static Object api;

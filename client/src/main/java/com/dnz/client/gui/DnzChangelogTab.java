@@ -10,9 +10,13 @@ public class DnzChangelogTab extends DnzMenuScreen {
 	}
 
 	private static final List<Release> RELEASES = List.of(
+		new Release("1.40.0", List.of(
+			"Chat Heads: the skin head of the player who wrote a message, right before it in chat (Visual → Chat Heads).",
+			"Block Outline: your own frame around the block you look at; color or rainbow, line width, opacity and a see-through fill (Visual → Block Outline).",
+			"DNZ themes also change this menu: colors, roundness, glow, background picture, pattern and stickers.")),
 		new Release("1.39.0", List.of(
 			"Freelook: hold Left Alt to look around your player while you keep walking the same way.",
-			"Freelook works only in single player: it is locked on every multiplayer server, so it never breaks server rules.")),
+			"Freelook works only in single player: on every multiplayer server it shows \"Locked on servers\" and can't be turned on, so it never breaks server rules.")),
 		new Release("1.38.0", List.of(
 			"DNZ badge: a DNZ logo next to the names of players who also play with DNZ Client (above the head and in Tab).",
 			"Your own name with the DNZ logo shows above your head in third person (F5).",

@@ -10,8 +10,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
 /**
- * Minecraft's own ESC menu with a "DNZ Settings" button (opens the Right Shift screen), in the place of "Report Bugs".
- * Without that button: in the place of Open to LAN, else next to a narrowed Options button.
+ * Minecraft's own ESC menu with a "DNZ Settings" button (opens the Right Shift screen), in the place of
+ * "Report Bugs".
  */
 public final class PauseMenu {
 	private PauseMenu() {

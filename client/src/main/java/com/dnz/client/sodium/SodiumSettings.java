@@ -22,11 +22,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * Reads Sodium's option pages (and those other mods like Sodium Extra add to it) into plain rows
- * that DNZ screens draw with their own widgets. Values are changed the same way Sodium's screen does:
- * pending until {@link #apply()}.
- * <p>
- * This is the only class that touches Sodium; only call it when Sodium is loaded.
+ * Reads Sodium's option pages (and those other mods like Sodium Extra add to it) into plain rows that DNZ
+ * screens draw with their own widgets.
  */
 public final class SodiumSettings {
 	public enum Kind { HEADER, TOGGLE, CYCLE, SLIDER, BUTTON }
@@ -34,11 +31,7 @@ public final class SodiumSettings {
 	public record PageInfo(Component mod, Component name) {
 	}
 
-	/**
-	 * One line in the list. {@code press} is used by TOGGLE, CYCLE and BUTTON (it gets the current screen),
-	 * {@code set} by SLIDER. CYCLE rows also list their {@code choices} ({@code current} is the chosen one) and
-	 * pick one by its index with {@code set}.
-	 */
+	/** One line in the list. */
 	public record Row(Kind kind, Component name, Component tooltip, boolean enabled, boolean changed, Component value,
 		int min, int max, int step, int current, IntFunction<Component> format, IntConsumer set, Consumer<Screen> press,
 		List<Component> choices) {

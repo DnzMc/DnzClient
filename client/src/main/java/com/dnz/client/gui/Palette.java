@@ -1,10 +1,6 @@
 package com.dnz.client.gui;
 
-/**
- * Colors of the DNZ menu in the chosen theme. The menu is designed dark; while it draws ({@link Theme#smoothAll}),
- * every color goes through {@link #map}: the White theme turns the grays around (dark becomes light, light text
- * becomes dark) and the Minecraft look takes the color out (black and white). Colored parts keep their color.
- */
+/** Colors of the DNZ menu in the chosen theme. */
 public final class Palette {
 	/** Always white (switch and slider knobs). */
 	public static final int KEEP_WHITE = 0xFFFFFFFE;

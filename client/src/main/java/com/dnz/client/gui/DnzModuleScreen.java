@@ -16,8 +16,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * Settings of one module in the DNZ menu: setting rows in two columns (name and a short note on the left,
- * the control on the right) on a scrolling page. Opened by clicking a card on the Mods page.
+ * Settings of one module in the DNZ menu: setting rows in two columns (name and a short note on the left, the
+ * control on the right) on a scrolling page.
  */
 public class DnzModuleScreen extends DnzMenuScreen {
 	private final HudModule module;
@@ -103,6 +103,38 @@ public class DnzModuleScreen extends DnzMenuScreen {
 				c.dot = on;
 				save.run();
 			}));
+		}
+		if (m.id.equals("blockoutline")) {
+			DnzConfig.BlockOutline c = DnzConfig.get().blockOutline;
+			Runnable save = () -> DnzConfig.get().save();
+			rows.add(new HeaderOption(L.t("outline.look")));
+			int[] colors = {0xFFFFFFFF, 0xFF55FF55, 0xFF00FFFF, 0xFFFF5555, 0xFFFFFF55, 0xFFFF55FF, 0xFFFF8A3D, 0xFF000000};
+			List<String> names = new ArrayList<>();
+			for (String s : new String[] {"white", "green", "cyan", "red", "yellow", "pink", "orange", "black"}) {
+				names.add(L.t("cross.color." + s));
+			}
+			rows.add(new com.dnz.client.gui.config.ChoiceOption(L.t("cross.color"), names, () -> {
+				for (int i = 0; i < colors.length; i++) {
+					if (colors[i] == c.color) {
+						return i;
+					}
+				}
+				return 0;
+			}, i -> {
+				c.color = colors[i];
+				save.run();
+			}));
+			rows.add(new SwitchOption(L.t("outline.chroma"), () -> c.chroma, on -> {
+				c.chroma = on;
+				save.run();
+			}).note(L.t("outline.chroma.note")));
+			rows.add(new SliderOption(L.t("outline.opacity"), 0, 100, 5, () -> c.opacity, v -> c.opacity = v, v -> v + "%").onRelease(save));
+			rows.add(new SliderOption(L.t("outline.thickness"), 1, 10, 1, () -> Math.round(c.thickness), v -> c.thickness = v, v -> v + " px").onRelease(save));
+			rows.add(new SwitchOption(L.t("outline.fill"), () -> c.fill, on -> {
+				c.fill = on;
+				save.run();
+			}).note(L.t("outline.fill.note")));
+			rows.add(new SliderOption(L.t("outline.fillopacity"), 0, 100, 5, () -> c.fillOpacity, v -> c.fillOpacity = v, v -> v + "%").onRelease(save));
 		}
 		if (m.id.equals("shield")) {
 			DnzConfig c = DnzConfig.get();

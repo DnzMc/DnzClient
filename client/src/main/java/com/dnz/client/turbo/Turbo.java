@@ -14,9 +14,9 @@ import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
 
 /**
- * DNZ Turbo: skips drawing things that cost FPS on busy servers but don't matter far away
- * (hologram armor stands, item frames, paintings, dropped items, XP orbs, signs, banners, heads)
- * and caps the number of particles. Players and mobs are never hidden, so nothing changes for PvP.
+ * DNZ Turbo: skips drawing things that cost FPS on busy servers but don't matter far away (hologram armor
+ * stands, item frames, paintings, dropped items, XP orbs, signs, banners, heads) and caps the number of
+ * particles.
  */
 public final class Turbo {
 	/** Most particles on screen at once (Minecraft allows far more). */

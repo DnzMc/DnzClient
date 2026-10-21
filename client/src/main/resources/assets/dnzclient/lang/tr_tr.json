@@ -297,6 +297,7 @@
 	"dnzclient.hud.hitboxes": "Hitbox",
 	"dnzclient.hud.freelook": "Serbest Bakış",
 	"dnzclient.freelook.locked": "Serbest bakış sadece tek oyunculu dünyada çalışır (sunucularda kilitli).",
+	"dnzclient.freelook.locked_short": "Sunucuda kilitli",
 	"dnzclient.hud.daycount": "Gün",
 	"dnzclient.hud.weather": "Hava Durumu",
 	"dnzclient.hud.battery": "Pil",
@@ -400,5 +401,15 @@
 	"dnzclient.hud.customimage": "Özel Görsel",
 	"dnzclient.hud.opt.lowest": "En düşük",
 	"dnzclient.hud.opt.smoothing": "Hızı yumuşat",
-	"dnzclient.hud.opt.total": "Toplam varlıkları göster"
+	"dnzclient.hud.opt.total": "Toplam varlıkları göster",
+	"dnzclient.hud.blockoutline": "Blok Çerçevesi",
+	"dnzclient.hud.chatheads": "Sohbet Kafaları",
+	"dnzclient.outline.look": "Çerçeve",
+	"dnzclient.outline.chroma": "Gökkuşağı",
+	"dnzclient.outline.chroma.note": "Renk sürekli değişir",
+	"dnzclient.outline.opacity": "Çizgi görünürlüğü",
+	"dnzclient.outline.thickness": "Çizgi kalınlığı",
+	"dnzclient.outline.fill": "İçini doldur",
+	"dnzclient.outline.fill.note": "Bloğun yüzeyleri yarı saydam renklenir",
+	"dnzclient.outline.fillopacity": "Dolgu görünürlüğü"
 }

@@ -3,10 +3,7 @@ package com.dnz.client.mods;
 import java.lang.reflect.Method;
 import net.fabricmc.loader.api.FabricLoader;
 
-/**
- * Mod Menu adds "(N Mods)" to the version line at the bottom left of the title screen. DNZ turns that off in Mod
- * Menu's own setting (a count on the Mods button stays). Read by reflection: Mod Menu is optional.
- */
+/** Mod Menu adds "(N Mods)" to the version line at the bottom left of the title screen. */
 public final class ModMenuTitleCount {
 	private ModMenuTitleCount() {
 	}

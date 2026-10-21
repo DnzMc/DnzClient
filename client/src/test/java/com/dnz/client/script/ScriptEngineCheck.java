@@ -5,8 +5,8 @@ import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 
 /**
- * Checks the DNZ Script sandbox without starting Minecraft (gradlew scriptCheck):
- * no Java access, endless loops are stopped, errors have the right line, and which JavaScript features work.
+ * Checks the DNZ Script sandbox without starting Minecraft (gradlew scriptCheck): no Java access, endless
+ * loops are stopped, errors have the right line, and which JavaScript features work.
  */
 public final class ScriptEngineCheck {
 	private static int failures;

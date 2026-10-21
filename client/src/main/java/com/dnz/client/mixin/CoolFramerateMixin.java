@@ -9,10 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Less heat, steadier FPS: a laptop that runs hot slows itself down (in tests the same scene fell from about 500 to
- * 250 FPS once warm). In a world with a pause menu open (ESC, DNZ menu) the game draws at most 60 FPS; with
- * "Cool mode" on, playing is capped at twice the screen's refresh rate (frames the screen cannot show only add heat).
- * Minecraft's own limits (minimized, AFK, menus outside a world) stay as they are.
+ * Less heat, steadier FPS: a laptop that runs hot slows itself down (in tests the same scene fell from about
+ * 500 to 250 FPS once warm).
  */
 @Mixin(FramerateLimitTracker.class)
 public class CoolFramerateMixin {

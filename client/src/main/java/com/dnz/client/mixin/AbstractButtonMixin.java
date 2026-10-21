@@ -15,9 +15,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Draws the vanilla buttons inside the DNZ menus in the DNZ style (outside them they stay vanilla, see Theme.vanillaWidgets).
- * In the Simple style the label is also redrawn: smooth font, no drop shadow (the pixel font with
- * a shadow looks broken next to the smooth DNZ texts).
+ * Draws the vanilla buttons inside the DNZ menus in the DNZ style (outside them they stay vanilla, see
+ * Theme.vanillaWidgets).
  */
 @Mixin(AbstractButton.class)
 public class AbstractButtonMixin {

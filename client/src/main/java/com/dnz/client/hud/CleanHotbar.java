@@ -11,8 +11,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Borderless hotbar: one see-through rounded bar instead of the nine boxed slots, the selected slot
- * lit in the accent color. Same place and size as the vanilla hotbar, so nothing else moves.
+ * Borderless hotbar: one see-through rounded bar instead of the nine boxed slots, the selected slot lit in
+ * the accent color.
  */
 public final class CleanHotbar {
 	private CleanHotbar() {

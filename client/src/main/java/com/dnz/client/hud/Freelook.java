@@ -9,9 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 /**
- * Freelook: hold the key (Left Alt by default) and the camera circles around the player while the player keeps
- * looking and walking where they were. Only in single player (and worlds opened to friends from this computer):
- * on every multiplayer server it is locked, so it can never break a server's rules.
+ * Freelook: hold the key (Left Alt by default) and the camera circles around the player while the player
+ * keeps looking and walking where they were.
  */
 public final class Freelook {
 	public static final KeyMapping KEY = new KeyMapping("key.dnzclient.freelook", InputConstants.KEY_LALT, Zoom.CATEGORY);
@@ -35,6 +34,12 @@ public final class Freelook {
 
 	public static float pitch() {
 		return pitch;
+	}
+
+	/** On a multiplayer server (or a world on another computer): Freelook is off and its switch is locked. */
+	public static boolean lockedHere() {
+		Minecraft mc = Minecraft.getInstance();
+		return mc.getConnection() != null && !mc.hasSingleplayerServer();
 	}
 
 	/** Allowed here: the module is on and the world runs on this computer (never on a multiplayer server). */

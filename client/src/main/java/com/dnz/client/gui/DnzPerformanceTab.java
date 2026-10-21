@@ -18,10 +18,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * DNZ menu "Performance" tab: Sodium's (and Sodium Extra's) video settings drawn with DNZ widgets.
- * Without Sodium, or if Sodium's settings can't be read, it falls back to a button that opens the video settings screen.
- */
+/** DNZ menu "Performance" tab: Sodium's (and Sodium Extra's) video settings drawn with DNZ widgets. */
 public class DnzPerformanceTab extends DnzMenuScreen {
 	private static final int ROW_H = 22;
 	private static int pageIndex;

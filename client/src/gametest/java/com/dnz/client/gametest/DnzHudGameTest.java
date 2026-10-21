@@ -15,8 +15,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 
 /**
- * Every module on: hits a zombie (reach, combo, target info), holds bread while hungry (food preview),
- * and takes screenshots of the HUD, the HUD editor and the Modules tab.
+ * Every module on: hits a zombie (reach, combo, target info), holds bread while hungry (food preview), and
+ * takes screenshots of the HUD, the HUD editor and the Modules tab.
  */
 public class DnzHudGameTest implements FabricClientGameTest {
 	private final List<String> failures = new ArrayList<>();

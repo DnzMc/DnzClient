@@ -17,9 +17,9 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Footage for the DNZ trailer (only with gradlew runClientGameTest -Ptrailer): one screenshot per game tick while a
- * scripted camera flies over the land, shows the HUD, a fight, the Right Shift menu and the HUD editor.
- * Frames: run/screenshots/trailer-<shot>-<frame>.png (20 per second of game time).
+ * Footage for the DNZ trailer (only with gradlew runClientGameTest -Ptrailer): one screenshot per game tick
+ * while a scripted camera flies over the land, shows the HUD, a fight, the Right Shift menu and the HUD
+ * editor.
  */
 public class DnzTrailerGameTest implements FabricClientGameTest {
 	/** The HUD that shows in the footage (a tidy set, not every module). */

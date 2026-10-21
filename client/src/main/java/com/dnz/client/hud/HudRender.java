@@ -7,10 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-/**
- * What a module draws with. In "measure" mode nothing is drawn (only the size is worked out);
- * without a background, text gets a shadow so it stays readable.
- */
+/** What a module draws with. */
 public final class HudRender {
 	public final GuiGraphicsExtractor g;
 	public final Minecraft mc;

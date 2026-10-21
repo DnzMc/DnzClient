@@ -3,6 +3,10 @@
 	"package": "com.dnz.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"BlockOutlineMixin",
+		"ChatHeadsLinesMixin",
+		"ChatHeadsDrawingBackgroundMixin",
+		"ChatHeadsDrawingFocusedMixin",
 		"OpenWorldTextMixin",
 		"TabListFriendsMixin",
 		"EntityNameBadgeMixin",

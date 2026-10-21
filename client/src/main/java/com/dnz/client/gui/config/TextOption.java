@@ -11,10 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
-/**
- * Text setting: a text box on the right. Click it to type; the edge lights up in the accent color while typing.
- * Enter or Escape stops typing; every change is passed on right away.
- */
+/** Text setting: a text box on the right. */
 public class TextOption extends Option {
 	private static final float BOX_H = 15;
 	private final Supplier<String> get;
