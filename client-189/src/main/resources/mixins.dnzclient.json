@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "minVersion": "0.7",
+  "package": "com.dnz.client189.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.dnzclient.refmap.json",
+  "client": [
+    "RenderManagerMixin",
+    "ChunkRenderContainerAccessor",
+    "VboRenderListMixin",
+    "ChunkUploadMixin",
+    "RenderChunkMixin",
+    "RenderGlobalMixin",
+    "FontRendererMixin",
+    "TabListMixin",
+    "TextureMapAccessor",
+    "TextureMapMixin",
+    "RenderEntityItemMixin",
+    "TileEntityRendererDispatcherMixin",
+    "EffectRendererMixin",
+    "GuiNewChatMixin"
+  ]
+}

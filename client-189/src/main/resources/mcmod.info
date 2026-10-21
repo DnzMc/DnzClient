@@ -1,0 +1,10 @@
+[
+  {
+    "modid": "dnzclient",
+    "name": "DNZ Client",
+    "description": "DNZ Client for Minecraft 1.8.9: DNZ menu and HUD modules.",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "authorList": ["DNZ"]
+  }
+]
