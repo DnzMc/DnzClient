@@ -13,7 +13,6 @@ import net.minecraft.world.phys.Vec3;
  * target, movement speed, time played this session, and kills / deaths since the game started.
  */
 public final class CombatTracker {
-	/** Reach and target stay visible this long after the last hit. */
 	private static final long SHOW_MS = 3000;
 
 	private static double lastReach = -1;
@@ -30,7 +29,6 @@ public final class CombatTracker {
 	private static long sessionStart;
 	private static Object sessionLevel;
 
-	/** Players killed (died within a few seconds of our last hit) and own deaths since the game started. */
 	private static int kills;
 	private static int deaths;
 	private static Entity killTarget;
@@ -51,7 +49,7 @@ public final class CombatTracker {
 
 	private static void onAttack(Vec3 eye, Entity target) {
 		AABB box = target.getBoundingBox();
-		// Distance from the eyes to the closest point of the target's hitbox (how reach is measured).
+		// Distance from the eyes to the closest point of the target's hitbox (how reach is measured)
 		double dx = Math.max(Math.max(box.minX - eye.x, 0), eye.x - box.maxX);
 		double dy = Math.max(Math.max(box.minY - eye.y, 0), eye.y - box.maxY);
 		double dz = Math.max(Math.max(box.minZ - eye.z, 0), eye.z - box.maxZ);
@@ -81,12 +79,12 @@ public final class CombatTracker {
 		}
 		long now = System.currentTimeMillis();
 
-		// A hit counts for the combo when the target really took damage right after our attack.
+		// A hit counts for the combo when the target really took damage right after our attack
 		if (!hitCounted && lastTarget instanceof LivingEntity living && living.hurtTime > 0 && now - lastAttackTime < 500) {
 			combo++;
 			hitCounted = true;
 		}
-		// Getting hit, or 3 seconds without a hit, ends the combo.
+		// Getting hit, or 3 seconds without a hit, ends the combo
 		int hurt = mc.player.hurtTime;
 		if (hurt > lastOwnHurtTime) {
 			combo = 0;
@@ -111,7 +109,7 @@ public final class CombatTracker {
 		Vec3 pos = mc.player.position();
 		if (lastPos != null) {
 			double dx = pos.x - lastPos.x, dz = pos.z - lastPos.z;
-			// Blocks per tick * 20 = blocks per second (horizontal only, like other speed meters).
+			// Blocks per tick * 20 = blocks per second (horizontal only, like other speed meters)
 			rawSpeed = Math.sqrt(dx * dx + dz * dz) * 20.0;
 			speed += (rawSpeed - speed) * 0.5;
 		}

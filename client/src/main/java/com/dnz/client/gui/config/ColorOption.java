@@ -13,7 +13,6 @@ public class ColorOption extends Option {
 	private final int[] colors;
 	private final IntSupplier get;
 	private final IntConsumer set;
-	/** Per swatch: ring (chosen) and hover animation. */
 	private final float[] ring;
 	private final float[] lift;
 

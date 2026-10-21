@@ -17,7 +17,6 @@ public final class Ui {
 	/** Page and sidebar glass, see-through over the blurred game. */
 	public static final int PAGE_BG = 0xD811171C;
 	public static final int SIDEBAR_BG = 0xCC151C22;
-	/** Chips, cards and option rows. */
 	public static final int CHIP_BG = 0xC2232D32;
 	public static final int CARD_BG = 0x66232D32;
 	public static final int CARD_HOVER = 0x8A2B363D;
@@ -75,7 +74,6 @@ public final class Ui {
 		return font(head.stripTrailing() + "…", font);
 	}
 
-	/** Text at [scale] with its top-left corner at x, y. */
 	public static void text(GuiGraphicsExtractor g, Component text, float x, float y, float scale, int color) {
 		g.pose().pushMatrix();
 		g.pose().translate(x, y);
@@ -96,7 +94,6 @@ public final class Ui {
 		return Math.round(Minecraft.getInstance().font.width(text) * scaled(scale));
 	}
 
-	/** Glass box with a thin light edge (cards, option rows, inputs). */
 	public static void glass(GuiGraphicsExtractor g, float x, float y, float w, float h, float radius, int fill) {
 		Smooth.rect(g, x, y, w, h, radius, BORDER);
 		Smooth.rect(g, x + 0.75F, y + 0.75F, w - 1.5F, h - 1.5F, Math.max(0, radius - 0.75F), fill);
@@ -126,14 +123,13 @@ public final class Ui {
 		float k = 8 + hover * 1.5F;
 		float kx = x + w * value - k / 2;
 		if (hover > 0.01F && active) {
-			// Soft accent halo around the knob while the mouse is on the slider.
+			// Soft accent halo around the knob while the mouse is on the slider
 			Smooth.shadow(g, kx, y + (h - k) / 2, k, k, k / 2, 3 * hover, Theme.withAlpha(accent & 0xFFFFFF, 0.45F * hover));
 		}
 		Smooth.shadow(g, kx, y + (h - k) / 2 + 0.5F, k, k, k / 2, 2, 0x60000000);
 		Smooth.rect(g, kx, y + (h - k) / 2, k, k, k / 2, active ? Palette.KEEP_WHITE : 0xFF9BA1AD);
 	}
 
-	/** One rounded stroke centered at (cx, cy), turned by [degrees]: the building block of vector marks. */
 	private static void stroke(GuiGraphicsExtractor g, float cx, float cy, float length, float thick, float degrees, int color) {
 		g.pose().pushMatrix();
 		g.pose().translate(cx, cy);
@@ -152,7 +148,6 @@ public final class Ui {
 		stroke(g, cx + half / 2, cy, length, thick, -turn, color);
 	}
 
-	/** A check mark of [size] units centered at (cx, cy). */
 	public static void check(GuiGraphicsExtractor g, float cx, float cy, float size, int color) {
 		float thick = Math.max(0.9F, size * 0.16F);
 		float c = 0.7071F;

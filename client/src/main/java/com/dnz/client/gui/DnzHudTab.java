@@ -26,14 +26,11 @@ public class DnzHudTab extends DnzMenuScreen {
 	private static final int GAP = 6;
 	/** null = all categories (Java and Simple styles). */
 	private static HudModule.Category category;
-	/** Category chip of the DNZ style. */
 	private static Chip chip = Chip.ALL;
 	private int page;
 
-	/** Grid scroll in pixels: where it is drawn now and where the mouse wheel sent it. */
 	private float scroll;
 	private float scrollTarget;
-	/** Per card: hover and on/off animation (0..1). */
 	private final Map<String, float[]> anim = new HashMap<>();
 
 	private enum Chip {
@@ -55,10 +52,8 @@ public class DnzHudTab extends DnzMenuScreen {
 		}
 	}
 
-	/** Card id of Open World (opens the single player world to friends). */
 	private static final String OPEN_WORLD = "page.openworld";
 
-	/** One card: a module (switches on/off) or a page (opens). */
 	private record Card(String id, String name, char icon, HudModule module, Tab page) {
 	}
 
@@ -69,7 +64,7 @@ public class DnzHudTab extends DnzMenuScreen {
 	@Override
 	protected void initContent() {
 		if (Theme.dnzStyle()) {
-			// Chips sized to their text; the grid is drawn and clicked in extractContent / clicked.
+			// Chips sized to their text; the grid is drawn and clicked in extractContent / clicked
 			int x = this.cx;
 			for (Chip c : Chip.values()) {
 				int w = ChipButton.widthFor(this.font, c);
@@ -170,7 +165,6 @@ public class DnzHudTab extends DnzMenuScreen {
 
 	// ---------------------------------------------------------------- DNZ grid
 
-	/** Cards of the chosen chip that match the search text. */
 	private List<Card> cards() {
 		String q = query.trim().toLowerCase(Locale.ROOT);
 		List<Card> list = new ArrayList<>();
@@ -185,7 +179,7 @@ public class DnzHudTab extends DnzMenuScreen {
 			if (Tab.SCHEMATIC.available()) {
 				list.add(new Card("page.schematic", "Schematic", '\uea3b', null, Tab.SCHEMATIC));
 			}
-			// Opens the single player world to friends anywhere (internet hosting comes with DNZ Client).
+			// opens the single player world to friends anywhere (internet hosting comes with DNZ Client)
 			if (this.minecraft.hasSingleplayerServer()) {
 				list.add(new Card(OPEN_WORLD, "Open World", Icon.SERVER, null, null));
 			}
@@ -208,12 +202,10 @@ public class DnzHudTab extends DnzMenuScreen {
 		return 4;
 	}
 
-	/** Cards a little less than half as tall as wide. */
 	private int cardH() {
 		return Math.max(40, Math.round(this.cardW() * 0.47F));
 	}
 
-	/** The gear in a module card's top right corner (opens its settings). */
 	private static final int GEAR = 14;
 
 	private int cardW() {
@@ -229,7 +221,6 @@ public class DnzHudTab extends DnzMenuScreen {
 	/** Set by cardAt: the mouse is on the card's gear (opens its settings) instead of the card (switches it). */
 	private boolean onGear;
 
-	/** The card under the mouse, or null. */
 	private Card cardAt(List<Card> list, double mouseX, double mouseY) {
 		int top = this.gridTop();
 		if (mouseX < this.cx || mouseX >= this.cx + this.cw || mouseY < top || mouseY >= top + this.gridHeight()) {
@@ -310,7 +301,7 @@ public class DnzHudTab extends DnzMenuScreen {
 			if (y + ch < top || y > top + height) {
 				continue;
 			}
-			// Dark card, its edge orange when on; icon top left, name and On / Off at the bottom, gear top right.
+			// Dark card, its edge orange when on; icon top left, name and On / Off at the bottom, gear top right
 			boolean page = c.module() == null;
 			int hoverEdge = 0xFF000000 | Theme.lighter(GameTheme.cardEdge);
 			int edge = page ? Theme.lerp(GameTheme.cardEdge, hoverEdge, st[0]) : Theme.lerp(Theme.lerp(GameTheme.cardEdge, hoverEdge, st[0]), Theme.withAlpha(accent, 0.6F), st[1]);
@@ -344,7 +335,7 @@ public class DnzHudTab extends DnzMenuScreen {
 		}
 		g.disableScissor();
 
-		// Thin scrollbar when the grid is taller than the area.
+		// Thin scrollbar when the grid is taller than the area
 		if (max > 0) {
 			float total = max + height;
 			float barH = Math.max(16, height * height / total);
@@ -353,7 +344,6 @@ public class DnzHudTab extends DnzMenuScreen {
 		}
 	}
 
-	/** Line icon of a module card (Material Icons code points). */
 	private static char icon(String id) {
 		return switch (id) {
 			case "fps" -> '\ue9e4';
@@ -438,7 +428,6 @@ public class DnzHudTab extends DnzMenuScreen {
 		};
 	}
 
-	/** Category chip of the DNZ style: optional line icon and the name, the chosen one filled. */
 	private static final class ChipButton extends net.minecraft.client.gui.components.AbstractButton {
 		private final Chip chip;
 		private final boolean selected;

@@ -62,7 +62,7 @@ public final class Freelook {
 		} else {
 			stop(mc);
 		}
-		// On a server: say once per press that it is locked there.
+		// on a server: say once per press that it is locked there
 		if (held && !allowed(mc) && mc.player != null && !mc.hasSingleplayerServer()) {
 			if (!lockedShown) {
 				lockedShown = true;

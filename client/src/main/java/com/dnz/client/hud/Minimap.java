@@ -69,7 +69,7 @@ final class Minimap extends HudModule {
 				r.fill(x - 1, y - 1, x + 1, y + 1, e instanceof Player ? 0xFFFFFFFF : 0xFFFF5555);
 			}
 		}
-		// The player: a small arrow pointing where they look.
+		// the player: a small arrow pointing where they look
 		float cx = m + inner / 2.0F + (float) (px - (this.centerX + 0.5)) * perBlock;
 		float cy = m + inner / 2.0F + (float) (pz - (this.centerZ + 0.5)) * perBlock;
 		r.g.pose().pushMatrix();
@@ -88,7 +88,6 @@ final class Minimap extends HudModule {
 		return new int[] {box, h};
 	}
 
-	/** Redraws the map picture around the player (at most twice a second). */
 	private void update(Minecraft mc) {
 		long now = System.currentTimeMillis();
 		if (this.texture == null) {
@@ -113,7 +112,7 @@ final class Minimap extends HudModule {
 					int y = cave ? playerY + 1 : level.getHeight(Heightmap.Types.WORLD_SURFACE, wx, wz) - 1;
 					pos.set(wx, y, wz);
 					BlockState state = level.getBlockState(pos);
-					// In the Nether (a roof) look down from the player's height instead of the top.
+					// in the Nether (a roof) look down from the player's height instead of the top
 					if (cave) {
 						for (int i = 0; i < 24 && state.isAir(); i++) {
 							pos.move(0, -1, 0);

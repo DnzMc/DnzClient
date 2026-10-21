@@ -39,7 +39,6 @@ public class DnzTitleScreen extends Screen {
 		super(Component.translatable("narrator.screen.title"));
 	}
 
-	/** Size unit: one pixel of the 1280 x 720 design. */
 	private float u() {
 		return this.height / 720.0F;
 	}
@@ -57,7 +56,7 @@ public class DnzTitleScreen extends Screen {
 		this.addRenderableWidget(new MenuButton(x, y + bh + gap, bw, bh, "Multiplayer", true, () -> this.minecraft.gui.setScreen(new JoinMultiplayerScreen(this))));
 		this.addRenderableWidget(new MenuButton(x, y + 2 * (bh + gap), bw, bh, "Quit", false, this.minecraft::stop));
 
-		// Top right, from the right edge: settings, screenshots, friends, mods, DNZ.
+		// top right, from the right edge: settings, screenshots, friends, mods, DNZ.
 		int sq = Math.round(42 * u), sgap = Math.round(10 * u), top = Math.round(26 * u);
 		int ix = this.width - Math.round(25 * u) - sq;
 		this.addRenderableWidget(new IconButton(ix, top, sq, Icon.PREFERENCES, "Settings", () -> this.minecraft.gui.setScreen(com.dnz.client.compat.Compat.optionsScreen(this))));
@@ -74,7 +73,6 @@ public class DnzTitleScreen extends Screen {
 		this.addRenderableWidget(new AccountChip(ix - chipW, top, chipW, sq));
 	}
 
-	/** Opens [dir] in the file manager (made first if missing). */
 	private static void openFolder(java.nio.file.Path dir) {
 		try {
 			java.nio.file.Files.createDirectories(dir);
@@ -93,7 +91,7 @@ public class DnzTitleScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		// The title picture covering the screen without stretching, a little darker so the buttons stand out.
+		// the title picture covering the screen without stretching, a little darker so the buttons stand out
 		float scale = Math.max(this.width / 1920.0F, this.height / 1080.0F);
 		int w = (int) Math.ceil(1920 * scale), h = (int) Math.ceil(1080 * scale);
 		int x = (this.width - w) / 2, y = (this.height - h) / 2;
@@ -111,7 +109,6 @@ public class DnzTitleScreen extends Screen {
 		Ui.text(g, version, 10 * u, this.height - 18 * u, 0.62F, 0x88FFFFFF);
 	}
 
-	/** App icon, then "DNZ" and the spaced "CLIENT" next to it, above the buttons. */
 	private void logo(GuiGraphicsExtractor g, float u) {
 		float icon = 86 * u;
 		Component dnz = Component.literal("DNZ").withStyle(s -> s.withFont(TITLE_FONT));
@@ -128,7 +125,6 @@ public class DnzTitleScreen extends Screen {
 		Ui.text(g, Ui.medium("C L I E N T"), tx + 1 * u, y + 62 * u, 12.5F * u / 9.0F, MUTED);
 	}
 
-	/** Bottom right: the latest DNZ notifications (friends joining, updates...), or a hint. */
 	private void notifications(GuiGraphicsExtractor g, float u) {
 		float w = 318 * u, x = this.width - 25 * u - w;
 		List<Notifications.Entry> list = Notifications.latest(3);
@@ -179,7 +175,6 @@ public class DnzTitleScreen extends Screen {
 		}
 	}
 
-	/** Wide dark button: a green dot and the name; Quit has no dot and a green name. */
 	private static final class MenuButton extends Base {
 		private final boolean dot;
 
@@ -242,7 +237,6 @@ public class DnzTitleScreen extends Screen {
 		}
 	}
 
-	/** The player's head and name (top right). */
 	private final class AccountChip extends Base {
 		AccountChip(int x, int y, int w, int h) {
 			super(x, y, w, h, Minecraft.getInstance().getUser().getName(), null);

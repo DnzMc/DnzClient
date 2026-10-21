@@ -17,7 +17,6 @@ public class TextOption extends Option {
 	private final Supplier<String> get;
 	private final TextField field = new TextField();
 	private final String hint;
-	/** Typing glow, 0..1. */
 	private float glow;
 	private float boxW;
 	private float boxX;

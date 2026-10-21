@@ -74,7 +74,7 @@ public class DnzModsScreen extends DnzMenuScreen {
 			this.buildLocalRows(x, this.listTop(), w, this.visibleRows());
 		}
 
-		// Bottom bar
+		// bottom bar
 		int by = this.cy + this.ch - 20;
 		this.addRenderableWidget(new DnzButton(x, by, 90, 20, Component.literal(L.t("open_folder")),
 			() -> com.dnz.client.compat.Compat.openFolder(ModManager.modsDir())));

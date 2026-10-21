@@ -22,7 +22,7 @@ public final class CleanHotbar {
 		HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR, vanilla -> (g, delta) -> {
 			HudModule module = DnzHud.module("cleanhotbar");
 			Minecraft mc = Minecraft.getInstance();
-			// Spectators get their own menu there; leave it to vanilla.
+			// Spectators get their own menu there; leave it to vanilla
 			if (module != null && module.enabled() && mc.player != null && !mc.player.isSpectator()) {
 				render(g, mc, mc.player);
 			} else {
@@ -45,7 +45,7 @@ public final class CleanHotbar {
 		}
 		ItemStack offhand = player.getOffhandItem();
 		if (!offhand.isEmpty()) {
-			// Offhand on the side opposite the main hand, like vanilla.
+			// Offhand on the side opposite the main hand, like vanilla
 			boolean left = player.getMainArm() == HumanoidArm.RIGHT;
 			int ox = left ? x - 26 : x + 182 + 4;
 			Theme.roundedRect(g, ox, y, 22, 22, 0x70000000);

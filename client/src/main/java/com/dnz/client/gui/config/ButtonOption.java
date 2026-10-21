@@ -49,7 +49,7 @@ public class ButtonOption extends Option {
 	protected void extractControl(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		boolean on = this.isActive();
 		this.press = Anim.approach(this.press, 0.0F, 10.0F);
-		// Pressed: the button dips in for a moment.
+		// Pressed: the button dips in for a moment
 		float shrink = this.press * 1.2F;
 		float bx = this.btnX + shrink;
 		float by = this.btnY + shrink * 0.5F;

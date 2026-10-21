@@ -28,7 +28,6 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 	private List<SodiumSettings.Row> rows = List.of();
 	private int scroll;
 	private Component status;
-	/** DNZ style: the settings page and its Apply / Undo buttons. */
 	private OptionList list;
 	private DnzButton applyButton;
 	private DnzButton undoButton;
@@ -69,7 +68,7 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 				}
 				return;
 			} catch (Throwable t) {
-				// Sodium changed how its settings work; use its own screen instead.
+				// Sodium changed how its settings work; use its own screen instead
 				this.sodium = false;
 				this.rebuildWidgets();
 				return;
@@ -80,7 +79,6 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 		this.addRenderableWidget(video);
 	}
 
-	/** DNZ style: page picker with Apply / Undo on top, the page's settings as rows on a scrolling page below. */
 	private void initSodiumOptions() {
 		this.pages = SodiumSettings.pages();
 		pageIndex = Math.max(0, Math.min(pageIndex, this.pages.size() - 1));
@@ -90,7 +88,7 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 		}
 		int buttonW = 52;
 		int buttonsW = 2 * buttonW + 4;
-		// The page picker is a one-row list of its own, so its dropdown opens over the settings below.
+		// the page picker is a one-row list of its own, so its dropdown opens over the settings below
 		OptionList top = new OptionList(this.cx, this.cy, this.cw - buttonsW - 6, 24);
 		top.set(List.of(new ChoiceOption(L.t("perf.page"), names, () -> pageIndex, i -> {
 			pageIndex = i;
@@ -115,7 +113,6 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 		this.updateButtons();
 	}
 
-	/** Settings of the chosen page; the first page starts with DNZ's own FPS switches. */
 	private List<Option> sodiumRows() {
 		List<Option> rows = new ArrayList<>();
 		com.dnz.client.DnzConfig config = com.dnz.client.DnzConfig.get();
@@ -224,7 +221,7 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 			this.addRenderableWidget(widget);
 		}
 
-		// Bottom bar
+		// bottom bar
 		int by = this.cy + this.ch - 20;
 		boolean changed = SodiumSettings.anyChanged();
 		DnzButton apply = new DnzButton(this.cx, by, 80, 20, Component.literal(L.t("perf.apply")), () -> {
@@ -275,7 +272,6 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 		this.refresh();
 	}
 
-	/** Shows the new values (other settings may have become usable); the DNZ style keeps its scroll and animations. */
 	private void refresh() {
 		if (this.list != null) {
 			try {
@@ -381,7 +377,7 @@ public class DnzPerformanceTab extends DnzMenuScreen {
 
 		// Credit
 		Component credit = Component.literal("Powered by ").withColor(0xB0B8C8).append(Component.literal("Sodium").withColor(0x7CE38B));
-		// Only where it doesn't run into the Turbo button.
+		// only where it doesn't run into the Turbo button
 		if (this.cw - 262 >= this.font.width(credit)) {
 			g.text(this.font, credit, this.cx + this.cw - this.font.width(credit), this.cy + this.ch - 14, 0xFFFFFFFF);
 		}

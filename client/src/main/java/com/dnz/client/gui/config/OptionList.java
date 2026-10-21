@@ -32,20 +32,15 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 	private final int height;
 	private final List<Option> options = new ArrayList<>();
 	private int contentHeight;
-	/** Scroll in units: where it is drawn now and where the wheel sent it. */
 	private float scroll;
 	private float scrollTarget;
-	/** Row that took the last mouse press (gets drags and the release). */
 	private Option pressed;
-	/** Row that gets the keyboard (a text box being typed in). */
 	private Option keyboard;
-	/** Dropdown whose list is open. */
 	private ChoiceOption popup;
 	private boolean barDrag;
 	private double barGrab;
 	private Option hovered;
 	private boolean focused;
-	/** Counts {@link #set} calls: a click can make the page show new rows, then the old row is not kept. */
 	private int generation;
 
 	public OptionList(int left, int top, int width, int height) {
@@ -55,7 +50,6 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 		this.height = height;
 	}
 
-	/** Shows [rows]. */
 	public OptionList set(List<? extends Option> rows) {
 		Map<String, Option> before = new HashMap<>();
 		for (Option o : this.options) {
@@ -112,7 +106,6 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 		this.contentHeight = Math.max(0, y - GAP);
 	}
 
-	/** Gives the rows of one line the same height (so the cards line up); returns where the next line starts. */
 	private int closeLine(List<Option> line, int y, int rowH) {
 		if (line.isEmpty()) {
 			return y;
@@ -182,7 +175,6 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 		}
 	}
 
-	/** Open dropdown lists, over every other part of the menu. */
 	public void extractOverlay(GuiGraphicsExtractor g, int mouseX, int mouseY) {
 		for (Option o : this.options) {
 			if (o instanceof ChoiceOption choice && choice.popupVisible()) {
@@ -326,7 +318,6 @@ public class OptionList implements GuiEventListener, Renderable, NarratableEntry
 		return false;
 	}
 
-	/** A dropdown list is open and the mouse is on it (nothing under it should react). */
 	public boolean popupUnder(double mouseX, double mouseY) {
 		return this.popup != null && this.popup.popupContains(mouseX, mouseY);
 	}

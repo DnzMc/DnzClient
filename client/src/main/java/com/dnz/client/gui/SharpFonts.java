@@ -18,9 +18,7 @@ public final class SharpFonts {
 		void dnz$setOversample(float oversample);
 	}
 
-	/** Font atlas textures of our fonts (weak, so reloaded fonts can go away). */
 	private static final Set<Object> SMOOTH_ATLASES = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
-	/** Our TrueType fonts and the biggest scale each is drawn at (weak, so reloaded fonts can go away). */
 	private static final Map<Sharp, Float> FONTS = Collections.synchronizedMap(new WeakHashMap<>());
 	/** Screen pixels per GUI unit our glyphs are rendered for now (0 = not decided yet). */
 	private static volatile float density;
@@ -71,7 +69,6 @@ public final class SharpFonts {
 		}
 	}
 
-	/** Screen pixels per GUI unit of what [screen] draws: the DNZ menu has its own scale, everything else the GUI scale. */
 	private static float wanted(Minecraft mc, Screen screen) {
 		if (screen instanceof DnzMenuScreen && Theme.dnzStyle()) {
 			return MenuScale.pixels(mc.getWindow());
@@ -93,7 +90,7 @@ public final class SharpFonts {
 		synchronized (FONTS) {
 			FONTS.forEach((font, scale) -> font.dnz$setOversample(want * scale));
 		}
-		// Drops the glyphs already in the font atlases (like switching "Force Unicode Font"), so they are made again.
+		// Drops the glyphs already in the font atlases (like switching "Force Unicode Font"), so they are made again
 		((MinecraftAccessor) mc).dnz$fontManager().updateOptions(mc.options);
 	}
 

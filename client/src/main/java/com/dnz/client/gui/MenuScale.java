@@ -7,10 +7,8 @@ import com.mojang.blaze3d.platform.Window;
 public final class MenuScale {
 	public static final int PANEL_W = 560;
 	public static final int PANEL_H = 340;
-	/** Room the menu needs on the screen: the panel, side margins and the credit line below it. */
 	private static final int ROOM_W = PANEL_W + 16;
 	private static final int ROOM_H = PANEL_H + 40;
-	/** Below this many screen pixels per unit the small text gets hard to read. */
 	private static final float READABLE = 1.25F;
 
 	private MenuScale() {

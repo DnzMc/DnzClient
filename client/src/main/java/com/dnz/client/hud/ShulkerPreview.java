@@ -20,7 +20,6 @@ public final class ShulkerPreview {
 	private static final int SLOTS = 27;
 	private static final int COLUMNS = 9;
 	private static final int SLOT = 18;
-	/** The plain (undyed) shulker's purple. */
 	private static final int PLAIN = 0xFF8C6A8C;
 
 	private ShulkerPreview() {
@@ -75,7 +74,7 @@ public final class ShulkerPreview {
 			int w = COLUMNS * SLOT + 2;
 			int h = rows * SLOT + 2;
 			int top = y + 2;
-			// Frame in the box's color, darker slots inside.
+			// Frame in the box's color, darker slots inside
 			g.fill(x, top, x + w, top + h, darken(contents.color, 0.55F));
 			g.outline(x, top, w, h, contents.color);
 			for (int i = 0; i < SLOTS; i++) {

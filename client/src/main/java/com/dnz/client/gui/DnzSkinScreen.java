@@ -181,7 +181,7 @@ public class DnzSkinScreen extends DnzMenuScreen {
 		g.fill(boxX, boxY, boxX + PREVIEW_W, boxBottom, 0x50000000);
 		if (this.minecraft.player != null) {
 			int size = Math.max(30, Math.min(60, (boxBottom - boxY - 16) / 2));
-			// Minecraft draws the player without the menu's scale: hand it the box and the mouse in real GUI units.
+			// Minecraft draws the player without the menu's scale: hand it the box and the mouse in real GUI units
 			org.joml.Vector2f from = toGui(g, boxX, boxY + 4);
 			org.joml.Vector2f to = toGui(g, boxX + PREVIEW_W, boxBottom - 4);
 			org.joml.Vector2f mouse = toGui(g, mouseX, mouseY);

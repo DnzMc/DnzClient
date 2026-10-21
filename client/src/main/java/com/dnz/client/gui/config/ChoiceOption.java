@@ -21,13 +21,11 @@ public class ChoiceOption extends Option {
 	private final IntSupplier get;
 	private final IntConsumer set;
 	private boolean open;
-	/** Unfold animation 0..1 (also runs backwards after closing). */
 	private float unfold;
 	private float pillHover;
 	private float pillW;
 	private float pillX;
 	private float pillY;
-	/** Where the open list is (set when drawn). */
 	private float listX;
 	private float listY;
 	private float listW;
@@ -112,7 +110,6 @@ public class ChoiceOption extends Option {
 		this.open = false;
 	}
 
-	/** Still on screen (open, or folding away). */
 	public boolean popupVisible() {
 		return this.open || this.unfold > 0.01F;
 	}
@@ -121,7 +118,6 @@ public class ChoiceOption extends Option {
 		return this.open && inside(mouseX, mouseY, this.listX, this.listY, this.listW, this.listH);
 	}
 
-	/** The click picked a value from the open list (true) or missed it. */
 	public boolean choose(double mouseX, double mouseY) {
 		if (!this.popupContains(mouseX, mouseY)) {
 			return false;
@@ -149,7 +145,7 @@ public class ChoiceOption extends Option {
 		if (shown <= 0.01F) {
 			return;
 		}
-		// Unfolds from the pill: only the part that is out so far is drawn.
+		// Unfolds from the pill: only the part that is out so far is drawn
 		float visible = this.listH * shown + 6;
 		int clipTop = (int) Math.floor(this.upward ? this.listY + this.listH - visible : this.listY - 6);
 		int clipBottom = (int) Math.ceil(this.upward ? this.listY + this.listH + 6 : this.listY + visible);

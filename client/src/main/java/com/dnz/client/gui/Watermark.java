@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 
 /** "DNZ Client" in the bold DNZ font (DNZ white, Client blue) at the bottom right of the inventory and ESC menu. */
 public final class Watermark {
-	/** Blue of the DNZ logo. */
 	private static final int BLUE = 0x4DA0FF;
 	private static final int MARGIN = 6;
 

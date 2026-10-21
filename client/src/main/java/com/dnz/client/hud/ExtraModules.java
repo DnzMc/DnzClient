@@ -273,7 +273,6 @@ public final class ExtraModules {
 		}
 	}
 
-	/** Counts the selected item; an empty configured identifier follows the main hand. */
 	private static final class ItemCounter extends HudModule {
 		ItemCounter() { super("itemcounter", Category.ITEMS, 0.30F, 0.70F, false); }
 		@Override public boolean editableValue() { return true; }
@@ -328,7 +327,6 @@ public final class ExtraModules {
 		}
 	}
 
-	/** A small feed of changes in inventory item totals, sampled four times per second. */
 	private static final class ItemTracker extends HudModule {
 		private final Map<Item, Integer> previous = new HashMap<>();
 		private final List<Change> changes = new ArrayList<>();
@@ -395,7 +393,6 @@ public final class ExtraModules {
 		}
 	}
 
-	/** PNG files are loaded from config/dnzclient/hud-images, with size and opacity set as file.png|width|opacity. */
 	private static final class CustomImage extends HudModule {
 		private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("dnzclient", "hud_custom_image");
 		private String loadedName = "";
@@ -570,7 +567,6 @@ public final class ExtraModules {
 		}
 	}
 
-	/** Flat primitives, selected by entering rectangle, ellipse, triangle, polygon, star or ring. */
 	private static final class ShapePanel extends HudModule {
 		ShapePanel() { super("shape", Category.VISUAL, 0.60F, 0.32F, false); }
 		@Override public boolean editableValue() { return true; }

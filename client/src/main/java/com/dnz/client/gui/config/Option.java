@@ -22,26 +22,21 @@ public abstract class Option {
 	protected Supplier<String> note = () -> "";
 	protected Component tooltip;
 	protected boolean wide;
-	/** Small accent bar on the left edge (e.g. a changed setting that is not applied yet). */
 	protected boolean marked;
 	private BooleanSupplier active = () -> true;
 
-	/** Place inside the list (relative to its content), set by the list's layout. */
 	int relX;
 	int relY;
-	/** Where the row is on screen this frame (moves with scrolling). */
 	protected float x;
 	protected float y;
 	protected int width;
 	protected int height;
-	/** Mouse-over animation, 0..1. */
 	protected float hover;
 
 	protected Option(String name) {
 		this.name = name;
 	}
 
-	/** Short gray line under the name. */
 	public Option note(String note) {
 		String text = note == null ? "" : note;
 		this.note = () -> text;
@@ -66,7 +61,6 @@ public abstract class Option {
 		return this;
 	}
 
-	/** Shows the accent bar on the left edge. */
 	public Option marked(boolean marked) {
 		this.marked = marked;
 		return this;
@@ -90,27 +84,22 @@ public abstract class Option {
 		return this.tooltip;
 	}
 
-	/** Height of the row in menu units. */
 	public int rowHeight() {
 		return this.note.get().isEmpty() ? 24 : 30;
 	}
 
-	/** Width the control takes on the right; the name and the note are cut before it. */
 	protected float controlWidth() {
 		return 0;
 	}
 
-	/** Identity used to keep animations running when a page rebuilds its rows. */
 	protected String key() {
 		return this.getClass().getSimpleName() + ":" + this.name;
 	}
 
-	/** Takes over the animation state of the row this one replaces. */
 	protected void adopt(Option old) {
 		this.hover = old.hover;
 	}
 
-	/** Keyboard input goes to this row after a click (text boxes). */
 	protected boolean wantsKeyboard() {
 		return false;
 	}
@@ -173,7 +162,6 @@ public abstract class Option {
 		return false;
 	}
 
-	/** Lost the keyboard (clicked somewhere else). */
 	public void blur() {
 	}
 

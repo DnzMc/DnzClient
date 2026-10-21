@@ -19,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 public final class DnzHud {
 	private static final List<HudModule> BUILT_IN = Modules.all();
 	private static final Map<String, HudModule> BY_ID = new LinkedHashMap<>();
-	/** Script mod panels ("script:mod:id"), created when first seen. */
 	private static final Map<String, HudModule> SCRIPT_MODULES = new HashMap<>();
 
 	static {
@@ -28,7 +27,6 @@ public final class DnzHud {
 
 	private static final Deque<Long> LEFT_CLICKS = new ArrayDeque<>();
 	private static final Deque<Long> RIGHT_CLICKS = new ArrayDeque<>();
-	/** Last drawn size (already scaled) of each panel, used for clamping and dragging. */
 	private static final Map<String, int[]> SIZES = new HashMap<>();
 
 	private DnzHud() {
@@ -58,7 +56,7 @@ public final class DnzHud {
 	}
 
 	private static HudModule scriptModule(String id) {
-		// Script panels start on the right, one under the other (7% of the height apart, so they never touch).
+		// Script panels start on the right, one under the other (7% of the height apart, so they never touch)
 		int index = Math.max(0, ScriptManager.hudIds().indexOf(id));
 		return new Modules.TextModule(id, HudModule.Category.INFO, 0.84F, 0.01F + 0.07F * (index % 12), true, mc -> ScriptManager.hudValue(id)) {
 			@Override
@@ -68,7 +66,6 @@ public final class DnzHud {
 		};
 	}
 
-	/** Ids of the panels that are drawn on the HUD (built-in and script). */
 	public static List<String> elements() {
 		return modules().stream().filter(HudModule::movable).map(m -> m.id).toList();
 	}
@@ -83,7 +80,6 @@ public final class DnzHud {
 		return m == null ? id : m.label();
 	}
 
-	/** Puts every panel back to its default place and size (on/off stays as it is). */
 	public static void reset() {
 		for (HudModule m : modules()) {
 			if (!m.movable()) {
@@ -171,7 +167,6 @@ public final class DnzHud {
 	public static final Map<String, long[]> PROFILE = new LinkedHashMap<>();
 	public static volatile boolean profiling;
 
-	/** Draws every enabled panel. */
 	public static void renderAll(GuiGraphicsExtractor g, boolean editor) {
 		Minecraft mc = Minecraft.getInstance();
 		int w = g.guiWidth();

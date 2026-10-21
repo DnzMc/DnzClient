@@ -2,7 +2,6 @@ package com.dnz.client.gui;
 
 /** Colors of the DNZ menu in the chosen theme. */
 public final class Palette {
-	/** Always white (switch and slider knobs). */
 	public static final int KEEP_WHITE = 0xFFFFFFFE;
 	/** Text and icons drawn on the accent color: white, or black where the accent is light (Minecraft look, dark). */
 	public static final int ON_ACCENT = 0xFFFFFFFD;
@@ -29,17 +28,17 @@ public final class Palette {
 		int b = c & 0xFF;
 		int lum = (r * 77 + g * 150 + b * 29) >> 8;
 		if (lum < 24 && a < 0xC0) {
-			// Shadows and dimming stay dark (softer on the White theme).
+			// Shadows and dimming stay dark (softer on the White theme)
 			return light ? (a / 2) << 24 | (c & 0xFFFFFF) : c;
 		}
 		boolean colored = Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) > 60;
 		if (colored) {
 			if (mono) {
-				// Black and white: the accent becomes a light gray on black, a dark gray on white.
+				// Black and white: the accent becomes a light gray on black, a dark gray on white
 				int v = light ? 0x3A : 0xC8;
 				return a << 24 | v * 0x010101;
 			}
-			// Light colored text would be hard to read on white.
+			// Light colored text would be hard to read on white
 			return lum > 140 ? a << 24 | scale(r, 0.7F) << 16 | scale(g, 0.7F) << 8 | scale(b, 0.7F) : c;
 		}
 		if (mono) {

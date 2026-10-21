@@ -36,7 +36,7 @@ public class DnzSideItem extends AbstractButton {
 		int x = this.getX();
 		int y = this.getY();
 		int accent = Theme.menuAccent();
-		// Plain text list: muted gray, white on hover or when selected (with a faint background).
+		// Plain text list: muted gray, white on hover or when selected (with a faint background)
 		if (this.selected || this.hover > 0.01F) {
 			Smooth.rect(g, x, y, this.width, this.height, 3.5F, Theme.withAlpha(0xFFFFFF, this.selected ? 0.06F : 0.04F * this.hover));
 		}
@@ -49,7 +49,7 @@ public class DnzSideItem extends AbstractButton {
 		g.text(font, text, 0, 0, color, false);
 		g.pose().popMatrix();
 		if (this.beta) {
-			// Small "BETA" pill after the name.
+			// small "BETA" pill after the name
 			float bx = x + 10 + font.width(text) * s;
 			Smooth.rect(g, bx, y + (this.height - 8) / 2.0F, 20, 8, 4, accent);
 			g.pose().pushMatrix();

@@ -22,7 +22,6 @@ public final class ChatHeads {
 	private static final int SIZE = 8;
 	/** Message -> its writer (absent = no writer found). */
 	private static final Map<GuiMessage, PlayerInfo> OWNERS = Collections.synchronizedMap(new WeakHashMap<>());
-	/** First line of a message with a writer -> the writer. */
 	private static final Map<FormattedCharSequence, PlayerInfo> LINES = Collections.synchronizedMap(new WeakHashMap<>());
 
 	private ChatHeads() {
@@ -42,7 +41,6 @@ public final class ChatHeads {
 		return content instanceof Component c ? Component.literal(pad).append(c) : FormattedText.composite(FormattedText.of(pad), content);
 	}
 
-	/** Remembers which line shows the head. */
 	public static void lines(GuiMessage message, List<FormattedCharSequence> lines) {
 		if (!on() || lines.isEmpty()) {
 			return;
@@ -73,7 +71,6 @@ public final class ChatHeads {
 		return found;
 	}
 
-	/** The Tab list player whose name comes first in [text], before the separator after it. */
 	private static PlayerInfo find(String text) {
 		ClientPacketListener connection = Minecraft.getInstance().getConnection();
 		if (connection == null || text.isEmpty()) {
@@ -110,7 +107,6 @@ public final class ChatHeads {
 		return best;
 	}
 
-	/** Where [name] stands as a whole word before [end] in [text], or -1. */
 	private static int wordIndex(String text, String name, int end) {
 		int from = 0;
 		while (true) {

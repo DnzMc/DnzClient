@@ -8,7 +8,6 @@ public final class Anim {
 	private Anim() {
 	}
 
-	/** Seconds since the last frame (capped), shared by all animations of the frame. */
 	private static float delta() {
 		long now = System.nanoTime();
 		if (now - lastFrame > 1_000_000L) {

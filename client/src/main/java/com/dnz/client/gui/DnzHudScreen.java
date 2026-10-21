@@ -24,10 +24,8 @@ public class DnzHudScreen extends Screen {
 	private String dragging;
 	private double offX;
 	private double offY;
-	/** Guide lines shown while a panel snapped: x of vertical lines, y of horizontal lines. */
 	private final List<Integer> guidesX = new ArrayList<>();
 	private final List<Integer> guidesY = new ArrayList<>();
-	/** Panel whose settings popup is open. */
 	private String popup;
 	private int popX;
 	private int popY;
@@ -70,7 +68,7 @@ public class DnzHudScreen extends Screen {
 		this.popH = 22 + rows * 20 + 4;
 		int[] at = DnzHud.screenPos(m.id, this.width, this.height);
 		int[] size = DnzHud.size(m.id);
-		// Next to the panel, on whichever side has room.
+		// next to the panel, on whichever side has room
 		this.popX = at[0] + size[0] + 6 + POPUP_W < this.width ? at[0] + size[0] + 6 : Math.max(2, at[0] - POPUP_W - 6);
 		this.popY = Math.max(2, Math.min(at[1], this.height - this.popH - 34));
 		int x = this.popX + 6, w = POPUP_W - 12;
@@ -143,7 +141,7 @@ public class DnzHudScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		// Center lines, faint, so centering is easy.
+		// Center lines, faint, so centering is easy
 		g.fill(this.width / 2, 0, this.width / 2 + 1, this.height, 0x18FFFFFF);
 		g.fill(0, this.height / 2, this.width, this.height / 2 + 1, 0x18FFFFFF);
 
@@ -207,7 +205,7 @@ public class DnzHudScreen extends Screen {
 		}
 		String id = this.panelAt(event.x(), event.y());
 		if (event.button() == 1) {
-			// Right click: settings of that panel (or close the open ones).
+			// right click: settings of that panel (or close the open ones)
 			this.popup = id;
 			this.rebuildWidgets();
 			return true;
@@ -244,7 +242,6 @@ public class DnzHudScreen extends Screen {
 		return true;
 	}
 
-	/** Snaps a panel edge or center to the screen edges/center or to another panel's edges. */
 	private double snap(double v, int size, boolean horizontal) {
 		int screen = horizontal ? this.width : this.height;
 		List<Integer> targets = new ArrayList<>(List.of(0, screen / 2, screen));
@@ -259,7 +256,7 @@ public class DnzHudScreen extends Screen {
 			targets.add(start);
 			targets.add(start + length);
 		}
-		// Try the panel's start, center and end against every target; take the closest.
+		// try the panel's start, center and end against every target; take the closest
 		double best = SNAP + 1;
 		double result = v;
 		int guide = -1;

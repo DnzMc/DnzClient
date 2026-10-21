@@ -48,12 +48,10 @@ public abstract class HudModule {
 		return custom == null || custom.isBlank() ? this.label() : custom;
 	}
 
-	/** Drawn on the HUD and movable in the editor. */
 	public boolean movable() {
 		return true;
 	}
 
-	/** Keys of this module's on/off options (shown in the editor's right-click menu). */
 	public List<String> options() {
 		return List.of();
 	}
@@ -62,7 +60,6 @@ public abstract class HudModule {
 		return true;
 	}
 
-	/** Shows a free-form value field in the HUD editor's settings popup. */
 	public boolean editableValue() {
 		return false;
 	}

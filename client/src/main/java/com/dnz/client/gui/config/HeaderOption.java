@@ -24,7 +24,7 @@ public class HeaderOption extends Option {
 		Component title = Ui.semibold(this.name);
 		float textW = Ui.width(title, TEXT);
 		Ui.text(g, title, this.x + 1, this.y + 4, TEXT, Ui.TEXT);
-		// Faint line after the title, to the right edge.
+		// Faint line after the title, to the right edge
 		float lineX = this.x + textW + 8;
 		if (lineX < this.x + this.width) {
 			Smooth.rect(g, lineX, this.y + 8, this.x + this.width - lineX, 0.75F, 0, 0x16FFFFFF);

@@ -12,7 +12,6 @@ public class SwitchOption extends Option {
 	private static final float H = 12;
 	private final BooleanSupplier get;
 	private final Consumer<Boolean> set;
-	/** Knob position 0 (off) .. 1 (on), slides after a click. */
 	private float knob = -1;
 
 	public SwitchOption(String name, BooleanSupplier get, Consumer<Boolean> set) {

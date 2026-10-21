@@ -20,16 +20,13 @@ public class TextField {
 	private static final float SCALE = 0.75F;
 	private String value = "";
 	private int cursor;
-	/** Other end of the selection (same as the cursor when nothing is selected). */
 	private int anchor;
-	/** Sideways scroll of the text, in font units. */
 	private float offset;
 	private int maxLength = 64;
 	private boolean focused;
 	private long caretShownAt;
 	private Consumer<String> responder = text -> {
 	};
-	/** Box of the text area (set when drawn), for mouse clicks. */
 	private float textX;
 
 	public TextField value(String value) {
@@ -70,7 +67,6 @@ public class TextField {
 		return Minecraft.getInstance().font;
 	}
 
-	/** Width of the first [chars] characters in font units. */
 	private float widthOf(int chars) {
 		return font().width(Ui.regular(this.value.substring(0, Math.max(0, Math.min(chars, this.value.length())))));
 	}
@@ -80,7 +76,7 @@ public class TextField {
 		this.textX = x + 5;
 		float room = (w - 10) / SCALE;
 		float caret = this.widthOf(this.cursor);
-		// Keep the caret in view: scroll the text sideways when it would leave the box.
+		// keep the caret in view: scroll the text sideways when it would leave the box
 		if (caret - this.offset > room - 1) {
 			this.offset = caret - room + 1;
 		} else if (caret - this.offset < 0) {
@@ -103,7 +99,7 @@ public class TextField {
 		} else {
 			g.text(font(), Ui.regular(this.value), 0, 0, active ? 0xFFFFFFFF : Ui.TEXT_OFF, false);
 		}
-		// Caret: on for half a second, off for half a second; always on right after typing or moving.
+		// Caret: on for half a second, off for half a second; always on right after typing or moving
 		if (this.focused && (System.currentTimeMillis() - this.caretShownAt) % 1000 < 500) {
 			Smooth.rect(g, caret - 0.1F, -1.5F, 1.1F, 11, 0.5F, 0xFFFFFFFF);
 		}
@@ -111,7 +107,6 @@ public class TextField {
 		g.disableScissor();
 	}
 
-	/** Character position under the mouse. */
 	private int indexAt(double mouseX) {
 		float target = (float) ((mouseX - this.textX) / SCALE + this.offset);
 		int best = 0;
@@ -149,7 +144,6 @@ public class TextField {
 		return this.value.substring(Math.min(this.cursor, this.anchor), Math.max(this.cursor, this.anchor));
 	}
 
-	/** Puts [text] where the caret is (over the selection), as far as it fits. */
 	private void insert(String text) {
 		int from = Math.min(this.cursor, this.anchor);
 		int to = Math.max(this.cursor, this.anchor);
@@ -172,7 +166,6 @@ public class TextField {
 		}
 	}
 
-	/** Start of the word left of [from] (Ctrl + arrow / backspace). */
 	private int wordLeft(int from) {
 		int i = from;
 		while (i > 0 && this.value.charAt(i - 1) == ' ') {

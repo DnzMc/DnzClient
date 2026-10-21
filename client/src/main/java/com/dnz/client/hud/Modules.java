@@ -166,7 +166,7 @@ public final class Modules {
 
 		// ---- Visual and performance (existing settings, now switchable here too)
 		list.add(new HudModule.Feature("zoom", Category.VISUAL, true));
-		// Freelook: Off and locked while on a multiplayer server (works only in single player).
+		// Freelook: Off and locked while on a multiplayer server (works only in single player)
 		list.add(new HudModule.Feature("freelook", Category.VISUAL, true, () -> DnzConfig.get().freelook && !Freelook.lockedHere(),
 			v -> { if (!Freelook.lockedHere()) DnzConfig.get().freelook = v; }));
 		list.add(new HudModule.Feature("cleanhotbar", Category.VISUAL, false));
@@ -198,7 +198,6 @@ public final class Modules {
 		return path.equals("overworld") ? "Overworld" : path.equals("the_nether") ? "Nether" : path.equals("the_end") ? "End" : path;
 	}
 
-	/** Ticks per second of the single player server (a multiplayer server does not tell its TPS). */
 	private static String tps(Minecraft mc) {
 		var server = mc.getSingleplayerServer();
 		if (server == null) {
@@ -224,7 +223,6 @@ public final class Modules {
 		return held.isDamageableItem() ? (held.getMaxDamage() - held.getDamageValue()) + " / " + held.getMaxDamage() : "-";
 	}
 
-	/** How many of the held item the player has in total. */
 	private static String itemCount(Minecraft mc) {
 		if (mc.player == null || mc.player.getMainHandItem().isEmpty()) {
 			return "-";
@@ -240,7 +238,6 @@ public final class Modules {
 		return Integer.toString(n);
 	}
 
-	/** Entity hitboxes (like F3 + B). */
 	private static boolean hitboxes() {
 		return Minecraft.getInstance().debugEntries.isCurrentlyEnabled(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES);
 	}
@@ -280,7 +277,7 @@ public final class Modules {
 		}
 		long time = mc.level.getOverworldClockTime();
 		long day = time / 24000 + 1;
-		// Minecraft's day starts at 06:00.
+		// Minecraft's day starts at 06:00
 		int t = (int) ((time + 6000) % 24000);
 		return L.t("hud.day", day) + "  " + String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
 	}
@@ -305,7 +302,7 @@ public final class Modules {
 			return "-";
 		}
 		BlockPos pos = mc.player.blockPosition();
-		// Monsters spawn where block light is 0, so that number matters most.
+		// Monsters spawn where block light is 0, so that number matters most
 		return mc.level.getBrightness(LightLayer.BLOCK, pos) + "  (" + L.t("hud.sky") + " " + mc.level.getBrightness(LightLayer.SKY, pos) + ")";
 	}
 
@@ -353,7 +350,6 @@ public final class Modules {
 			return this.cached;
 		}
 
-		/** The finished line and its width, rebuilt only when the value text changes (not every frame). */
 		private Component text;
 		private String textFor;
 		private int textWidth;
@@ -447,7 +443,7 @@ public final class Modules {
 			}
 			r.panel(w, h);
 			float yaw = r.mc.player == null ? 180 : r.mc.player.getYRot();
-			// 0 = north, 90 = east (Minecraft's yaw has 0 = south).
+			// 0 = north, 90 = east (Minecraft's yaw has 0 = south)
 			float heading = Mth.wrapDegrees(yaw + 180.0F);
 			if (heading < 0) {
 				heading += 360;
@@ -546,7 +542,6 @@ public final class Modules {
 			return new int[] {w, h};
 		}
 
-		/** Key names change only when the player rebinds a key, so they are looked up once a second, not every frame. */
 		private static final Map<net.minecraft.client.KeyMapping, String> LABELS = new HashMap<>();
 		private static long labelsAt;
 
@@ -607,7 +602,7 @@ public final class Modules {
 			r.panel(w, h);
 			r.accentBar(h);
 			r.text(r.font.plainSubstrByWidth(name, w - 34), 6, 4, 0xFFFFFFFF);
-			// Health bar: green -> yellow -> red, absorption in gold on top.
+			// Health bar: green -> yellow -> red, absorption in gold on top
 			int barW = w - 34, barX = 6, barY = 16;
 			r.fill(barX, barY, barX + barW, barY + 5, 0x60000000);
 			float part = Mth.clamp(health / Math.max(1, max), 0, 1);
@@ -827,7 +822,6 @@ public final class Modules {
 			return new int[] {w, h};
 		}
 
-		/** Counting the whole inventory every frame is wasteful: 4 times a second is plenty. */
 		private int count(Minecraft mc) {
 			long now = System.nanoTime();
 			long[] c = CACHE.computeIfAbsent(this.id, k -> new long[] {0, -1});

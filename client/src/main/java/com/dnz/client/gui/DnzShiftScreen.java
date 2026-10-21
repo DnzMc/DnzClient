@@ -42,7 +42,7 @@ public class DnzShiftScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-		// The game behind, just blurred a little (no dark layer); on the title screen the normal background.
+		// the game behind, just blurred a little (no dark layer); on the title screen the normal background
 		if (this.minecraft.level == null) {
 			super.extractBackground(g, mouseX, mouseY, a);
 			return;
@@ -57,7 +57,6 @@ public class DnzShiftScreen extends Screen {
 		Theme.spacedText(g, this.font, "DNZ CLIENT", this.width / 2, this.height / 2 - 34, 1.5F, 1, Theme.withAlpha(0xFFFFFF, Math.max(0.05F, fade)), 0.0F);
 	}
 
-	/** The orange MODS button. */
 	private static final class Big extends AbstractButton {
 		private final Runnable action;
 		private float hover;
@@ -100,7 +99,6 @@ public class DnzShiftScreen extends Screen {
 		}
 	}
 
-	/** A small dark button with an icon above its name. */
 	private static final class Small extends AbstractButton {
 		private final char icon;
 		private final Runnable action;

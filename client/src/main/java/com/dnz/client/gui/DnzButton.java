@@ -44,7 +44,7 @@ public class DnzButton extends AbstractButton {
 	protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
 		Font font = Minecraft.getInstance().font;
 		if (Theme.vanillaWidgets()) {
-			// Vanilla Minecraft button; selected options get yellow text.
+			// Vanilla Minecraft button; selected options get yellow text
 			this.extractDefaultSprite(g);
 			int color = !this.active ? 0xFFA0A0A0 : this.selected ? 0xFFFFFF55 : 0xFFFFFFFF;
 			g.centeredText(font, this.getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 8) / 2, color);
@@ -58,14 +58,14 @@ public class DnzButton extends AbstractButton {
 		int h = this.height;
 
 		if (Theme.simpleStyle()) {
-			// Simple: rounded glass button, smooth centered text, no side bar.
+			// Simple: rounded glass button, smooth centered text, no side bar
 			Theme.roundedRect(g, x, y, w, h, 3, Theme.simpleButtonBg(this.active, this.selected, this.hover));
 			Theme.centeredText(g, font, this.getMessage(), x + w / 2, y + (h - 8) / 2, this.active ? 0xFFFFFFFF : 0xFF8A8F9C);
 			return;
 		}
 
 		Component text = Theme.smooth(this.getMessage());
-		// Text wider than the button is cut with "…" instead of spilling over the edges.
+		// Text wider than the button is cut with "…" instead of spilling over the edges
 		int room = this.look == Look.TAB ? this.width - 16 : this.width - 8;
 		if (font.width(text) > room) {
 			text = Theme.smooth(Component.literal(font.plainSubstrByWidth(this.getMessage().getString(), room - 6) + "…"));
@@ -74,7 +74,7 @@ public class DnzButton extends AbstractButton {
 		int textY = y + (h - 8) / 2;
 		switch (this.look) {
 			case TAB -> {
-				// See-through until hovered; the open tab glows softly in the accent color.
+				// see-through until hovered; the open tab glows softly in the accent color
 				if (this.selected) {
 					Smooth.rect(g, x, y, w, h, 7, Theme.withAlpha(accent, 0.20F));
 					Smooth.rect(g, x + 3, y + h / 2.0F - 5, 3, 10, 1.5F, 0xFF000000 | accent);

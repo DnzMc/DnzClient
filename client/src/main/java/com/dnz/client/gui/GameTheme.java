@@ -182,7 +182,6 @@ public final class GameTheme {
 		}
 	}
 
-	/** A picture from the theme's images folder (only there, PNG or JPG, size limits), or null. */
 	private static Picture picture(JsonObject o, String key, String name) {
 		if (!o.has(key)) {
 			return null;
@@ -219,7 +218,6 @@ public final class GameTheme {
 		g.blit(RenderPipelines.GUI_TEXTURED, p.id(), x, y, u, v, w, h, uw, vh, p.width(), p.height(), Math.round(alpha * 255) << 24 | 0xFFFFFF);
 	}
 
-	/** Draws [p] stretched into (x, y, w, h). */
 	public static void draw(GuiGraphicsExtractor g, Picture p, int x, int y, int w, int h) {
 		g.blit(RenderPipelines.GUI_TEXTURED, p.id(), x, y, 0, 0, w, h, p.width(), p.height(), p.width(), p.height(), 0xFFFFFFFF);
 	}

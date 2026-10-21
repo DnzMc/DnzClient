@@ -54,7 +54,7 @@ public final class FoodOverlay {
 			|| mc.gui.hud.isHidden()) {
 			return;
 		}
-		// While riding a horse the hunger bar is replaced by the horse's health.
+		// while riding a horse the hunger bar is replaced by the horse's health
 		if (mc.player.getVehicle() instanceof LivingEntity) {
 			return;
 		}
@@ -73,7 +73,7 @@ public final class FoodOverlay {
 			if (props != null && (food < 20 || props.canAlwaysEat())) {
 				int newFood = Math.min(20, food + props.nutrition());
 				float newSat = Math.min(newFood, sat + props.saturation());
-				// Slow blink, like a hint rather than an alarm.
+				// Slow blink, like a hint rather than an alarm
 				float pulse = 0.35F + 0.45F * (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 220.0));
 				int alpha = Math.round(pulse * 255) << 24;
 				drawUnits(g, right, top, food, newFood, alpha | 0xFFFFFF);
@@ -105,7 +105,7 @@ public final class FoodOverlay {
 			} else if (first) {
 				g.blitSprite(RenderPipelines.GUI_TEXTURED, HALF, x, top, 9, 9, color);
 			} else if (second) {
-				// Only the right half of this drumstick is new.
+				// only the right half of this drumstick is new
 				g.enableScissor(x + 4, top, x + 9, top + 9);
 				g.blitSprite(RenderPipelines.GUI_TEXTURED, FULL, x, top, 9, 9, color);
 				g.disableScissor();

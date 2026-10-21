@@ -86,7 +86,6 @@ public final class Theme {
 		return !javaStyle() && !simpleStyle();
 	}
 
-	/** Anti-aliased font (Inter) from assets/dnzclient/font/smooth.json. */
 	public static final FontDescription SMOOTH_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("dnzclient", "smooth"));
 
 	public static MutableComponent smooth(String text) {
@@ -118,7 +117,6 @@ public final class Theme {
 		return DnzConfig.get().menuLook == 1;
 	}
 
-	/** DNZ menu in the White theme. */
 	public static boolean lightMenu() {
 		return DnzConfig.get().menuLight;
 	}
@@ -152,7 +150,6 @@ public final class Theme {
 		return simpleStyle() ? smooth(text) : text;
 	}
 
-	/** Accent color with full alpha. */
 	public static int accent() {
 		return 0xFF000000 | accentInfo().rgb();
 	}
@@ -166,7 +163,6 @@ public final class Theme {
 		return a << 24 | r << 16 | gr << 8 | b;
 	}
 
-	/** The color a bit lighter (toward white), for hovered accent buttons. */
 	public static int lighter(int rgb) {
 		return lerp(0xFF000000 | rgb, 0xFFFFFFFF, 0.18F) & 0xFFFFFF;
 	}
@@ -223,12 +219,12 @@ public final class Theme {
 
 	public static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h) {
 		if (simpleStyle()) {
-			// Dark glass with a thin light edge (clean, glass).
+			// Dark glass with a thin light edge (clean, glass)
 			roundedRect(g, x - 1, y - 1, w + 2, h + 2, 7, 0x38FFFFFF);
 			roundedRect(g, x, y, w, h, 6, 0xD8121316);
 			return;
 		}
-		// DNZ: deep dark card with large soft corners, a soft shadow and a hairline edge.
+		// DNZ: deep dark card with large soft corners, a soft shadow and a hairline edge
 		Smooth.shadow(g, x, y + 3, w, h, 12, 16, 0x70000000);
 		Smooth.rect(g, x - 1, y - 1, w + 2, h + 2, 13, 0x1CFFFFFF);
 		Smooth.rect(g, x, y, w, h, 12, 0xF5101216);
@@ -309,14 +305,12 @@ public final class Theme {
 		return Component.literal(String.valueOf(c)).withStyle(style -> style.withFont(TITLE_FONT));
 	}
 
-	/** Real bold font (Poppins Bold) for Simple style titles and buttons. */
 	public static final FontDescription BOLD_FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("dnzclient", "bold"));
 
 	private static Component spacedChar(char c) {
 		return Component.literal(String.valueOf(c)).withStyle(style -> style.withFont(BOLD_FONT));
 	}
 
-	/** Text at x,y. */
 	public static void text(GuiGraphicsExtractor g, Font font, Component text, int x, int y, int color) {
 		boolean simple = simpleStyle();
 		g.text(font, simple ? smooth(text) : text, x, y, color, !simple);

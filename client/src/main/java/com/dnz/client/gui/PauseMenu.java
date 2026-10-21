@@ -39,7 +39,7 @@ public final class PauseMenu {
 			if (options == null || advancements == null || stats == null) {
 				return;
 			}
-			// Same columns as the Advancements / Statistics row above.
+			// same columns as the Advancements / Statistics row above
 			options.setWidth(advancements.getWidth());
 			x = stats.getX();
 			y = options.getY();

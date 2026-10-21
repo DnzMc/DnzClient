@@ -23,7 +23,6 @@ public class DnzVisualScreen extends DnzMenuScreen {
 	private static final int SWATCH = 22;
 	private static final int ROW_H = 22;
 		private static final int TOGGLES_TOP = 102;
-	/** Blur strengths for Off / Low / Medium / High. */
 	private static final int[] BLUR_STEPS = {0, 3, 6, 10};
 
 	public DnzVisualScreen(Screen parent) {
@@ -63,10 +62,10 @@ public class DnzVisualScreen extends DnzMenuScreen {
 			}).selected(config.theme == i));
 		}
 
-		// Toggles: two columns of "Name: value" buttons, so everything fits on small screens.
+		// Toggles: two columns of "Name: value" buttons, so everything fits on small screens
 		List<DnzButton> toggles = new ArrayList<>();
 
-		// Menu style cycles DNZ -> Simple -> Java.
+		// Menu style cycles DNZ -> Simple -> Java
 		String styleName = config.javaStyle ? "Java" : config.simpleStyle ? "Simple" : "DNZ";
 		toggles.add(new DnzButton(0, 0, 0, 0, Component.literal(L.t("visual.style") + ": " + styleName), () -> {
 			if (config.javaStyle) {
@@ -81,7 +80,7 @@ public class DnzVisualScreen extends DnzMenuScreen {
 			this.rebuildWidgets();
 		}).selected(true));
 
-		// Menu background blur: Minecraft's own setting (0-10), in four steps.
+		// Menu background blur: Minecraft's own setting (0-10), in four steps
 		int blur = this.minecraft.options.getMenuBackgroundBlurriness();
 		int step = blur <= 0 ? 0 : blur <= 3 ? 1 : blur <= 6 ? 2 : 3;
 		toggles.add(new DnzButton(0, 0, 0, 0, Component.literal(L.t("visual.blur_short") + ": " + L.t("visual.blur." + step)), () -> {
@@ -122,7 +121,6 @@ public class DnzVisualScreen extends DnzMenuScreen {
 		}
 	}
 
-	/** DNZ style: only the look of the menu (Modern or Minecraft, dark or white). */
 	private void initOptions(DnzConfig config) {
 		List<Option> rows = new ArrayList<>();
 		rows.add(new HeaderOption(L.t("visual.section.look")));
@@ -178,7 +176,7 @@ public class DnzVisualScreen extends DnzMenuScreen {
 			config.coolMode = on;
 			config.save();
 		}).note(L.t("cool.note")));
-		// DNZ Cloud (off until the player turns it on; also in DNZ Launcher settings).
+		// DNZ Cloud (off until the player turns it on; also in DNZ Launcher settings)
 		rows.add(new SwitchOption(L.t("cloud.title"), com.dnz.client.CloudSync::enabled, com.dnz.client.CloudSync::setEnabled)
 			.note(L.t("cloud.note")));
 		return rows;
@@ -196,7 +194,6 @@ public class DnzVisualScreen extends DnzMenuScreen {
 		g.fill(this.cx, this.cy + TOGGLES_TOP - 5, this.cx + this.cw, this.cy + TOGGLES_TOP - 4, 0x30FFFFFF);
 	}
 
-	/** A clickable colored square. */
 	private static class Swatch extends AbstractButton {
 		private final Theme.Accent accent;
 		private final boolean selected;

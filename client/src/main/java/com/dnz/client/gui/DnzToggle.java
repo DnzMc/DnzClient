@@ -43,7 +43,7 @@ public class DnzToggle extends AbstractButton {
 
 		// Card
 		Smooth.rect(g, x, y, w, h, 7, Theme.lerp(0xFF1A1D23, 0xFF22262E, this.hover));
-		// Name, cut with "…" when it does not fit next to the switch.
+		// Name, cut with "…" when it does not fit next to the switch
 		Component name = Theme.smooth(this.getMessage());
 		int maxText = w - 44;
 		if (font.width(name) > maxText) {
@@ -51,7 +51,7 @@ public class DnzToggle extends AbstractButton {
 		}
 		g.text(font, name, x + 9, y + (h - 8) / 2, Theme.lerp(0xFFC9CFDA, 0xFFFFFFFF, Math.max(this.hover, this.knob)), false);
 
-		// Switch: track fills with the accent color, the knob slides right.
+		// Switch: track fills with the accent color, the knob slides right
 		float sw = 22;
 		float sh = 12;
 		float sx = x + w - sw - 8;

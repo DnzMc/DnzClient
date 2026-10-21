@@ -19,10 +19,8 @@ public class SliderOption extends Option {
 	private final IntFunction<String> format;
 	private Runnable done = () -> {
 	};
-	/** Knob position 0..1 as drawn (follows the value smoothly). */
 	private float shown = -1;
 	private boolean dragging;
-	/** The mouse moved since the press: the knob sticks to it (a plain click lets it glide there). */
 	private boolean moved;
 
 	public SliderOption(String name, int min, int max, int step, IntSupplier get, IntConsumer set, IntFunction<String> format) {
@@ -91,7 +89,7 @@ public class SliderOption extends Option {
 
 	@Override
 	public boolean click(double mouseX, double mouseY, int button, boolean doubleClick) {
-		// Only the lower half (the track) moves the value, so a click on the name can't change it by accident.
+		// only the lower half (the track) moves the value, so a click on the name can't change it by accident
 		if (button != 0 || mouseY < this.y + this.height - 18) {
 			return false;
 		}

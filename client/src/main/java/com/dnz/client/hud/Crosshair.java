@@ -26,7 +26,7 @@ public final class Crosshair {
 		DnzConfig.Crosshair c = DnzConfig.get().crosshair;
 		float scale = (float) mc.getWindow().getGuiScale();
 		g.pose().pushMatrix();
-		// Real pixels from here on, centered on the screen.
+		// Real pixels from here on, centered on the screen
 		g.pose().translate(g.guiWidth() / 2.0F, g.guiHeight() / 2.0F);
 		g.pose().scale(1.0F / scale, 1.0F / scale);
 		int color = c.color;
@@ -38,7 +38,7 @@ public final class Crosshair {
 		if (style.equals("dot")) {
 			dot(g, Math.max(2, t * 1.5F), color, c.outline);
 		} else if (style.equals("circle")) {
-			// A ring of small dots (smooth at any size).
+			// A ring of small dots (smooth at any size)
 			float r = gap + len / 2;
 			int n = Math.max(12, Math.round(r * 2.5F));
 			for (int i = 0; i < n; i++) {

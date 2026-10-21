@@ -33,7 +33,6 @@ public final class HudRender {
 		}
 	}
 
-	/** The thin accent bar on the left of text panels. */
 	public void accentBar(int h) {
 		if (!this.measure && this.bg) {
 			this.g.fill(0, 3, 2, h - 3, Theme.accent());
