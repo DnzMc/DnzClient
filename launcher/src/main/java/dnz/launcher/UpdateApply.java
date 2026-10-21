@@ -9,12 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Swaps in a downloaded launcher update (see Updater.kt) and starts the launcher again.
- * Runs from a temporary copy of the launcher jar with plain Java only, after the launcher has quit.
- *
- * Arguments: launcher process id, lib folder, update folder, "--", command that starts the launcher.
- */
+/** Swaps in a downloaded launcher update (see Updater.kt) and starts the launcher again. */
 public final class UpdateApply {
 	private UpdateApply() {
 	}
@@ -24,10 +19,10 @@ public final class UpdateApply {
 		File lib = new File(args[1]);
 		File stage = new File(args[2]);
 		List<String> restart = new ArrayList<>(Arrays.asList(args).subList(Arrays.asList(args).indexOf("--") + 1, args.length));
-		// The player sees "Updating your launcher" until the new launcher is up (not when started hidden with Windows).
+		// the player sees "Updating your launcher" until the new launcher is up (not when started hidden with Windows)
 		UpdateSplash splash = restart.contains("--background") ? null : UpdateSplash.show("Updating your launcher...");
 
-		// Old copies of this program from earlier updates.
+		// old copies of this program from earlier updates
 		File[] old = new File(System.getProperty("java.io.tmpdir")).listFiles((d, n) -> n.startsWith("dnz-update-") && n.endsWith(".jar"));
 		if (old != null) {
 			for (File f : old) {
@@ -35,7 +30,7 @@ public final class UpdateApply {
 			}
 		}
 
-		// Wait (up to a minute) for the launcher to close, so its jars are no longer in use.
+		// wait (up to a minute) for the launcher to close, so its jars are no longer in use
 		Optional<ProcessHandle> launcher = ProcessHandle.of(pid);
 		long until = System.currentTimeMillis() + 60_000;
 		while (launcher.isPresent() && launcher.get().isAlive() && System.currentTimeMillis() < until) {
@@ -60,10 +55,10 @@ public final class UpdateApply {
 				}
 			}
 		} catch (Exception e) {
-			// The launcher still starts: its next update check compares every jar again and fetches what is missing.
+			// the launcher still starts: its next update check compares every jar again and fetches what is missing
 			e.printStackTrace();
 		} finally {
-			// Never retried: a failed swap must not end in a restart loop.
+			// Never retried: a failed swap must not end in a restart loop
 			deleteTree(stage);
 		}
 		new ProcessBuilder(restart).directory(lib.getParentFile()).start();
@@ -75,7 +70,6 @@ public final class UpdateApply {
 		System.exit(0);
 	}
 
-	/** Copies with a few retries: antivirus programs sometimes hold a fresh file for a moment. */
 	private static void replace(File from, File to) throws Exception {
 		IOException last = null;
 		for (int i = 0; i < 25; i++) {

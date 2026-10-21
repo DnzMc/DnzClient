@@ -44,7 +44,6 @@ class ServersState {
     var newAddress by mutableStateOf("")
 }
 
-/** Server rack icon for the sidebar (two stacked boxes with status lights). */
 val ServerIcon: ImageVector by lazy {
     ImageVector.Builder("server", 24.dp, 24.dp, 24f, 24f).apply {
         for (top in listOf(3f, 13f)) {
@@ -77,7 +76,7 @@ fun ServersScreen(state: LauncherState) {
             Spacer(Modifier.width(8.dp))
             DnzButton("+ " + state.t("servers.add")) { sv.adding = !sv.adding }
         }
-        // Which profile's list this is (every profile has its own, like in the game).
+        // which profile's list this is (every profile has its own, like in the game)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(state.t("servers.profile"), color = Dnz.Muted, fontSize = 12.sp)
             state.profiles.forEachIndexed { i, p ->
@@ -230,7 +229,6 @@ private fun ServerCard(state: LauncherState, profile: Profile, server: SavedServ
     }
 }
 
-/** Four signal bars: green for a good ping, yellow, red for a bad one. */
 @Composable
 private fun PingBars(ms: Long) {
     val bars = when {
@@ -252,11 +250,12 @@ private fun PingBars(ms: Long) {
 }
 
 /** Leaves the "join this server" note for DNZ Client, then starts the game like PLAY. */
-private fun join(state: LauncherState, profile: Profile, server: SavedServer) {
+internal fun join(state: LauncherState, profile: Profile, server: SavedServer) {
     if (state.busy || state.gameRunning) {
         state.dialog = state.t("servers") to state.t("servers.game_open")
         return
     }
+    if (!isSignedIn(state)) return requireSignIn(state) { join(state, profile, server) }
     state.scope.launch {
         val ok = withContext(Dispatchers.IO) { runCatching { Servers.requestJoin(profile, server) }.isSuccess }
         if (!ok) return@launch

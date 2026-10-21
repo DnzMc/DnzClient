@@ -10,8 +10,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 
 /**
- * The mods of one profile (its instance "mods" folder): what is installed, installing from Modrinth
- * (with required dependencies), turning mods on/off (".jar.disabled", same as the in-game DNZ menu) and removing them.
+ * The mods of one profile (its instance "mods" folder): what is installed, installing from Modrinth (with
+ * required dependencies), turning mods on/off (".jar.disabled", same as the in-game DNZ menu) and removing
+ * them.
  */
 object Library {
     data class Installed(
@@ -42,7 +43,6 @@ object Library {
         mods.listFiles { f -> f.isFile && (f.name.endsWith(".jar") || f.name.endsWith(".jar.disabled")) }
             ?.sortedBy { it.name.lowercase() } ?: emptyList()
 
-    /** Lists the profile's mods. Works offline too (then only file names are known). */
     suspend fun scan(profile: Profile, checkUpdates: Boolean): List<Installed> = withContext(Dispatchers.IO) {
         val mods = modsDir(profile)
         val files = jarFiles(mods)
@@ -56,7 +56,7 @@ object Library {
         val versions = hashes.mapValues { (_, sha1) -> versionCache[sha1]?.getOrNull() }
         val projectIds = versions.values.mapNotNull { it?.projectId }.filter { !projectCache.containsKey(it) }.toSet()
         runCatching { Modrinth.projects(projectIds) }.onSuccess { list -> list.forEach { projectCache[it.id] = it } }
-        // Mods installed from CurseForge that Modrinth does not know.
+        // Mods installed from CurseForge that Modrinth does not know
         val sources = readSources(mods)
 
         val updates: Map<String, Modrinth.Version> = if (checkUpdates) {
@@ -64,7 +64,7 @@ object Library {
             val latest = runCatching { Modrinth.latestByHash(known, profile.version) }.getOrDefault(emptyMap())
             latest.mapNotNull { (sha1, newest) ->
                 val current = versionCache[sha1]?.getOrNull() ?: return@mapNotNull null
-                // Someone on a stable (release) version is only offered stable updates, never alpha/beta.
+                // Someone on a stable (release) version is only offered stable updates, never alpha/beta
                 val offer = if (current.type == "release" && newest.type != "release") {
                     runCatching { Modrinth.versions(current.projectId, profile.version).firstOrNull { it.type == "release" } }.getOrNull()
                 } else newest
@@ -98,8 +98,8 @@ object Library {
     }
 
     /**
-     * A name reduced for comparing the same mod across Modrinth and CurseForge: "Entity Culling", "EntityCulling" and
-     * "entityculling" all become "entityculling".
+     * A name reduced for comparing the same mod across Modrinth and CurseForge: "Entity Culling",
+     * "EntityCulling" and "entityculling" all become "entityculling".
      */
     fun simpleName(name: String) = name.lowercase().filter { it.isLetterOrDigit() }
 
@@ -109,7 +109,6 @@ object Library {
         return installed.any { it.projectId == id || it.names.any { n -> n in keys } }
     }
 
-    /** Mod name from the jar's fabric.mod.json, for mods that are not on Modrinth. */
     private fun fabricName(file: File): String? = fabricField(file, "name")
 
     private fun fabricField(file: File, key: String): String? = runCatching {
@@ -137,7 +136,7 @@ object Library {
     private fun writeSource(mods: File, fileName: String, source: Source?) {
         val all = readSources(mods).toMutableMap()
         if (source == null) all.remove(fileName) else all[fileName] = source
-        // Forget files that are gone.
+        // Forget files that are gone
         all.keys.removeAll { !File(mods, it).exists() && !File(mods, "$it.disabled").exists() && it != fileName }
         val o = com.google.gson.JsonObject()
         all.forEach { (name, s) ->
@@ -153,7 +152,7 @@ object Library {
 
     /**
      * Installs [projectId] ([version], or the newest compatible one) into the profile, plus every required
-     * dependency that is missing. An older file of the same mod is replaced.
+     * dependency that is missing.
      */
     suspend fun install(profile: Profile, projectId: String, version: Modrinth.Version? = null, progress: (String) -> Unit = {}): InstallResult =
         installLock.withLock { withContext(Dispatchers.IO) { installNow(profile, projectId, version, progress) } }
@@ -190,7 +189,7 @@ object Library {
             val cfBriefs = cfIds.mapNotNull { id -> runCatching { CurseForge.brief(id) }.getOrNull() }.associateBy { it.id }
             val names = runCatching { Modrinth.projects(plan.keys - cfIds.toSet()).associate { it.id to it.title } }.getOrDefault(emptyMap()) +
                 cfBriefs.mapValues { it.value.title }
-            // Fabric mod ids already in the folder (bundled mods too), so a dependency from either site is never a second copy.
+            // Fabric mod ids already in the folder (bundled mods too), so a dependency from either site is never a second copy
             val presentIds = installed.mapNotNull { fabricField(it.file, "id") }.toMutableSet()
             val bundledNames = GameLauncher.modrinthMods.map { simpleName(it) }.toSet()
             val skipped = mutableSetOf<String>()
@@ -202,7 +201,7 @@ object Library {
                 val safeName = file.filename.isNotBlank() && !file.filename.contains('/') && !file.filename.contains('\\') && !file.filename.startsWith(".")
                 check(safeName) { Strings.current("lib.bad_name") }
                 progress(Strings.current("lib.downloading").replace("%s", names[pid] ?: file.filename))
-                // Download next to the mods first and look inside before it counts as installed.
+                // Download next to the mods first and look inside before it counts as installed
                 val temp = File(mods, ".${file.filename}.new")
                 Net.download(file.url, temp, file.sha1)
                 val fabricId = fabricField(temp, "id")
@@ -229,11 +228,11 @@ object Library {
                 } else {
                     file.sha1?.let { versionCache[it] = Result.success(v) }
                 }
-                // Updating (or switching the site of) a mod that is turned off keeps it off.
+                // Updating (or switching the site of) a mod that is turned off keeps it off
                 if (pid == projectId && turnedOff) File(mods, file.filename).renameTo(File(mods, file.filename + ".disabled"))
             }
             skipped.forEach { plan.remove(it) }
-            // Required dependencies that were installed but turned off are turned back on.
+            // Required dependencies that were installed but turned off are turned back on
             val needed = plan.values.flatMap { v -> v.dependencies.filter { it.type == "required" }.mapNotNull { it.projectId } }.toSet()
             installed.filter { !it.enabled && it.projectId in needed }.forEach { setEnabled(it, true) }
 
@@ -244,16 +243,11 @@ object Library {
 
     fun packsDir(profile: Profile) = File(GameLauncher.instanceDir(profile), "resourcepacks")
 
-    /** Project ids of the texture packs installed from the library. */
     fun packIds(profile: Profile): Set<String> = readSources(packsDir(profile)).filterKeys { File(packsDir(profile), it).exists() }.values.map { it.projectId }.toSet()
 
     /** Simplified titles of the installed texture packs, so a pack shows as installed on both sites. */
     fun packNames(profile: Profile): Set<String> = readSources(packsDir(profile)).filterKeys { File(packsDir(profile), it).exists() }.values.map { simpleName(it.title) }.toSet()
 
-    /**
-     * Installs texture pack [projectId] ([version], or the newest release) into the profile. An older file of the
-     * same pack is replaced.
-     */
     suspend fun installPack(profile: Profile, projectId: String, version: Modrinth.Version? = null, progress: (String) -> Unit = {}): InstallResult =
         installLock.withLock {
             withContext(Dispatchers.IO) {
@@ -293,7 +287,6 @@ object Library {
         return list.firstOrNull { it.type == "release" } ?: list.firstOrNull()
     }
 
-    /** Turns a mod on or off by renaming "x.jar" <-> "x.jar.disabled". Returns the new file, or null if it could not be renamed. */
     fun setEnabled(mod: Installed, enabled: Boolean): File? {
         if (mod.locked) return null
         if (mod.enabled == enabled) return mod.file

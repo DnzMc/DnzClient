@@ -82,7 +82,7 @@ private fun AutoResult(state: LauncherState, result: AutoTune.Result) {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Dnz.Border))
     Spacer(Modifier.height(16.dp))
     Row {
-        // What was found
+        // what was found
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Label(state.t("auto.your_pc"))
             val ram = "${specs.ramGb.roundToInt()} GB" + if (specs.laptop) "  •  " + state.t("auto.laptop") else ""
@@ -97,7 +97,7 @@ private fun AutoResult(state: LauncherState, result: AutoTune.Result) {
             }
         }
         Spacer(Modifier.width(20.dp))
-        // What was changed
+        // what was changed
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Label(state.t("auto.changes"))

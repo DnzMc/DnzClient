@@ -27,6 +27,21 @@ import java.net.URI
 /** A sign-in in progress: the browser page ([url]), or the backup short code ([code]). */
 class MsLogin(val url: String, val code: MicrosoftAuth.DeviceCode? = null)
 
+/** Has an account to play with: DNZ's own sign-in, or the Minecraft Launcher's accounts when it starts the game. */
+fun isSignedIn(state: LauncherState): Boolean =
+    state.account != null || (state.launchMode == LaunchMode.Official && state.officialAccounts.isNotEmpty())
+
+/** Runs [action] now when signed in; otherwise opens the Microsoft sign-in first and runs it after a successful one. */
+fun requireSignIn(state: LauncherState, action: () -> Unit) {
+    if (isSignedIn(state)) {
+        action()
+        return
+    }
+    state.afterSignIn = action
+    state.toast = state.t("signin.first")
+    signInWithMicrosoft(state)
+}
+
 /** Starts "Sign in with Microsoft": Microsoft's sign-in page opens in the browser, nothing to type in DNZ. */
 fun signInWithMicrosoft(state: LauncherState) {
     if (state.msLogin != null) return
@@ -43,7 +58,6 @@ fun signInWithMicrosoft(state: LauncherState) {
     }
 }
 
-/** Backup: a short code typed on microsoft.com/link (when the browser page does not work). */
 private fun signInWithCode(state: LauncherState) {
     state.msLogin = null
     state.scope.launch {
@@ -60,13 +74,19 @@ private fun signInWithCode(state: LauncherState) {
 }
 
 private fun finish(state: LauncherState, login: MsLogin, result: Result<Account>) {
-    if (state.msLogin !== login) return // closed by the player
+    if (state.msLogin !== login) { // closed by the player
+        state.afterSignIn = null
+        return
+    }
     state.msLogin = null
+    val then = state.afterSignIn
+    state.afterSignIn = null
     result.onSuccess { account ->
         state.account = account
-        // Signed in with Microsoft: DNZ can start the game itself now.
+        // Signed in with Microsoft: DNZ can start the game itself now
         state.launchMode = LaunchMode.Direct
         state.toast = state.t("ms.success").replace("%s", account.name)
+        then?.invoke()
     }.onFailure { showError(state, it) }
 }
 

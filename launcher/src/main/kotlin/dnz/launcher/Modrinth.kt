@@ -5,7 +5,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import java.net.URLEncoder
 
-/** Modrinth API (https://docs.modrinth.com) for the mod library. Only Fabric mods that work on the client are shown. */
+/** Modrinth API (https://docs.modrinth.com) for the mod library. */
 object Modrinth {
     private const val API = "https://api.modrinth.com/v2"
 
@@ -14,6 +14,7 @@ object Modrinth {
         val downloads: Long, val follows: Long, val iconUrl: String?, val categories: List<String>,
         /** A texture pack (not a mod). */
         val pack: Boolean = false,
+        val modpack: Boolean = false,
     )
 
     data class SearchPage(val hits: List<Hit>, val total: Int)
@@ -40,7 +41,6 @@ object Modrinth {
         val sourceUrl: String?, val issuesUrl: String?, val wikiUrl: String?, val discordUrl: String?,
         val gallery: List<GalleryImage>,
         val pageUrl: String = "https://modrinth.com/mod/$slug",
-        /** Author known from the project itself (CurseForge); Modrinth needs a separate request. */
         val author: String? = null,
         /** A texture pack (not a mod). */
         val pack: Boolean = false,
@@ -61,10 +61,7 @@ object Modrinth {
 
     // ------------------------------------------------------------------ requests
 
-    /**
-     * [packs]: texture packs instead of mods. They are not tied to a Minecraft version like mods (most PvP packs are
-     * made for older versions and still work, the game only shows a note), so they are not filtered by version.
-     */
+    /** [packs]: texture packs instead of mods. */
     fun search(query: String, mc: String, sort: Sort, category: String?, offset: Int, limit: Int = 20, packs: Boolean = false): SearchPage {
         val facets = if (packs) "[[\"project_type:resourcepack\"]]" else buildList {
             add("[\"categories:fabric\"]")
@@ -108,7 +105,6 @@ object Modrinth {
         )
     }
 
-    /** Owner's user name, shown as the author on the mod page. */
     fun author(projectId: String): String? = runCatching {
         val members = Net.json("$API/project/${enc(projectId)}/members").asJsonArray.map { it.asJsonObject }
         val owner = members.firstOrNull { it.str("role") == "Owner" } ?: members.firstOrNull()
@@ -126,7 +122,7 @@ object Modrinth {
 
     /** Versions of a project that work with Fabric on [mc], newest first. */
     fun versions(projectId: String, mc: String, packs: Boolean = false): List<Version> {
-        // Texture packs: every version (see search).
+        // Texture packs: every version (see search)
         val url = if (packs) "$API/project/${enc(projectId)}/version"
         else "$API/project/${enc(projectId)}/version?loaders=${enc("[\"fabric\"]")}&game_versions=${enc("[\"$mc\"]")}"
         return Net.json(url).asJsonArray.map { version(it.asJsonObject) }
@@ -134,7 +130,7 @@ object Modrinth {
 
     fun version(versionId: String): Version = version(Net.json("$API/version/${enc(versionId)}").asJsonObject)
 
-    /** Which Modrinth version each file is (by SHA-1). Files that are not on Modrinth are missing from the map. */
+    /** Which Modrinth version each file is (by SHA-1). */
     fun versionsByHash(sha1s: Collection<String>): Map<String, Version> {
         if (sha1s.isEmpty()) return emptyMap()
         val body = """{"hashes":${sha1s.toJsonArray()},"algorithm":"sha1"}"""

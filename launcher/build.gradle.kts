@@ -22,7 +22,7 @@ group = "dnz.launcher"
 version = "0.1.0"
 
 /** DNZ Launcher's released version (installer, Mac app, Windows "Installed apps"). */
-val launcherVersion = "1.0.15"
+val launcherVersion = "1.0.17"
 
 dependencies {
     implementation(compose.desktop.currentOs)
@@ -140,7 +140,7 @@ val macApp = tasks.register("macApp") {
         )
 
         // Mac icon: an .icns file holding the DNZ logo as PNG.
-        val png = file("src/main/resources/logo.png").readBytes()
+        val png = file("src/main/resources/tray.png").readBytes()
         val icns = ByteArrayOutputStream()
         val data = DataOutputStream(icns)
         data.writeBytes("icns"); data.writeInt(8 + 8 + png.size)
@@ -215,7 +215,8 @@ tasks.register("installer") {
         val work = layout.buildDirectory.dir("installer").get().asFile.apply { deleteRecursively(); mkdirs() }
         val src = file("installer")
         val icon = file("icons/dnz.ico")
-        val logo = file("src/main/resources/logo.png")
+        // The app icon (green D), embedded under the name the setup windows read.
+        val logo = work.resolve("logo.png").also { file("src/main/resources/tray.png").copyTo(it, overwrite = true) }
         work.resolve("BuildInfo.cs").writeText(buildInfo("DNZ Launcher Setup"))
 
         fun compile(out: File, sources: List<String>, resources: List<File> = emptyList()) {
@@ -455,4 +456,18 @@ tasks.register<JavaExec>("screenshots") {
     mainClass.set("dnz.launcher.ScreenshotsKt")
     // -Pshot=<name> renders only that one
     args(listOfNotNull(layout.buildDirectory.dir("screenshots").get().asFile.absolutePath, project.findProperty("shot") as String?))
+}
+
+// Installs a Modrinth modpack into a throwaway profile (deleted afterwards): gradlew modpackTest
+tasks.register<JavaExec>("modpackTest") {
+    group = "dnz"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("dnz.launcher.ModpackTestKt")
+}
+
+// Starts and stops a throwaway local server (Servers → Make): gradlew localServerTest
+tasks.register<JavaExec>("localServerTest") {
+    group = "dnz"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("dnz.launcher.LocalServerTestKt")
 }

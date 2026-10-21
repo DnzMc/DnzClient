@@ -15,15 +15,11 @@ data class McAccount(
     val name: String,
     /** Minecraft profile id without dashes (used for the skin). */
     val uuid: String,
-    /** Id inside the official launcher's account file; null for DNZ's own test account. */
     val localId: String?,
     val file: File?,
 )
 
-/**
- * Accounts signed in to the official Minecraft Launcher. DNZ only reads names and profile ids, and when the player
- * switches, it only changes which account is active (sign-in keys stay untouched, the file is backed up first).
- */
+/** Accounts signed in to the official Minecraft Launcher. */
 object Accounts {
     private val dir = Platform.minecraftDir
     private val files = listOf("launcher_accounts_microsoft_store.json", "launcher_accounts.json").map { File(dir, it) }
@@ -55,7 +51,6 @@ object Accounts {
             (Platform.isMac && path.contains("/Minecraft.app/", ignoreCase = true) && !path.contains("/runtime/"))
     }
 
-    /** Makes [account] the active one in the official launcher. Returns false if it could not be changed. */
     fun switchOfficial(account: McAccount): Boolean {
         val file = account.file ?: return false
         val localId = account.localId ?: return false
@@ -74,7 +69,6 @@ object Accounts {
         }.getOrDefault(false)
     }
 
-    /** Opens the Minecraft Launcher, where new accounts are added. */
     fun openOfficialLauncher(): Boolean = runCatching { OfficialLauncher.open() }.isSuccess
 
     // ------------------------------------------------------------------ skin heads
@@ -84,10 +78,7 @@ object Accounts {
 
     fun cachedHead(uuid: String): ImageBitmap? = synchronized(heads) { heads[uuid] }
 
-    /**
-     * The face of the account's skin (face + hat layer), 8x8 pixels. Downloaded from Mojang once a day,
-     * then read from ~/.dnzlauncher/skins so it shows instantly and offline.
-     */
+    /** The face of the account's skin (face + hat layer), 8x8 pixels. */
     fun head(uuid: String): ImageBitmap? {
         synchronized(heads) { if (heads.containsKey(uuid)) return heads[uuid] }
         val image = runCatching { face(ImageIO.read(skinFile(uuid))) }.getOrNull()
@@ -100,6 +91,11 @@ object Accounts {
         val file = skinFile(uuid)
         ImageIO.read(file) to File(headDir, "$uuid.slim").exists()
     }.getOrNull()
+
+    /** The skin was changed: the next [skin] downloads it again. */
+    fun forgetSkin(uuid: String) {
+        File(headDir, "$uuid.png").delete()
+    }
 
     /** ~/.dnzlauncher/skins/<uuid>.png, downloaded from Mojang once a day (and "<uuid>.slim" for slim arms). */
     private fun skinFile(uuid: String): File {

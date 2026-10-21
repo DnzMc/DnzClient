@@ -4,9 +4,8 @@ import com.google.gson.JsonParser
 import java.io.File
 
 /**
- * DNZ Cloud switch (off by default): when on, DNZ Client keeps key bindings and DNZ settings in the player's cloud
- * copy at cloud.dnzclient.com (the game does the syncing, see client CloudSync). Shared with the game through
- * ~/.dnzlauncher/cloud.json.
+ * DNZ Cloud switch (off by default): when on, DNZ Client keeps key bindings and DNZ settings in the player's
+ * cloud copy at cloud.dnzclient.com (the game does the syncing, see client CloudSync).
  */
 object Cloud {
     private val file = File(System.getProperty("user.home"), ".dnzlauncher/cloud.json")

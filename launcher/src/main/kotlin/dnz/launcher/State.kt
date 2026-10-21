@@ -10,7 +10,7 @@ import kotlinx.coroutines.withContext
 
 enum class Screen { Home, Profiles, Mods, Servers, Settings, Account }
 
-/** Official = hand off to the Minecraft Launcher (no Mojang approval needed). Direct = DNZ starts the game itself. */
+/** Official = hand off to the Minecraft Launcher (no Mojang approval needed). */
 enum class LaunchMode { Official, Direct }
 
 data class Profile(
@@ -19,12 +19,13 @@ data class Profile(
     val description: String,
     /** Folder under instances/, fixed when the profile is made, so renaming keeps its worlds and mods. */
     val dir: String? = null,
-    /** Color of the letter icon (index into ProfileColors). */
     val color: Int? = null,
     /** Own picture: file name in ~/.dnzlauncher/icons, or null for the letter icon. */
     val icon: String? = null,
     /** RAM for this profile in GB; null = the RAM from Settings. */
     val ramGb: Int? = null,
+    /** How it starts ("Fabric", "Forge", "Vanilla"); null = the version's default (see Versions.loaderOf). */
+    val loader: String? = null,
 ) {
     val folder: String get() = dir ?: name.replace(Regex("[^A-Za-z0-9_-]"), "_")
 }
@@ -38,7 +39,7 @@ class LauncherState {
     val scope = MainScope()
 
     var screen by mutableStateOf(Screen.Home)
-    private var languageState by mutableStateOf(Lang.TR)
+    private var languageState by mutableStateOf(Lang.EN)
     var language: Lang
         get() = languageState
         set(value) {
@@ -53,8 +54,9 @@ class LauncherState {
 
     /** Profile being edited in the profile window (-1 = a new one), or null. */
     var editingProfile by mutableStateOf<Int?>(null)
-    /** Profile asked to be deleted, or null. */
     var deletingProfile by mutableStateOf<Int?>(null)
+    /** Profile whose game log is open in the Logs window, or null. */
+    var logsProfile by mutableStateOf<Profile?>(null)
     var launchMode by mutableStateOf(LaunchMode.Official)
     var account by mutableStateOf<Account?>(null)
     /** Open while the player signs in on Microsoft's page. */
@@ -70,7 +72,6 @@ class LauncherState {
         get() = if (launchMode == LaunchMode.Direct && account != null) dnzAccount
         else officialAccounts.firstOrNull { it.localId == activeOfficialId } ?: officialAccounts.firstOrNull()
 
-    /** DNZ's own Microsoft sign-in, shown in the list while DNZ starts the game itself. */
     private val dnzAccount: McAccount?
         get() = account?.let { McAccount(it.name, it.uuid.replace("-", ""), null, null) }
 
@@ -110,7 +111,7 @@ class LauncherState {
         val ok = withContext(Dispatchers.IO) { Accounts.switchOfficial(target) }
         if (ok) {
             refreshAccounts()
-            // A Minecraft Launcher account can only play through the Minecraft Launcher.
+            // A Minecraft Launcher account can only play through the Minecraft Launcher
             val modeChanged = launchMode != LaunchMode.Official
             launchMode = LaunchMode.Official
             toast = t("acc.switched").replace("%s", target.name) + if (modeChanged) " " + t("acc.mode_changed") else ""
@@ -120,16 +121,18 @@ class LauncherState {
     }
     var dialog by mutableStateOf<Pair<String, String>?>(null)
     var confirm by mutableStateOf<Confirm?>(null)
-    /** Short message at the bottom that hides itself. */
     var toast by mutableStateOf<String?>(null)
     val library = LibraryState()
     val imports = ImportState()
     val servers = ServersState()
+    val host = HostState()
+    /** Screenshots only: the player counts box starts open. */
+    var presenceOpen = false
 
     /** "Auto" button on the Settings page: scanning right now / what it found and changed. */
     var autoBusy by mutableStateOf(false)
 
-    /** Launcher starts hidden with Windows (Startup folder shortcut). Read from Windows, not from launcher.json. */
+    /** Launcher starts hidden with Windows (Startup folder shortcut). */
     var startWithWindows by mutableStateOf(Autostart.isEnabled())
     var autoResult by mutableStateOf<AutoTune.Result?>(null)
     /** Mac: AUTO ran once by itself (first start), so the game starts with settings made for this Mac. */
@@ -139,6 +142,10 @@ class LauncherState {
     var mojangNoticeClosed by mutableStateOf(false)
     /** Home page: the player's skin as a moving 3D character (off: the pixel scene). */
     var skinAnimation by mutableStateOf(true)
+    /** First-run setup finished (launchers that had settings before it existed count as finished). */
+    var setupDone by mutableStateOf(false)
+    /** Runs once a Microsoft sign-in succeeds: Play, a new profile or a mod install that asked for it. */
+    var afterSignIn: (() -> Unit)? = null
     /** Launcher version of the last run (saved) and whether launcher.json existed: for the Changelog popup. */
     var lastVersion by mutableStateOf<String?>(null)
     var hadSettings = false
@@ -146,13 +153,12 @@ class LauncherState {
     var changelogFrom by mutableStateOf<String?>(null)
     var changelogTo: String? = null
 
-    /** Install / launch progress shown on the Home screen. */
     var busy by mutableStateOf(false)
     var status by mutableStateOf<String?>(null)
     var progress by mutableStateOf(0f)
     var gameRunning by mutableStateOf(false)
 
-    val versions = listOf("26.3", "26.2")
+    val versions = Versions.all
     val profiles = mutableStateListOf(
         Profile("DNZ PvP", "26.3", "DNZ Client + Sodium"),
         Profile("DNZ Survival", "26.2", "DNZ Client + Sodium + Mod Menu"),
@@ -195,10 +201,11 @@ object Strings {
         "ws.applied" to "%s artık launcher'ın görünümü.", "ws.default" to "Varsayılan görünüme dön", "ws.not_saved" to "Kütüphane kaydedilemedi. Tekrar dene.",
         "ws.browse" to "Keşfet",
         "mods.search_all" to "Modrinth'te mod ve doku paketi ara...", "mods.search_cf_all" to "CurseForge'da mod ve doku paketi ara...", "lib.results_all" to "%s sonuç",
-        "mods.search_packs" to "Modrinth'te doku paketi ara...", "mods.search_cf_packs" to "CurseForge'da doku paketi ara...", "lib.kind.mods" to "Modlar", "lib.kind.packs" to "Doku Paketleri", "lib.pack_tag" to "Doku paketi",
+        "mods.search_packs" to "Modrinth'te doku paketi ara...", "mods.search_cf_packs" to "CurseForge'da doku paketi ara...", "lib.kind.mods" to "Modlar", "lib.kind.packs" to "Doku Paketleri", "lib.kind.modpacks" to "Modpackler", "lib.results_modpacks" to "%s modpack", "lib.modpack_tag" to "Modpack", "lib.modpack_install" to "Yeni profil olarak kur", "lib.modpack_made" to "Profilin hazır", "lib.modpack_done" to "%s profili hazır (%n dosya). Profil seçildi, OYNA ile başlat.", "mods.search_modpacks" to "Modrinth'te modpack ara...", "mods.search_cf_modpacks" to "Modrinth'te modpack ara...", "lib.pack_tag" to "Doku paketi",
         "lib.pack_installed" to "%s, \"%p\" profiline eklendi. Oyunda Seçenekler → Kaynak Paketleri'nden açabilirsin.",
         "mods.search" to "Modrinth'te mod ara...", "mods.search_cf" to "CurseForge'da mod ara...", "mods.searching" to "Aranıyor...", "mods.install" to "Yükle",
         "mods.error" to "Arama başarısız. İnternet bağlantını kontrol et.", "mods.downloads" to "indirme",
+        "settings.theme_file" to "Tema dosyası yükle (.dnztheme)", "settings.theme_applied" to "Tema uygulandı", "settings.theme_remove" to "Temayı kaldır",
         "settings.accent" to "Vurgu rengi", "settings.accent.caption" to "Düğmeler, seçili yerler ve parlamalar bu renkte olur.",
         "settings.character" to "Animasyonlu karakter", "settings.character.caption" to "Ana sayfada skin'in 3D olarak durur, nefes alır ve fareye bakar. Sürükleyerek çevir, tıklayınca el sallar.",
         "settings.ram" to "Bellek (RAM)", "settings.language" to "Dil", "settings.theme" to "Tema", "theme.color" to "Renkli", "theme.mono" to "Siyah Beyaz", "settings.folder" to "Oyun klasörü",
@@ -208,7 +215,7 @@ object Strings {
         "account.safe2" to "DNZ sadece Microsoft'un verdiği giriş anahtarını saklar, şifreli olarak.",
         "account.safe3" to "İstediğin zaman account.microsoft.com'dan izni kaldırabilirsin.",
         "ok" to "Tamam", "acc.relogin" to "Bu hesabın girişi artık geçerli değil. Hesap sayfasından tekrar giriş yap.", "acc.add_another" to "Başka hesap ekle", "acc.others" to "Diğer hesapların", "acc.remove" to "Kaldır", "acc.use" to "Bu hesaba geç", "changelog.title" to "Değişiklikler", "changelog.updated" to "Launcher %1 sürümünden %2 sürümüne güncellendi. Yenilikler:", "changelog.now" to "Launcher %s sürümüne güncellendi. Yenilikler:",
-        "need_account.title" to "Önce giriş yap",
+        "signin.first" to "Önce Microsoft ile giriş yap; tarayıcıda giriş sayfası açıldı.", "need_account.title" to "Önce giriş yap",
         "need_account.body" to "Oynamak için Hesap sayfasından Microsoft ile giriş yap.",
         "signin.no_internet" to "Microsoft'a bağlanılamadı, bu yüzden girişin yenilenemedi. İnternet bağlantını kontrol edip tekrar Oyna'ya bas.",
         "sign_out" to "Çıkış yap",
@@ -249,10 +256,11 @@ object Strings {
         "ws.applied" to "%s is now the launcher's look.", "ws.default" to "Back to the default look", "ws.not_saved" to "Your library couldn't be saved. Try again.",
         "ws.browse" to "Browse",
         "mods.search_all" to "Search mods and texture packs on Modrinth...", "mods.search_cf_all" to "Search mods and texture packs on CurseForge...", "lib.results_all" to "%s results",
-        "mods.search_packs" to "Search texture packs on Modrinth...", "mods.search_cf_packs" to "Search texture packs on CurseForge...", "lib.kind.mods" to "Mods", "lib.kind.packs" to "Texture Packs", "lib.pack_tag" to "Texture pack",
+        "mods.search_packs" to "Search texture packs on Modrinth...", "mods.search_cf_packs" to "Search texture packs on CurseForge...", "lib.kind.mods" to "Mods", "lib.kind.packs" to "Texture Packs", "lib.kind.modpacks" to "Modpacks", "lib.modpack_tag" to "Modpack", "lib.modpack_install" to "Install as new profile", "lib.modpack_made" to "Profile ready", "lib.modpack_done" to "Profile %s is ready (%n files). It is selected, start it with PLAY.", "mods.search_modpacks" to "Search modpacks on Modrinth...", "mods.search_cf_modpacks" to "Search modpacks on Modrinth...", "lib.results_modpacks" to "%s modpacks", "lib.pack_tag" to "Texture pack",
         "lib.pack_installed" to "%s added to the \"%p\" profile. Turn it on in the game: Options → Resource Packs.",
         "mods.search" to "Search mods on Modrinth...", "mods.search_cf" to "Search mods on CurseForge...", "mods.searching" to "Searching...", "mods.install" to "Install",
         "mods.error" to "Search failed. Check your internet connection.", "mods.downloads" to "downloads",
+        "settings.theme_file" to "Load a theme file (.dnztheme)", "settings.theme_applied" to "Theme applied", "settings.theme_remove" to "Remove theme",
         "settings.accent" to "Accent color", "settings.accent.caption" to "Buttons, selections and glows use this color.",
         "settings.character" to "Animated character", "settings.character.caption" to "Your skin stands on the home page in 3D, breathing and looking at the mouse. Drag to turn it, click to make it wave.",
         "settings.ram" to "Memory (RAM)", "settings.language" to "Language", "settings.theme" to "Theme", "theme.color" to "Colorful", "theme.mono" to "Black & White", "settings.folder" to "Game folder",
@@ -262,7 +270,7 @@ object Strings {
         "account.safe2" to "DNZ only keeps the sign-in key Microsoft gives it, encrypted.",
         "account.safe3" to "You can remove access anytime at account.microsoft.com.",
         "ok" to "OK", "acc.relogin" to "This account's sign-in is no longer valid. Sign in again on the Account page.", "acc.add_another" to "Add another account", "acc.others" to "Your other accounts", "acc.remove" to "Remove", "acc.use" to "Switch to this account", "changelog.title" to "Changelog", "changelog.updated" to "The launcher was updated from %1 to %2. What's new:", "changelog.now" to "The launcher was updated to %s. What's new:",
-        "need_account.title" to "Sign in first",
+        "signin.first" to "Sign in with Microsoft first; the sign-in page opened in your browser.", "need_account.title" to "Sign in first",
         "need_account.body" to "Sign in with Microsoft on the Account page to play.",
         "signin.no_internet" to "Couldn't reach Microsoft to renew your sign-in. Check your internet connection and press Play again.",
         "sign_out" to "Sign out",
@@ -361,6 +369,7 @@ object Strings {
         "profiles.picture" to "Resim Seç", "profiles.picture_remove" to "Resmi Kaldır", "profiles.name" to "Ad", "profiles.description" to "Açıklama",
         "profiles.version_warn" to "Sürüm değişince modlar bir sonraki OYNA'da o sürüme göre yeniden kurulur. Dünyaların yedeğini almak iyi olur.",
         "profiles.ram_hint" to "En sola çekersen Ayarlar'daki RAM kullanılır.",
+        "profiles.loader" to "Yükleyici", "profiles.loader_dnz" to "DNZ Client ve FPS iyileştirmeleriyle.", "profiles.loader_fabric" to "Fabric modlarıyla (Sodium vb. otomatik kurulur).", "profiles.loader_forge" to "Forge modlarıyla.", "profiles.loader_vanilla" to "Modsuz, Minecraft'ın kendisi.",
         "profiles.delete_title" to "\"%s\" silinsin mi?", "profiles.delete_body" to "Profil listeden kaldırılır. Dosyaları (dünyalar, modlar, ayarlar) istersen Geri Dönüşüm Kutusu'na gönderilir, oradan geri alabilirsin.",
         "profiles.delete_files" to "Dosyalarını da Geri Dönüşüm Kutusu'na gönder", "profiles.delete_running" to "Oyun açıkken bu profil silinemez.",
         "profiles.deleted" to "%s silindi.", "profiles.trash_failed" to "%s listeden kaldırıldı ama dosyaları Geri Dönüşüm Kutusu'na gönderilemedi.",
@@ -489,6 +498,7 @@ object Strings {
         "profiles.picture" to "Pick Picture", "profiles.picture_remove" to "Remove Picture", "profiles.name" to "Name", "profiles.description" to "Description",
         "profiles.version_warn" to "After a version change the mods are reinstalled for it on the next PLAY. Backing up your worlds is a good idea.",
         "profiles.ram_hint" to "All the way left = the RAM from Settings.",
+        "profiles.loader" to "Loader", "profiles.loader_dnz" to "With DNZ Client and the FPS improvements.", "profiles.loader_fabric" to "With Fabric mods (Sodium and others installed automatically).", "profiles.loader_forge" to "With Forge mods.", "profiles.loader_vanilla" to "No mods, plain Minecraft.",
         "profiles.delete_title" to "Delete \"%s\"?", "profiles.delete_body" to "The profile is removed from the list. Its files (worlds, mods, settings) can go to the Recycle Bin, where you can get them back.",
         "profiles.delete_files" to "Also move its files to the Recycle Bin", "profiles.delete_running" to "This profile can't be deleted while the game is open.",
         "profiles.deleted" to "%s deleted.", "profiles.trash_failed" to "%s was removed from the list, but its files could not be moved to the Recycle Bin.",
@@ -537,7 +547,7 @@ object Strings {
 
     /** Language used by code that has no LauncherState at hand (e.g. install messages). */
     @Volatile
-    var currentLang = Lang.TR
+    var currentLang = Lang.EN
 
     fun current(key: String): String = get(currentLang, key)
 

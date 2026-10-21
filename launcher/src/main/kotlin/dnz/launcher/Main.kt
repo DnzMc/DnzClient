@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
             visible = true
             windowState.isMinimized = false
         }
-        // macOS: clicking the Dock icon of the hidden launcher opens it again.
+        // macOS: clicking the Dock icon of the hidden launcher opens it again
         if (Platform.isMac) {
             LaunchedEffect(Unit) {
                 runCatching {
@@ -41,30 +41,23 @@ fun main(args: Array<String>) {
                 }
             }
         }
-        // With "start with Windows" on, closing only hides the window, so the next open is instant.
+        // with "start with Windows" on, closing only hides the window, so the next open is instant
         val close = { if (state.startWithWindows) visible = false else exitApplication() }
 
         if (state.startWithWindows || !visible) {
-            Tray(
-                icon = BitmapPainter(DnzLogo),
-                tooltip = "DNZ Launcher",
-                onAction = { visible = true },
-                menu = {
-                    Item(state.t("tray.open"), onClick = { visible = true; windowState.isMinimized = false })
-                    Item(state.t("tray.quit"), onClick = ::exitApplication)
-                },
-            )
+            DnzTray(state, onOpen = { visible = true; windowState.isMinimized = false }, onQuit = ::exitApplication)
         }
+        state.logsProfile?.let { LogsWindow(state, it) { state.logsProfile = null } }
         Window(
             onCloseRequest = close,
             state = windowState,
             visible = visible,
             title = "DNZ Launcher",
             undecorated = true,
-            icon = BitmapPainter(DnzLogo),
+            icon = BitmapPainter(AppIcon),
         ) {
             LaunchedEffect(visible) {
-                // Opened again from the tray while a downloaded update waits: update now (never while a game runs).
+                // Opened again from the tray while a downloaded update waits: update now (never while a game runs)
                 if (visible && Updater.ready != null && state.profiles.none { GameLauncher.isRunning(it) }) {
                     if (Updater.restartNow()) exitProcess(0)
                 }

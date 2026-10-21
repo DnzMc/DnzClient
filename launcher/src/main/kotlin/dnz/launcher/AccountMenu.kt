@@ -32,10 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Top-right account button: skin face and name of the active account. Clicking it lists the other
- * accounts to switch to, plus adding an account and the account page.
- */
+/** Top-right account button: skin face and name of the active account. */
 @Composable
 fun AccountMenu(state: LauncherState) {
     var open by remember { mutableStateOf(false) }

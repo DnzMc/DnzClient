@@ -39,7 +39,6 @@ import kotlin.random.Random
 
 // ------------------------------------------------------------------ Home
 
-/** Turkish, English or German text (trial design, not in the string tables yet). */
 private fun tr(state: LauncherState, turkish: String, english: String, german: String) = when (state.language) {
     Lang.TR -> turkish
     Lang.DE -> german
@@ -51,7 +50,7 @@ fun HomeScreen(state: LauncherState) {
     val profile = state.profiles[state.selectedProfile]
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().padding(start = 56.dp, end = 40.dp, top = 24.dp, bottom = 28.dp)) {
-        // Top right: search and the account.
+        // top right: search and the account
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             Box(
@@ -72,21 +71,26 @@ fun HomeScreen(state: LauncherState) {
         MojangNotice(state)
         Spacer(Modifier.weight(1f))
         Box(Modifier.fillMaxWidth()) {
-        // The player's skin as a 3D character at the right (or the pixel scene when that is off / there is no skin).
+        // the player's skin as a 3D character at the right (or the pixel scene when that is off / there is no skin)
         val skinOwner = state.currentAccount?.uuid
         var skin by remember { mutableStateOf<LoadedSkin?>(null) }
         var skinLoaded by remember { mutableStateOf(false) }
-        LaunchedEffect(skinOwner, state.skinAnimation) { if (state.skinAnimation) { skin = loadSkin(skinOwner); skinLoaded = true } }
-        val shownSkin = skin
+        var skinVersion by remember { mutableStateOf(0) }
+        var found by remember { mutableStateOf<FoundSkin?>(null) }
+        LaunchedEffect(skinOwner, state.skinAnimation, skinVersion) { if (state.skinAnimation) { skin = loadSkin(skinOwner); skinLoaded = true } }
+        val shownSkin = found?.skin ?: skin
         if (state.skinAnimation && !skinLoaded) {
-            // Still loading the skin: nothing yet (no flash of the pixel scene).
+            // still loading the skin: nothing yet (no flash of the pixel scene)
         } else if (state.skinAnimation && shownSkin != null) {
+            // same 420 dp as before the skin search, so the profile cards below keep their size
             Box(Modifier.align(Alignment.CenterEnd).padding(end = 60.dp).width(340.dp).height(420.dp)) {
-                Box(Modifier.matchParentSize().background(Brush.radialGradient(listOf(Dnz.Accent.copy(alpha = 0.22f), Color.Transparent))))
-                PlayerModel(shownSkin, animate = !state.gameRunning, modifier = Modifier.matchParentSize())
+                Box(Modifier.fillMaxWidth().height(320.dp).background(Brush.radialGradient(listOf(Dnz.Accent.copy(alpha = 0.22f), Color.Transparent))))
+                // A new key per skin, so the character redraws with the searched skin
+                key(shownSkin) { PlayerModel(shownSkin, animate = !state.gameRunning, modifier = Modifier.fillMaxWidth().height(if (found != null) 230.dp else 320.dp)) }
+                SkinFinder(state, found, onFound = { found = it }, onApplied = { skinVersion++ }, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
             }
         } else
-        // Pixel scene at the right, level with the profile name; its edges fade into the page.
+        // Pixel scene at the right, level with the profile name; its edges fade into the page
         Box(Modifier.align(Alignment.CenterEnd).width(460.dp).height(354.dp)) {
             Image(
                 HomeScene, null, Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit,
@@ -106,7 +110,7 @@ fun HomeScreen(state: LauncherState) {
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val mods = remember(profile) { GameLauncher.instanceDir(profile).resolve("mods").listFiles { f -> f.name.endsWith(".jar") }?.size ?: 0 }
-            listOf(profile.version, "Fabric", state.t("profiles.mods").replace("%s", mods.toString())).forEach {
+            listOf(profile.version, Versions.loaderOf(profile).label, state.t("profiles.mods").replace("%s", mods.toString())).forEach {
                 Text(
                     it, color = Dnz.Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Dnz.Surface).padding(horizontal = 12.dp, vertical = 6.dp),
@@ -122,7 +126,7 @@ fun HomeScreen(state: LauncherState) {
             }
             Row(
                 Modifier.width(196.dp).height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Accent)
-                    .dnzClickable { if (!state.busy && !state.gameRunning) scope.launch { play(state) } },
+                    .dnzClickable { if (!state.busy && !state.gameRunning) requireSignIn(state) { state.scope.launch { play(state) } } },
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!state.busy && !state.gameRunning) {
@@ -132,11 +136,16 @@ fun HomeScreen(state: LauncherState) {
                 Text(label, color = Dnz.OnAccent, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
             }
             Spacer(Modifier.width(12.dp))
-            Box(
+            // the game's log in its own window; works while the game is open too
+            Row(
                 Modifier.height(68.dp).clip(RoundedCornerShape(14.dp)).background(Dnz.Surface)
-                    .dnzClickable { state.editingProfile = state.selectedProfile }.padding(horizontal = 28.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(tr(state, "Düzenle", "Edit", "Bearbeiten"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
+                    .dnzClickable { state.logsProfile = profile }.padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Outlined.Info, null, tint = Dnz.Text, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(tr(state, "Logları Aç", "Open Logs", "Logs öffnen"), color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
         }
         state.status?.let { status ->
             Spacer(Modifier.height(12.dp))
@@ -169,7 +178,7 @@ fun HomeScreen(state: LauncherState) {
                     Icon(Icons.Outlined.List, null, tint = if (selected) Dnz.Accent else Dnz.Muted, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.weight(1f))
                     Text(p.name, color = Dnz.Text, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                    Text("Fabric · ${p.version}", color = Dnz.Muted, fontSize = 12.sp)
+                    Text("${Versions.loaderOf(p).label} · ${p.version}", color = Dnz.Muted, fontSize = 12.sp)
                 }
             }
             val dash = Dnz.Border
@@ -183,7 +192,7 @@ fun HomeScreen(state: LauncherState) {
                             ),
                         )
                     }
-                    .dnzClickable { state.editingProfile = -1 },
+                    .dnzClickable { requireSignIn(state) { state.editingProfile = -1 } },
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -192,10 +201,12 @@ fun HomeScreen(state: LauncherState) {
                     Text(tr(state, "Yeni profil", "New profile", "Neues Profil"), color = Dnz.Muted, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
-            // Always five slots wide, so a single profile card keeps its size.
+            // Always five slots wide, so a single profile card keeps its size
             repeat(4 - state.profiles.size.coerceAtMost(4)) { Spacer(Modifier.weight(1f)) }
         }
     }
+    // "New profile" here opens the same window as on the Profiles page
+    state.editingProfile?.let { ProfileEditor(state, it) }
 }
 
 /** Red notice until Mojang approves DNZ for Microsoft sign-in. ✕ hides it until the next start; "Don't show again" for good. */
@@ -247,7 +258,7 @@ private fun Hero(state: LauncherState) {
                     else -> state.t("play")
                 }
                 DnzButton(label, big = true) {
-                    if (!state.busy && !state.gameRunning) scope.launch { play(state) }
+                    if (!state.busy && !state.gameRunning) requireSignIn(state) { state.scope.launch { play(state) } }
                 }
             }
             state.status?.let { status ->
@@ -268,7 +279,6 @@ private fun Hero(state: LauncherState) {
     }
 }
 
-/** Installs everything that is missing, then starts the game. */
 internal suspend fun play(state: LauncherState) {
     val profile = state.profiles[state.selectedProfile]
     if (state.launchMode == LaunchMode.Official) {
@@ -289,11 +299,11 @@ internal suspend fun play(state: LauncherState) {
     }
 
     var account = state.account
-    // The Minecraft sign-in only lasts about a day: renew it quietly before starting.
+    // the Minecraft sign-in only lasts about a day: renew it quietly before starting
     if (account != null && !account.offline) {
         account = withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.restore() }.getOrNull() } ?: account
         state.account = account
-        // Shown from the last start but never renewed (no internet): the game can't start without a sign-in.
+        // Shown from the last start but never renewed (no internet): the game can't start without a sign-in
         if (account.accessToken.isEmpty()) {
             if (MicrosoftAuth.hasSaved) {
                 state.dialog = state.t("launch_error") to state.t("signin.no_internet")
@@ -331,7 +341,6 @@ internal suspend fun play(state: LauncherState) {
     }
 }
 
-/** Soft pixel squares like a Minecraft-style banner. */
 @Composable
 private fun PixelMosaic(modifier: Modifier) {
     val squares = remember {
@@ -393,7 +402,6 @@ private fun NewsCard(title: String, body: String, color: Color, modifier: Modifi
 
 // ------------------------------------------------------------------ Settings
 
-/** DNZ Cloud: key bindings and DNZ settings follow the Minecraft account (off until the player turns it on). */
 @Composable
 private fun CloudCard(state: LauncherState) {
     var on by remember { mutableStateOf(Cloud.enabled) }
@@ -475,6 +483,29 @@ fun SettingsScreen(state: LauncherState) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LauncherTheme.entries.forEach { theme -> ThemeChip(state, theme) }
             }
+            Spacer(Modifier.height(12.dp))
+            // A DNZ theme file (.dnztheme): launcher colors and picture, and the in-game DNZ menu (docs/dnz-theme.md)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                DnzButton(state.t("settings.theme_file")) {
+                    val dialog = java.awt.FileDialog(null as java.awt.Frame?, state.t("settings.theme_file"), java.awt.FileDialog.LOAD)
+                    dialog.setFilenameFilter { _, n -> n.lowercase().endsWith(".dnztheme") || n.lowercase().endsWith(".json") }
+                    dialog.isVisible = true
+                    val file = dialog.files.firstOrNull() ?: return@DnzButton
+                    val colors = runCatching { ThemePack.install(file.readBytes()) }
+                    colors.onSuccess { c ->
+                        if (c != null) Dnz.useWorkshopTheme("file:" + file.name, c) else Dnz.pickAccent(null)
+                        state.toast = state.t("settings.theme_applied")
+                    }.onFailure { state.dialog = state.t("settings.theme_file") to (it.message ?: it.toString()) }
+                }
+                if (java.io.File(ThemePack.dir, "theme.json").exists()) {
+                    Spacer(Modifier.width(10.dp))
+                    SmallButton(state.t("settings.theme_remove")) {
+                        ThemePack.clear()
+                        Dnz.pickAccent(null)
+                        Dnz.theme = LauncherTheme.Colorful
+                    }
+                }
+            }
         }
         Card(Modifier.fillMaxWidth()) {
             Text(state.t("settings.accent"), color = Dnz.Text, fontWeight = FontWeight.Bold)
@@ -488,7 +519,7 @@ fun SettingsScreen(state: LauncherState) {
                         Modifier.size(34.dp).clip(RoundedCornerShape(50))
                             .border(if (selected) 3.dp else 0.dp, if (selected) Dnz.Text else Color.Transparent, RoundedCornerShape(50))
                             .padding(if (selected) 5.dp else 0.dp).clip(RoundedCornerShape(50)).background(Color(color))
-                            .dnzClickable { Dnz.pickAccent(if (i == 0) null else color); Dnz.theme = LauncherTheme.Colorful },
+                            .dnzClickable { ThemePack.clear(); Dnz.pickAccent(if (i == 0) null else color); Dnz.theme = LauncherTheme.Colorful },
                     )
                 }
             }
@@ -515,7 +546,6 @@ fun SettingsScreen(state: LauncherState) {
     }
 }
 
-/** "Check for updates": looks now; a found update is downloaded and installed with one more click (restart). */
 @Composable
 private fun UpdateCard(state: LauncherState) {
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -572,14 +602,13 @@ private fun LangChip(state: LauncherState, lang: Lang, label: String) {
     ) { Text(label, color = if (selected) Dnz.OnAccent else Dnz.Text, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) }
 }
 
-/** A theme button with a small preview of its colors. */
 @Composable
 private fun ThemeChip(state: LauncherState, theme: LauncherTheme) {
     val selected = Dnz.theme == theme && (Dnz.custom == null || Dnz.accent != null)
     val preview = if (theme == LauncherTheme.Mono) listOf(Color(0xFF050505), Color(0xFFF2F2F2)) else listOf(Color(0xFFFF8A3D), Color(0xFFFF6A1A))
     Row(
         Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) Dnz.Accent else Dnz.SurfaceHigh)
-            .dnzClickable { Dnz.pickAccent(null); Dnz.theme = theme }.padding(horizontal = 14.dp, vertical = 10.dp),
+            .dnzClickable { ThemePack.clear(); Dnz.pickAccent(null); Dnz.theme = theme }.padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -620,7 +649,7 @@ fun AccountScreen(state: LauncherState) {
             }
             if (state.account == null) {
                 DnzButton(state.t("sign_in"), Modifier.fillMaxWidth()) {
-                    // Until Mojang approves DNZ Launcher, sign-in can't work: show the same notice as on Home.
+                    // until Mojang approves DNZ Launcher, sign-in can't work: show the same notice as on Home
                     if (MicrosoftAuth.approved && MicrosoftAuth.ready) signInWithMicrosoft(state)
                     else state.dialog = state.t("sign_in") to state.t("mojang_notice")
                 }

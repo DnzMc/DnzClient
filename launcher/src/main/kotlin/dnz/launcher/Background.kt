@@ -10,10 +10,7 @@ import java.util.concurrent.TimeUnit
 import javax.swing.SwingUtilities
 import kotlin.concurrent.thread
 
-/**
- * Only one DNZ Launcher runs at a time. A second start (desktop shortcut) asks the running one to show its
- * window and then quits, so opening is instant when the launcher already runs in the background.
- */
+/** Only one DNZ Launcher runs at a time. */
 object SingleInstance {
     private const val PORT = 47813
     private const val HELLO = "dnz-launcher"
@@ -27,7 +24,7 @@ object SingleInstance {
         val server = try {
             ServerSocket(PORT, 5, InetAddress.getLoopbackAddress())
         } catch (e: IOException) {
-            // Port taken: if it is a DNZ Launcher, it answers and shows itself.
+            // Port taken: if it is a DNZ Launcher, it answers and shows itself
             return !askRunningToShow()
         }
         thread(isDaemon = true, name = "DNZ single instance") {
@@ -60,7 +57,6 @@ object Autostart {
     private val link: File?
         get() = System.getenv("APPDATA")?.let { File(it, "Microsoft/Windows/Start Menu/Programs/Startup/DNZ Launcher.lnk") }
 
-    /** macOS: a login item (LaunchAgent) that starts the app hidden when the user logs in. */
     private val agent = File(System.getProperty("user.home"), "Library/LaunchAgents/com.dnz.launcher.plist")
 
     fun isEnabled(): Boolean = if (Platform.isMac) agent.exists() else link?.exists() == true
@@ -115,7 +111,6 @@ object Autostart {
         }.getOrDefault(false)
     }
 
-    /** How this launcher was started: the packaged .exe, or javaw with the lib folder (desktop shortcut). */
     private fun selfCommand(): Triple<String, String, String>? {
         System.getProperty("jpackage.app-path")?.let { exe -> return Triple(exe, "--background", File(exe).parent) }
         val java = ProcessHandle.current().info().command().orElse(null) ?: return null

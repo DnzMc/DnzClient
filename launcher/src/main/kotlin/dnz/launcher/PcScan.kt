@@ -52,10 +52,8 @@ data class PcSpecs(
 /** Reads the computer's hardware (Windows): RAM from Java, CPU/GPU/battery from Windows (read-only). */
 object PcScan {
     private val IGNORED_GPUS = listOf("microsoft basic", "remote display", "virtual", "parsec", "citrix", "vmware", "hyper-v")
-    /** Windows chassis types of portable computers (laptop, notebook, sub notebook, convertible...). */
     private val LAPTOP_CHASSIS = setOf(8, 9, 10, 11, 12, 14, 18, 21, 30, 31, 32)
 
-    /** A JSON number or array of numbers. */
     private fun numbers(e: JsonElement?): List<Int> = when {
         e == null || e.isJsonNull -> emptyList()
         e.isJsonPrimitive -> listOfNotNull(runCatching { e.asInt }.getOrNull())
@@ -94,7 +92,7 @@ ${'$'}games = @(Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name=
             val o = e as? JsonObject ?: return@mapNotNull null
             val name = o.str("Name")?.trim() ?: return@mapNotNull null
             if (IGNORED_GPUS.any { it in name.lowercase() }) return@mapNotNull null
-            // The registry value is exact; AdapterRAM stops at 4 GB.
+            // the registry value is exact; AdapterRAM stops at 4 GB.
             val bytes = vram[name] ?: bytes(o.get("AdapterRAM"))
             PcSpecs.Gpu(name, bytes?.let { it / (1024.0 * 1024 * 1024) }?.takeIf { it > 0.1 }, isDedicated(name))
         }?.distinctBy { it.name } ?: emptyList()
@@ -113,10 +111,6 @@ ${'$'}games = @(Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name=
         )
     }
 
-    /**
-     * macOS (and Linux, partly): CPU from sysctl, graphics from system_profiler. Apple Silicon graphics share the
-     * RAM; they count as strong graphics with about half the RAM as video memory.
-     */
     private fun unixScan(ramGb: Double, threads: Int, refresh: Int?): PcSpecs {
         val gpus = mutableListOf<PcSpecs.Gpu>()
         var cpuName = ""
@@ -165,7 +159,7 @@ ${'$'}games = @(Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name=
     }
 
     private fun windowsInfo(): JsonObject? {
-        // -EncodedCommand (UTF-16LE Base64) keeps the quotes in the script intact on the Windows command line.
+        // -EncodedCommand (UTF-16LE Base64) keeps the quotes in the script intact on the Windows command line
         val encoded = Base64.getEncoder().encodeToString(SCRIPT.toByteArray(Charsets.UTF_16LE))
         val process = ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded)
             .redirectError(ProcessBuilder.Redirect.DISCARD).start()
@@ -178,7 +172,6 @@ ${'$'}games = @(Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name=
         return JsonParser.parseString(json).asJsonObject
     }
 
-    /** Memory sizes come as a number or as little-endian bytes. */
     private fun bytes(e: JsonElement?): Long? = when {
         e == null || e.isJsonNull -> null
         e.isJsonPrimitive -> runCatching { e.asLong }.getOrNull()?.takeIf { it > 0 }

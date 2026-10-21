@@ -18,12 +18,9 @@ import java.time.Duration
 import java.util.Base64
 
 /**
- * Self-update of the installed (setup or portable) launcher.
- *
- * download.dnzclient.com/launcher-latest.json lists every jar of the lib folder with its SHA-256; it is signed with
- * DNZ's private update key (launcher-latest.json.sig, Ed25519) and only accepted with that signature. Changed jars
- * are downloaded into the "update" folder next to lib. The swap happens after the launcher has closed
- * (UpdateApply, a small program started from a temporary copy), then the launcher starts again.
+ * Self-update of the installed (setup or portable) launcher. download.dnzclient.com/launcher-latest.json
+ * lists every jar of the lib folder with its SHA-256; it is signed with DNZ's private update key
+ * (launcher-latest.json.sig, Ed25519) and only accepted with that signature.
  */
 object Updater {
     private const val BASE = "https://download.dnzclient.com/"
@@ -31,13 +28,11 @@ object Updater {
     /** DNZ's public update key; the private key never leaves the release computer. */
     private const val PUBLIC_KEY = "MCowBQYDK2VwAyEAhOU6kb5Gnk9J64ua74/K23VXG9MgXJ+HL7uV3ZFg3k4="
 
-    /** Version of a downloaded update waiting for a restart, or null. */
     var ready by mutableStateOf<String?>(null)
         private set
 
     private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).followRedirects(HttpClient.Redirect.NORMAL).build()
 
-    /** The lib folder of an installed launcher, or null (development, single jar, Mac app). */
     private val libDir: File? by lazy {
         runCatching {
             val jar = File(Updater::class.java.protectionDomain.codeSource.location.toURI())
@@ -58,7 +53,6 @@ object Updater {
 
     private val lock = Any()
 
-    /** Looks for a new version and downloads it. Runs in the background; problems only mean "no update now". */
     fun check() {
         if (libDir == null) {
             status = Status.NotInstalled
@@ -74,14 +68,14 @@ object Updater {
     }
 
     /**
-     * At start, before any window: a waiting update is swapped in, and a newer version on the server (a fresh install
-     * from an older setup file, or an update that came out while the launcher was closed) is downloaded first, with
-     * the "Updating your launcher" window. Returns true when the launcher must quit (UpdateApply starts it again).
+     * At start, before any window: a waiting update is swapped in, and a newer version on the server (a fresh
+     * install from an older setup file, or an update that came out while the launcher was closed) is
+     * downloaded first, with the "Updating your launcher" window.
      */
     fun updateAtStart(args: Array<String>): Boolean {
         if (applyPendingAtStart(args)) return true
         libDir ?: return false
-        // A quick look only: without internet the launcher simply starts as it is.
+        // A quick look only: without internet the launcher simply starts as it is
         val update = runCatching { newVersion(Duration.ofSeconds(4)) }.getOrNull() ?: return false
         val splash = if ("--background" in args) null else UpdateSplash.show("Updating your launcher...")
         val ok = synchronized(lock) { runCatching { download(update) }.getOrDefault(false) }
@@ -92,7 +86,6 @@ object Updater {
 
     private var lastCheckFailed = false
 
-    /** A newer, correctly signed version on the server whose files differ from ours, or null. */
     private class Update(val version: String, val json: ByteArray, val sig: String, val changed: Map<String, String>, val removed: List<String>)
 
     private fun newVersion(timeout: Duration): Update? {
@@ -104,7 +97,7 @@ object Updater {
         lastCheckFailed = false
         val manifest = JsonParser.parseString(String(json)).asJsonObject
         val version = manifest["version"].asString
-        // Never back to an older (or the same) version, e.g. while a newer build is installed by hand.
+        // Never back to an older (or the same) version, e.g. while a newer build is installed by hand
         if (!newer(version, current ?: return null)) return null
         val files = manifest["files"].asJsonArray.map { it.asJsonObject }.associate { it["name"].asString to it["sha256"].asString }
         if (files.keys.any { it.contains('/') || it.contains('\\') || !it.endsWith(".jar") }) return null
@@ -114,7 +107,6 @@ object Updater {
         return Update(version, json, sig, changed, removed)
     }
 
-    /** Downloads [update] into the update folder; true when it is complete. */
     private fun download(update: Update): Boolean {
         val stage = stageDir ?: return false
         if (ready == update.version && File(stage, MANIFEST).isFile) return true // already waiting
@@ -137,7 +129,7 @@ object Updater {
                 check(part.renameTo(target))
             }
             File(stage, "remove.txt").writeText(removed.joinToString("\n"))
-            // Written last: the update folder counts as complete only with the signed manifest in it.
+            // Written last: the update folder counts as complete only with the signed manifest in it
             File(stage, MANIFEST).writeBytes(json)
             File(stage, "$MANIFEST.sig").writeText(sig)
             ready = version
@@ -172,7 +164,7 @@ object Updater {
         val lib = libDir ?: return false
         val stage = stageDir ?: return false
         return runCatching {
-            // UpdateApply runs from a copy, because the jars in lib are about to be replaced.
+            // UpdateApply runs from a copy, because the jars in lib are about to be replaced
             val copy = File.createTempFile("dnz-update-", ".jar")
             File(Updater::class.java.protectionDomain.codeSource.location.toURI()).copyTo(copy, overwrite = true)
             val home = System.getProperty("java.home")
@@ -187,7 +179,6 @@ object Updater {
         }.getOrDefault(false)
     }
 
-    /** "1.0.10" is newer than "1.0.9". */
     private fun newer(a: String, b: String): Boolean {
         val x = a.split('.').map { it.toIntOrNull() ?: 0 }
         val y = b.split('.').map { it.toIntOrNull() ?: 0 }

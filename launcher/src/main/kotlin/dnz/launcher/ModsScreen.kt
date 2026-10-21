@@ -57,7 +57,7 @@ enum class LibraryTab { Discover, Installed, Workshop }
 enum class ModSource { Modrinth, CurseForge }
 
 /** Discover filter: everything, mods only or texture packs only. */
-enum class Kind(val key: String) { All("cat.all"), Mods("lib.kind.mods"), Packs("lib.kind.packs") }
+enum class Kind(val key: String) { All("cat.all"), Mods("lib.kind.mods"), Packs("lib.kind.packs"), Modpacks("lib.kind.modpacks") }
 
 /** Mod library state; kept in LauncherState so results stay when the player switches pages. */
 class LibraryState {
@@ -68,24 +68,21 @@ class LibraryState {
     var source by mutableStateOf(ModSource.Modrinth)
     /** What Discover shows: mods and texture packs together, or only one of them (a filter chip). */
     var kind by mutableStateOf(Kind.All)
-    /** Texture packs installed in the selected profile (project ids). */
     var packIds by mutableStateOf(emptySet<String>())
     var packNames by mutableStateOf(emptySet<String>())
     val hits = mutableStateListOf<Modrinth.Hit>()
     var total by mutableStateOf(0)
     var searching by mutableStateOf(false)
     var searchError by mutableStateOf(false)
-    /** Search that [hits] belong to, so coming back to the page doesn't search again. */
     var searchedFor by mutableStateOf<String?>(null)
 
-    /** Mod page being shown (project id), or null for the lists. */
     var openProject by mutableStateOf<String?>(null)
 
     val installed = mutableStateListOf<Library.Installed>()
     var scanning by mutableStateOf(false)
     var scannedFor by mutableStateOf<String?>(null)
 
-    // DNZ Workshop tab: the themes (loaded once), the player's library (null: not signed in / no identity) and what shows.
+    // DNZ Workshop tab: the themes (loaded once), the player's library (null: not signed in / no identity) and what shows
     val wsItems = mutableStateListOf<Workshop.Item>()
     var wsLoad by mutableStateOf(0) // 0 loading, 1 done, 2 failed
     var wsLibrary by mutableStateOf<List<String>?>(null)
@@ -105,7 +102,7 @@ fun ModsScreen(state: LauncherState) {
     val profile = state.profiles[state.selectedProfile]
     val mc = profile.version
 
-    // Search again when the text (after a short pause), sort, category or Minecraft version changes.
+    // Search again when the text (after a short pause), sort, category or Minecraft version changes
     val key = searchKey(lib, mc)
     LaunchedEffect(key) {
         if (lib.searchedFor != key) {
@@ -146,21 +143,19 @@ fun ModsScreen(state: LauncherState) {
 }
 
 private fun searchKey(lib: LibraryState, mc: String) = "${lib.kind}|${lib.source}|${lib.query.trim()}|${lib.sort}|${lib.category}|$mc"
-/** Already in the profile, from either site (the same mod or pack on Modrinth and CurseForge counts). */
 private fun isInstalled(lib: LibraryState, id: String, slug: String, title: String, pack: Boolean) =
     if (pack) id in lib.packIds || Library.simpleName(title) in lib.packNames else Library.isInstalled(lib.installed, id, slug, title)
 
-/** Text key ending for the search box and the result count: "" (mods), "_packs" or "_all". */
-private fun kindSuffix(lib: LibraryState) = when (lib.kind) { Kind.Mods -> ""; Kind.Packs -> "_packs"; Kind.All -> "_all" }
+private fun kindSuffix(lib: LibraryState) = when (lib.kind) { Kind.Mods -> ""; Kind.Packs -> "_packs"; Kind.All -> "_all"; Kind.Modpacks -> "_modpacks" }
 private fun scanKey(profile: Profile) = "${profile.name}|${profile.version}"
 
 private suspend fun search(lib: LibraryState, mc: String, reset: Boolean) {
     val key = searchKey(lib, mc)
-    if (lib.source == ModSource.CurseForge && !CurseForge.ready) return
+    if (lib.source == ModSource.CurseForge && !CurseForge.ready && lib.kind != Kind.Modpacks) return
     lib.searching = true
     lib.searchError = false
     try {
-        // Each kind pages on its own: "Show more" continues after the mods and the packs already in the list.
+        // each kind pages on its own: "Show more" continues after the mods and the packs already in the list
         val modOffset = if (reset) 0 else lib.hits.count { !it.pack }
         val packOffset = if (reset) 0 else lib.hits.count { it.pack }
         val query = lib.query.trim()
@@ -174,8 +169,10 @@ private suspend fun search(lib: LibraryState, mc: String, reset: Boolean) {
             when (lib.kind) {
                 Kind.Mods -> one(false, 20)
                 Kind.Packs -> one(true, 20)
+                // Modpacks always come from Modrinth (.mrpack), for every Minecraft version DNZ supports
+                Kind.Modpacks -> Modpacks.search(query, listOf("26.3", "26.2"), lib.sort, if (reset) 0 else lib.hits.size)
                 Kind.All -> {
-                    // Mods and texture packs together, taking turns in the list.
+                    // Mods and texture packs together, taking turns in the list
                     val mods = one(false, 10)
                     val packs = one(true, 10)
                     val mixed = (0 until maxOf(mods.hits.size, packs.hits.size)).flatMap { i -> listOfNotNull(mods.hits.getOrNull(i), packs.hits.getOrNull(i)) }
@@ -214,8 +211,8 @@ private suspend fun rescan(lib: LibraryState, profile: Profile) {
     }
 }
 
-/** Installs a mod (and what it needs) into the selected profile, in the background. */
 private fun installProject(state: LauncherState, projectId: String, version: Modrinth.Version? = null, pack: Boolean = false) {
+    if (!isSignedIn(state)) return requireSignIn(state) { installProject(state, projectId, version, pack) }
     val lib = state.library
     if (projectId in lib.busy) return
     val profile = state.profiles[state.selectedProfile]
@@ -237,7 +234,6 @@ private fun installProject(state: LauncherState, projectId: String, version: Mod
     }
 }
 
-/** Links come from mod authors: only web pages open (a "file:" or network path would start a program). */
 private fun openUrl(url: String) {
     runCatching {
         val uri = URI(url.trim())
@@ -260,7 +256,7 @@ private fun DiscoverView(state: LauncherState, mc: String) {
     val lib = state.library
     SearchBar(state, mc)
     Spacer(Modifier.height(10.dp))
-    // Without a CurseForge key (released builds) there is only Modrinth, so no switch.
+    // without a CurseForge key (released builds) there is only Modrinth, so no switch
     if (!CurseForge.ready) lib.source = ModSource.Modrinth
     val curse = lib.source == ModSource.CurseForge
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -276,7 +272,7 @@ private fun DiscoverView(state: LauncherState, mc: String) {
             val rowState = rememberLazyListState()
             val scope = rememberCoroutineScope()
             LazyRow(
-                // The mouse wheel scrolls the categories sideways.
+                // the mouse wheel scrolls the categories sideways
                 Modifier.fillMaxWidth().onPointerEvent(PointerEventType.Scroll) { event ->
                     val change = event.changes.firstOrNull() ?: return@onPointerEvent
                     if (!change.isConsumed) scope.launch { rowState.scrollBy((change.scrollDelta.y + change.scrollDelta.x) * 60f) }
@@ -297,7 +293,7 @@ private fun DiscoverView(state: LauncherState, mc: String) {
                 }
                 item { Spacer(Modifier.width(40.dp)) }
             }
-            // Fade on the right edge shows there are more categories.
+            // Fade on the right edge shows there are more categories
             if (rowState.canScrollForward) {
                 Box(
                     Modifier.align(Alignment.CenterEnd).width(48.dp).height(34.dp)
@@ -360,13 +356,11 @@ private fun SearchBar(state: LauncherState, mc: String) {
     }
 }
 
-/** The sites' own small icons, loaded like mod icons (nothing stored in the launcher). */
 private val SOURCE_LOGOS = mapOf(
     ModSource.Modrinth to "https://modrinth.com/favicon.ico",
     ModSource.CurseForge to "https://static-beta.curseforge.com/images/favicon.ico",
 )
 
-/** Modrinth / CurseForge switch for the Discover list. */
 @Composable
 private fun SourceSwitch(state: LauncherState) {
     val lib = state.library
@@ -419,7 +413,9 @@ private fun ModRow(state: LauncherState, hit: Modrinth.Hit, installed: Boolean) 
     val hovered by hover.collectIsHoveredAsState()
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (hovered) Dnz.SurfaceHigh else Dnz.Surface)
-            .hoverable(hover).dnzClickable(highlight = false) { state.library.openProject = hit.id }.padding(14.dp),
+            .hoverable(hover).dnzClickable(highlight = false) {
+                if (hit.modpack) openUrl("https://modrinth.com/modpack/${hit.slug}") else state.library.openProject = hit.id
+            }.padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ModIcon(hit.iconUrl, hit.title, 52.dp)
@@ -438,11 +434,52 @@ private fun ModRow(state: LauncherState, hit: Modrinth.Hit, installed: Boolean) 
                 Stat("↓ " + Modrinth.format(hit.downloads))
                 Stat("♥ " + Modrinth.format(hit.follows))
                 if (hit.pack) Tag(state.t("lib.pack_tag"))
+                if (hit.modpack) Tag(state.t("lib.modpack_tag"), Dnz.Accent)
                 hit.categories.filter { it in Modrinth.categories }.take(3).forEach { Tag(state.t("cat.$it")) }
             }
         }
         Spacer(Modifier.width(12.dp))
-        InstallButton(state, hit.id, installed, hit.pack)
+        if (hit.modpack) ModpackButton(state, hit) else InstallButton(state, hit.id, installed, hit.pack)
+    }
+}
+
+@Composable
+private fun ModpackButton(state: LauncherState, hit: Modrinth.Hit) {
+    val busy = state.library.busy[hit.id]
+    val made = state.profiles.any { it.description == "Modpack · " + hit.title }
+    when {
+        busy != null -> Row(Modifier.widthIn(max = 200.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.size(16.dp), color = Dnz.Accent, strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+            Text(busy, color = Dnz.Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        made -> SmallButton(state.t("lib.modpack_made"), icon = Icons.Filled.Check, accent = true) { state.screen = Screen.Profiles }
+        else -> DnzButton(state.t("lib.modpack_install")) { installModpack(state, hit) }
+    }
+}
+
+private fun installModpack(state: LauncherState, hit: Modrinth.Hit) {
+    if (!isSignedIn(state)) return requireSignIn(state) { installModpack(state, hit) }
+    val lib = state.library
+    if (hit.id in lib.busy) return
+    lib.busy[hit.id] = state.t("lib.installing")
+    val taken = state.profiles.map { it.folder }
+    state.scope.launch {
+        try {
+            val result = withContext(Dispatchers.IO) {
+                Modpacks.install(hit.id, hit.title, state.versions, taken) { text -> state.scope.launch { lib.busy[hit.id] = state.t("lib.installing") + " " + text } }
+            }
+            state.profiles.add(result.profile)
+            state.selectedProfile = state.profiles.size - 1
+            state.version = result.profile.version
+            state.toast = state.t("lib.modpack_done").replace("%s", result.profile.name).replace("%n", result.files.toString())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            state.dialog = state.t("lib.install_failed") to (e.message ?: e.toString())
+        } finally {
+            lib.busy.remove(hit.id)
+        }
     }
 }
 
@@ -519,7 +556,7 @@ private fun ModPage(state: LauncherState, projectId: String) {
                 else -> {
                     val page = result.getOrThrow()
                     val p = page.project
-                    // Compare with the real id: the page may have been opened with the mod's short name.
+                    // Compare with the real id: the page may have been opened with the mod's short name
                     val installedVersions = lib.installed.filter { it.projectId == p.id }.mapNotNull { it.versionId }.toSet()
                     val installed = isInstalled(lib, p.id, p.slug, p.title, p.pack)
                     item { PageHeader(state, page, installed, mc) }
@@ -840,7 +877,6 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** Small outlined button (used on the Mods and Settings pages). */
 @Composable
 fun SmallButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector? = null, accent: Boolean = false, onClick: () -> Unit) {
     val hover = remember { MutableInteractionSource() }
@@ -902,11 +938,6 @@ private fun Loading(text: String) {
 
 // ------------------------------------------------------------------ DNZ Workshop
 
-/**
- * Mods → Workshop: DNZ themes for the launcher, listed like the mods. Search and filters on top, My library and Upload
- * on the right. The library is the same as on dnzclient.com/workshop (DNZ Cloud, Microsoft account); a theme in the
- * library is put on with Install.
- */
 @Composable
 private fun WorkshopView(state: LauncherState) {
     val lib = state.library
@@ -1043,7 +1074,6 @@ private fun WorkshopRow(state: LauncherState, item: Workshop.Item) {
     }
 }
 
-/** Shows [ids] at once and saves them to DNZ Cloud; goes back if that fails. */
 private fun changeLibrary(state: LauncherState, ids: List<String>) {
     val lib = state.library
     val before = lib.wsLibrary
@@ -1056,7 +1086,6 @@ private fun changeLibrary(state: LauncherState, ids: List<String>) {
     }
 }
 
-/** A small picture of the launcher in a theme's colors: sidebar, title, cards and a button. */
 @Composable
 private fun ThemePreview(c: ThemeColors, modifier: Modifier) {
     Canvas(modifier) {

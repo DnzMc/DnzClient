@@ -21,7 +21,6 @@ namespace Dnz
         string installDir = Path.Combine(Programs(), "DNZ Launcher");
         bool desktop = true;
         bool startMenu = true;
-        bool openNow = true;
         readonly bool update;
         volatile float progress;
         float shownProgress;
@@ -31,52 +30,14 @@ namespace Dnz
         public SetupForm() : base(820, 500, "DNZ Launcher Setup")
         {
             update = File.Exists(JavaPath(installDir));
-            ShowReady();
-        }
-
-        void ShowReady()
-        {
-            step = Step.Ready;
-            Btn desktopBox = null;
-            Btn startBox = null;
-            desktopBox = new Btn(Btn.Kind.Toggle, new RectangleF(X, 262, 300, 26), L.S("Masaüstü kısayolu", "Desktop shortcut"),
-                delegate { desktop = !desktop; desktopBox.Checked = desktop; Invalidate(); });
-            desktopBox.Checked = desktop;
-            startBox = new Btn(Btn.Kind.Toggle, new RectangleF(X, 296, 300, 26), L.S("Başlat menüsü kısayolu", "Start menu shortcut"),
-                delegate { startMenu = !startMenu; startBox.Checked = startMenu; Invalidate(); });
-            startBox.Checked = startMenu;
-            SetButtons(
-                new Btn(Btn.Kind.Secondary, new RectangleF(X + 350, 196, 110, 44), L.S("Değiştir", "Change"), ChooseFolder),
-                desktopBox,
-                startBox,
-                new Btn(Btn.Kind.Primary, new RectangleF(X, 410, 170, 52), update ? L.S("Güncelle", "Update") : L.S("Kur", "Install"), StartInstall),
-                new Btn(Btn.Kind.Link, new RectangleF(X + 290, 421, 170, 30), L.S("Gizlilik politikası", "Privacy policy"), OpenPrivacy));
+            // No questions here: the files are put in place right away, then the launcher opens with its own
+            // setup pages (language, look, privacy, profile, sign-in).
+            SetButtons();
+            Shown += delegate { StartInstall(); };
         }
 
         /// <summary>Left edge of the content on the right of the decoration.</summary>
         const float X = 330;
-
-        /// <summary>Privacy policy on the website (DNZ collects nothing; see PRIVACY.md).</summary>
-        static void OpenPrivacy()
-        {
-            try { Process.Start(new ProcessStartInfo("https://dnzclient.com/privacy-policy") { UseShellExecute = true }); } catch { }
-        }
-
-        void ChooseFolder()
-        {
-            using (FolderBrowserDialog d = new FolderBrowserDialog())
-            {
-                d.Description = L.S("DNZ Launcher nereye kurulsun?", "Where should DNZ Launcher be installed?");
-                d.SelectedPath = Directory.Exists(installDir) ? installDir : Programs();
-                if (d.ShowDialog(this) == DialogResult.OK)
-                {
-                    string chosen = d.SelectedPath;
-                    // A folder of its own, so uninstalling never removes anything else.
-                    installDir = Path.GetFileName(chosen.TrimEnd('\\')) == "DNZ Launcher" ? chosen : Path.Combine(chosen, "DNZ Launcher");
-                    Invalidate();
-                }
-            }
-        }
 
         void StartInstall()
         {
@@ -217,44 +178,32 @@ namespace Dnz
                 k.SetValue("NoRepair", 1, RegistryValueKind.DWord);
                 k.SetValue("InstallerLanguage", L.Turkish ? "TR" : "EN");
             }
-            // First install: the launcher starts in the language picked here (an existing setting is kept).
-            string settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dnzlauncher", "launcher.json");
-            if (!File.Exists(settings))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(settings));
-                File.WriteAllText(settings, "{ \"language\": \"" + (L.Turkish ? "TR" : "EN") + "\" }");
-            }
         }
 
         void ShowDone()
         {
             step = Step.Done;
-            Btn open = null;
-            open = new Btn(Btn.Kind.Switch, new RectangleF(X + 16, 178, 428, 40), L.S("Launcher'ı şimdi aç", "Open the launcher now"),
-                delegate { openNow = !openNow; open.Checked = openNow; Invalidate(); });
-            open.Checked = openNow;
-            SetButtons(open, new Btn(Btn.Kind.Primary, new RectangleF(X, 410, 140, 52), L.S("Bitir", "Finish"), delegate
+            SetButtons();
+            try
             {
-                if (openNow)
-                {
-                    try
-                    {
-                        ProcessStartInfo psi = new ProcessStartInfo(JavaPath(installDir), JavaArgs());
-                        psi.WorkingDirectory = installDir;
-                        psi.UseShellExecute = false;
-                        Process.Start(psi);
-                    }
-                    catch { }
-                }
-                Close();
-            }));
+                ProcessStartInfo psi = new ProcessStartInfo(JavaPath(installDir), JavaArgs());
+                psi.WorkingDirectory = installDir;
+                psi.UseShellExecute = false;
+                Process.Start(psi);
+            }
+            catch { }
+            // A moment for the launcher window to come up, then this window goes.
+            System.Windows.Forms.Timer close = new System.Windows.Forms.Timer();
+            close.Interval = 1800;
+            close.Tick += delegate { close.Stop(); Close(); };
+            close.Start();
         }
 
         void Fail(string message)
         {
             step = Step.Failed;
             error = message;
-            SetButtons(new Btn(Btn.Kind.Primary, new RectangleF(X, 410, 170, 52), L.S("Tekrar dene", "Try again"), ShowReady));
+            SetButtons(new Btn(Btn.Kind.Primary, new RectangleF(X, 410, 170, 52), L.S("Tekrar dene", "Try again"), StartInstall));
         }
 
         protected override bool CanClose()
@@ -266,8 +215,7 @@ namespace Dnz
         {
             switch (step)
             {
-                case Step.Ready: ShowReady(); break;
-                case Step.Done: ShowDone(); break;
+                case Step.Done: SetButtons(); break;
                 case Step.Failed: Fail(error); break;
                 default: SetButtons(); break;
             }
@@ -282,44 +230,24 @@ namespace Dnz
 
         protected override void PaintContent(Graphics g)
         {
-            Decoration(g, step == Step.Done);
+            SidePanel(g);
             switch (step)
             {
                 case Step.Ready:
-                    Theme.Draw(g, update ? L.S("DNZ Launcher'ı güncelle", "Update DNZ Launcher") : L.S("DNZ Launcher'ı kur", "Install DNZ Launcher"),
-                        Theme.F(28, 2), Theme.Text, new RectangleF(X, 56, 460, 48), 0);
-                    Theme.Draw(g, "v" + BuildInfo.Version + "  ·  " + L.S("Modern menüler, HUD ve yüksek FPS", "Modern menus, HUD and high FPS"),
-                        Theme.F(13, 0), Theme.Muted, new RectangleF(X, 104, 460, 24), 0);
-                    Theme.Draw(g, L.S("Kurulum konumu", "Install location"), Theme.F(12, 1), Theme.Muted, new RectangleF(X, 168, 400, 22), 0);
-                    RectangleF box = new RectangleF(X, 196, 340, 44);
-                    Theme.Fill(g, box, 10, Theme.Surface);
-                    Theme.Draw(g, installDir, Theme.F(12, 0), Theme.Text, new RectangleF(box.X + 14, box.Y, box.Width - 28, box.Height), 0);
-                    string note = update
-                        ? L.S("Profillerin, dünyaların ve ayarların korunur.", "Your profiles, worlds and settings are kept.")
-                        : L.S("Yönetici izni gerekmez  ·  Java dahil", "No admin rights needed  ·  Java included");
-                    Theme.Draw(g, note, Theme.F(12, 0), Theme.Muted, new RectangleF(X, 336, 460, 24), 0);
-                    break;
-
                 case Step.Installing:
-                    Theme.Draw(g, L.S("Kuruluyor", "Installing"), Theme.F(28, 2), Theme.Text, new RectangleF(X, 56, 460, 48), 0);
-                    string pct = (int)Math.Round(shownProgress * 100) + "%";
-                    Font big = Theme.F(54, 2);
-                    float pw = g.MeasureString(pct, big).Width;
-                    Theme.Draw(g, pct, big, Theme.Accent, new RectangleF(X - 6, 112, pw + 10, 80), 0);
-                    Theme.Draw(g, status, Theme.F(13, 0), Theme.Muted, new RectangleF(X + pw + 4, 150, 460 - pw - 4, 34), 0);
-                    RectangleF track = new RectangleF(X, 212, 460, 10);
-                    Theme.Fill(g, track, 5, Theme.SurfaceHigh);
-                    Theme.Fill(g, new RectangleF(track.X, track.Y, Math.Max(10f, track.Width * shownProgress), track.Height), 5, Theme.Accent);
-                    Theme.Draw(g, L.S("Birkaç saniye sürer, pencereyi kapatma.", "Takes a few seconds, keep this window open."), Theme.F(12, 0), Theme.Muted,
-                        new RectangleF(X, 236, 460, 24), 0);
-                    break;
-
                 case Step.Done:
-                    Theme.Draw(g, update ? L.S("Güncelleme tamamlandı", "Update complete") : L.S("Kurulum tamamlandı", "Setup complete"),
-                        Theme.F(28, 2), Theme.Text, new RectangleF(X, 56, 460, 48), 0);
-                    Theme.Draw(g, L.S("DNZ Launcher kullanıma hazır.", "DNZ Launcher is ready to use."), Theme.F(13, 0), Theme.Muted,
-                        new RectangleF(X, 104, 460, 24), 0);
-                    Theme.Fill(g, new RectangleF(X, 170, 460, 56), 12, Theme.Surface);
+                    bool done = step == Step.Done;
+                    Theme.Draw(g, done ? L.S("Hazır!", "Ready!") : update ? L.S("Güncelleniyor", "Updating") : L.S("Hazırlanıyor", "Getting ready"),
+                        Theme.F(28, 2), Theme.Text, new RectangleF(X, 150, 460, 48), 0);
+                    string pct = (int)Math.Round((done ? 1f : shownProgress) * 100) + "%";
+                    Theme.Draw(g, done ? L.S("DNZ Launcher açılıyor...", "Opening DNZ Launcher...") : status, Theme.F(13, 0), Theme.Muted,
+                        new RectangleF(X, 200, 380, 24), 0);
+                    Theme.Draw(g, pct, Theme.F(13, 2), Theme.Accent, new RectangleF(X + 380, 200, 80, 24), 2);
+                    RectangleF track = new RectangleF(X, 236, 460, 10);
+                    Theme.Fill(g, track, 5, Theme.SurfaceHigh);
+                    Theme.Fill(g, new RectangleF(track.X, track.Y, Math.Max(10f, track.Width * (done ? 1f : shownProgress)), track.Height), 5, Theme.Accent);
+                    Theme.Draw(g, L.S("Birkaç saniye sürer. Sonra kurulum sayfaları açılır.", "Takes a few seconds. Then the setup pages open."),
+                        Theme.F(12, 0), Theme.Muted, new RectangleF(X, 262, 460, 24), 0);
                     break;
 
                 case Step.Failed:
@@ -329,24 +257,15 @@ namespace Dnz
             }
         }
 
-        /// <summary>Left panel: rounded bars and dots, dark while setting up and orange when done.</summary>
-        void Decoration(Graphics g, bool lit)
+        /// <summary>Left panel like the launcher's setup pages: the app icon and its name.</summary>
+        void SidePanel(Graphics g)
         {
             const float panel = 290;
             g.FillRectangle(new SolidBrush(Theme.Rgb(0x0D1118)), 0, 0, panel, H);
             using (Pen edge = new Pen(Theme.Border, 1f)) g.DrawLine(edge, panel, 0, panel, H);
-            GraphicsState saved = g.Save();
-            g.SetClip(new RectangleF(0, 0, panel, H));
-            Color bar = lit ? Theme.Accent : Theme.Surface;
-            Theme.Fill(g, new RectangleF(42, 156, 190, 48), 24, bar);
-            float[] rows = { 218, 280, 342 };
-            for (int i = 0; i < rows.Length; i++)
-            {
-                Color dot = lit ? (i == 1 ? Theme.Rgb(0x8A9099) : Theme.Rgb(0x555C66)) : Theme.Surface;
-                Theme.Fill(g, new RectangleF(-24, rows[i], 48, 48), 24, dot);
-                Theme.Fill(g, new RectangleF(42, rows[i], 280, 48), 24, bar);
-            }
-            g.Restore(saved);
+            Theme.DrawLogo(g, new RectangleF(32, 44, 40, 40), 10);
+            Theme.Draw(g, "DNZ Launcher", Theme.F(16, 2), Theme.Text, new RectangleF(84, 44, 190, 40), 0);
+            Theme.Draw(g, "v" + BuildInfo.Version, Theme.F(12, 0), Theme.Muted, new RectangleF(32, H - 56, 220, 24), 0);
         }
 
         static void Check(Graphics g, RectangleF r)

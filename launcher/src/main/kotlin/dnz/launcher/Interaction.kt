@@ -22,8 +22,8 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 
 /**
- * Everything clickable in the launcher: hand cursor over it, and it lights up a little while the mouse is on it.
- * [highlight] = false for elements that already change color on hover themselves.
+ * Everything clickable in the launcher: hand cursor over it, and it lights up a little while the mouse is on
+ * it. [highlight] = false for elements that already change color on hover themselves.
  */
 fun Modifier.dnzClickable(enabled: Boolean = true, highlight: Boolean = true, onClick: () -> Unit): Modifier = composed {
     val hover = remember { MutableInteractionSource() }
@@ -39,7 +39,6 @@ fun Modifier.dnzClickable(enabled: Boolean = true, highlight: Boolean = true, on
         .clickable(enabled = enabled, onClick = onClick)
 }
 
-/** Hand cursor for Material controls (switches, sliders, checkboxes, menu items). */
 fun Modifier.handCursor(): Modifier = this.pointerHoverIcon(PointerIcon.Hand)
 
 /** A row in a [DnzDropdown]: hand cursor and a rounded highlight inset from the menu's edges. */

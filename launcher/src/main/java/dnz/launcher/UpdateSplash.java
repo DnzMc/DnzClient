@@ -15,8 +15,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 /**
- * The small "Updating your launcher" window with a turning circle, shown while a launcher update is downloaded at
- * start and while UpdateApply swaps the files. Plain Swing, so UpdateApply can use it without Compose.
+ * The small "Updating your launcher" window with a turning circle, shown while a launcher update is
+ * downloaded at start and while UpdateApply swaps the files.
  */
 public final class UpdateSplash {
 	private static final Color BACKGROUND = new Color(0x15, 0x15, 0x1A);
@@ -55,7 +55,7 @@ public final class UpdateSplash {
 				g.fill(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 18, 18));
 				g.setColor(BORDER);
 				g.draw(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 18, 18));
-				// The turning circle: a faint ring with a bright arc going round.
+				// the turning circle: a faint ring with a bright arc going round
 				int size = 26, x = 28, y = (h - size) / 2;
 				g.setStroke(new BasicStroke(3.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 				g.setColor(TRACK);

@@ -1,9 +1,6 @@
 package dnz.launcher
 
-/**
- * Turns a Modrinth description (Markdown with some HTML) into simple lines the launcher can draw.
- * Images, badges and HTML are dropped, links keep their text; long descriptions are cut.
- */
+/** Turns a Modrinth description (Markdown with some HTML) into simple lines the launcher can draw. */
 object Markdown {
     enum class Kind { Text, Heading, Bullet, Quote, Code, Blank }
 
@@ -20,7 +17,6 @@ object Markdown {
     private val rule = Regex("^[-*_=]{3,}$")
     private val tableDivider = Regex("^\\|?[\\s:|-]+\\|?$")
 
-    /** The lines, and whether the text was cut short. */
     fun lines(markdown: String, max: Int = 140): Pair<List<Line>, Boolean> {
         val text = markdown.replace("\r", "")
             .replace(comment, "")

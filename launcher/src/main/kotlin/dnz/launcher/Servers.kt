@@ -93,7 +93,7 @@ object Servers {
             val out = DataOutputStream(socket.getOutputStream())
             val input = DataInputStream(socket.getInputStream())
 
-            // Handshake (next state 1 = status), then the status request.
+            // Handshake (next state 1 = status), then the status request
             packet(out, 0x00) {
                 varInt(it, -1)
                 string(it, host)
@@ -105,7 +105,7 @@ object Servers {
             readVarInt(input) // packet id
             val json = JsonParser.parseString(readString(input)).asJsonObject
 
-            // Ping / pong for the latency; some servers close right away, then the connect time is used.
+            // Ping / pong for the latency; some servers close right away, then the connect time is used
             val ping = runCatching {
                 val t = System.nanoTime()
                 packet(out, 0x01) { it.writeLong(System.currentTimeMillis()) }
@@ -132,7 +132,6 @@ object Servers {
         org.jetbrains.skia.Image.makeFromEncoded(Base64.getMimeDecoder().decode(base64)).toComposeImageBitmap()
     }.getOrNull()
 
-    /** "host", "host:port", or a domain with a Minecraft SRV record (like the game does). */
     private fun resolve(address: String): Pair<String, Int> {
         val trimmed = address.trim()
         val colon = trimmed.lastIndexOf(':')

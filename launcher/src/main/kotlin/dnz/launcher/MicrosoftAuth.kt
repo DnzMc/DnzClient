@@ -11,19 +11,11 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 /**
- * "Sign in with Microsoft" for starting the game directly from DNZ.
- *
- * The player signs in on Microsoft's own page (microsoft.com/link, device code), DNZ never sees the password.
- * Chain: Microsoft token -> Xbox Live -> XSTS -> Minecraft token -> Minecraft profile.
- * Only the Microsoft refresh token is kept, encrypted with Windows (DPAPI, only this Windows user can read it).
- * Several accounts: the one in use is microsoft.dat; the others wait in microsoft-accounts/<id>.dat (same encryption)
- * and can be switched to without signing in again.
- *
- * Needs an Azure app registration (CLIENT_ID) that Mojang has approved for Minecraft; until then the last step
- * answers 403 and the player is told the approval is still pending.
+ * "Sign in with Microsoft" for starting the game directly from DNZ. The player signs in on Microsoft's own
+ * page (microsoft.com/link, device code), DNZ never sees the password.
  */
 object MicrosoftAuth {
-    /** Mojang approved DNZ Launcher for Minecraft sign-in. Set to true once the approval arrives. */
+    /** Mojang approved DNZ Launcher for Minecraft sign-in. */
     const val approved = true // Mojang approved the App ID on 06.10.2026
 
     /** Application (client) ID from portal.azure.com -> App registrations ("microsoft.clientId" in dnz-keys.properties). */
@@ -43,9 +35,8 @@ object MicrosoftAuth {
     // ------------------------------------------------------------------ sign in (browser)
 
     /**
-     * Normal sign-in: Microsoft's own page opens in the browser, and after signing in it sends the player back to a
-     * tiny page served by DNZ on this computer (localhost), so no code has to be typed.
-     * The app registration needs the redirect URI "http://localhost" (Mobile and desktop applications).
+     * Normal sign-in: Microsoft's own page opens in the browser, and after signing in it sends the player
+     * back to a tiny page served by DNZ on this computer (localhost), so no code has to be typed.
      */
     class BrowserLogin internal constructor(
         val url: String,
@@ -163,10 +154,8 @@ object MicrosoftAuth {
     /** Name and id of the last signed-in player (nothing secret), so the launcher shows them at once on start. */
     private val profileFile = File(GameLauncher.root, "microsoft-profile.json")
 
-    /** Other Microsoft accounts signed in to DNZ (not the one in use), waiting to be switched to. */
     private val storeDir = File(GameLauncher.root, "microsoft-accounts")
 
-    /** Profile id of the account in use, or null. */
     private fun activeId(): String? = runCatching { JsonParser.parseString(profileFile.readText()).asJsonObject["id"].asString }.getOrNull()
 
     /** The other signed-in accounts (name and id only, no token), by name. */
@@ -177,7 +166,6 @@ object MicrosoftAuth {
         }.getOrNull()
     }.filter { File(storeDir, it.uuid + ".dat").isFile }.sortedBy { it.name.lowercase() }
 
-    /** Moves the account in use to the waiting list (before another one takes its place). */
     private fun stashCurrent() {
         if (!hasSaved) return
         val profile = runCatching { profileFile.readText() }.getOrNull() ?: return
@@ -188,7 +176,7 @@ object MicrosoftAuth {
         File(storeDir, "$id.json").writeText(profile)
     }
 
-    /** Switches to a waiting account: it becomes the one in use and the current one waits. Returns it signed in. */
+    /** Switches to a waiting account: it becomes the one in use and the current one waits. */
     fun switchTo(id: String): Account? {
         val dat = File(storeDir, "$id.dat")
         val json = File(storeDir, "$id.json")
@@ -204,14 +192,12 @@ object MicrosoftAuth {
         return restore()
     }
 
-    /** Removes a waiting account from this computer. */
     fun removeOther(id: String) {
         File(storeDir, "$id.dat").delete()
         File(storeDir, "$id.json").delete()
         Secret.forget(id)
     }
 
-    /** A sign-in is saved (it may still need renewing). */
     val hasSaved: Boolean get() = ready && saved.isFile
 
     /** The last signed-in player without a token yet (renewed by [restore]); null if nobody is signed in. */
@@ -223,11 +209,7 @@ object MicrosoftAuth {
         }.getOrNull()
     }
 
-    /**
-     * Signs in again with the saved refresh token (no window).
-     * Null when there is none or Microsoft no longer accepts it (then the saved sign-in is dropped);
-     * throws when Microsoft can't be reached (no internet yet), so it can be tried again later.
-     */
+    /** Signs in again with the saved refresh token (no window). */
     fun restore(): Account? {
         if (!hasSaved) return null
         val refresh = runCatching { Secret.decrypt(saved.readText()) }.getOrNull() ?: return null
@@ -255,9 +237,8 @@ object MicrosoftAuth {
     private var idToken: Pair<String, Long>? = null
 
     /**
-     * A Microsoft ID token (who the player is) for DNZ Cloud's Workshop library, the same Microsoft account the
-     * website signs in with. A separate request with the saved refresh token, so the Minecraft sign-in is never
-     * touched; null when nobody is signed in or Microsoft says no (the library then just isn't shown).
+     * A Microsoft ID token (who the player is) for DNZ Cloud's Workshop library, the same Microsoft account
+     * the website signs in with.
      */
     fun idToken(): String? {
         idToken?.let { (token, expires) -> if (System.currentTimeMillis() < expires - 120_000) return token }
@@ -325,7 +306,7 @@ object MicrosoftAuth {
         check(profile.statusCode() == 200) { "Minecraft profile: HTTP ${profile.statusCode()}" }
         val p = JsonParser.parseString(profile.body()).asJsonObject
 
-        // Signing in with another account keeps the one in use in the list (adding an account).
+        // Signing in with another account keeps the one in use in the list (adding an account)
         val newId = p["id"].asString
         if (activeId().let { it != null && it != newId }) {
             stashCurrent()
@@ -361,12 +342,10 @@ object MicrosoftAuth {
         return response.statusCode() to json
     }
 
-    /** Windows DPAPI through PowerShell: only this Windows user on this computer can decrypt. Secrets go through stdin. */
     private object Secret {
         private const val KEYCHAIN = "keychain"
         private const val SERVICE = "DNZ Launcher Microsoft"
 
-        /** Mac: the macOS Keychain keeps it (the file only says so). Linux: the file itself, readable by this user only. */
         private fun who(slot: String) = if (slot.isEmpty()) "DNZ" else "DNZ-$slot"
 
         fun encrypt(text: String, slot: String = ""): String = when {

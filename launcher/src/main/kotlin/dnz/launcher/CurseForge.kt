@@ -7,14 +7,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.net.URLEncoder
 
-/**
- * CurseForge API (https://docs.curseforge.com) as a second source for the mod library.
- *
- * Results use the same shapes as [Modrinth] so the library pages work for both. CurseForge ids are written
- * "cf:<number>" (projects and files) so they never mix with Modrinth ids.
- * The API needs DNZ's key; it stays on DNZ Cloud (cloud/worker.js, "/cf/"), which asks CurseForge for the launcher,
- * so the key is never inside the launcher.
- */
+/** CurseForge API (https://docs.curseforge.com) as a second source for the mod library. */
 object CurseForge {
     private const val API = "https://cloud.dnzclient.com/cf/v1"
     private const val MINECRAFT = 432
@@ -39,7 +32,6 @@ object CurseForge {
     private fun get(path: String) = Net.json(API + path, headers).asJsonObject
     private fun enc(s: String) = URLEncoder.encode(s, Charsets.UTF_8)
 
-    /** CurseForge's own sort fields for each library sort. */
     private fun sortField(sort: Modrinth.Sort) = when (sort) {
         Modrinth.Sort.Relevance -> 2 // popularity
         Modrinth.Sort.Downloads -> 6
@@ -66,7 +58,7 @@ object CurseForge {
             }
             if (root != null) {
                 val hits = root.getAsJsonArray("data").map { hit(it.asJsonObject) }
-                // The API never pages past 10 000 results.
+                // the API never pages past 10 000 results
                 val total = root.getAsJsonObject("pagination")?.get("totalCount")?.asInt ?: hits.size
                 return Modrinth.SearchPage(hits, total.coerceAtMost(10_000 - limit))
             }
@@ -75,8 +67,8 @@ object CurseForge {
     }
 
     /**
-     * Without search: CurseForge's popular and recently updated mods that have a Fabric file for [mc], filtered by
-     * the typed text. A typed project id (the number on a CurseForge mod page) opens that mod.
+     * Without search: CurseForge's popular and recently updated mods that have a Fabric file for [mc],
+     * filtered by the typed text.
      */
     private fun lists(query: String, mc: String, sort: Modrinth.Sort, packs: Boolean): Modrinth.SearchPage {
         val q = query.trim()
@@ -151,13 +143,11 @@ object CurseForge {
         )
     }
 
-    /** Download servers CurseForge uses; anything else is refused. */
     fun trusted(url: String) = url.startsWith("https://edge.forgecdn.net/") || url.startsWith("https://mediafilez.forgecdn.net/")
 
     private fun authors(o: JsonObject) = (o["authors"] as? JsonArray)?.firstOrNull()?.asJsonObject?.str("name")
     private fun icon(o: JsonObject) = (o["logo"] as? JsonObject)?.let { it.str("thumbnailUrl") ?: it.str("url") }
 
-    /** CurseForge descriptions are HTML; turn headings and list items into the Markdown the page already draws. */
     private fun htmlToMarkdown(html: String) = html
         .replace(Regex("(?i)<h1[^>]*>"), "\n# ").replace(Regex("(?i)<h2[^>]*>"), "\n## ").replace(Regex("(?i)<h[3-6][^>]*>"), "\n### ")
         .replace(Regex("(?i)<li[^>]*>"), "\n- ")

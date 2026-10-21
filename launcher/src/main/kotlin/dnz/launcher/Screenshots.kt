@@ -5,7 +5,6 @@ import androidx.compose.ui.unit.Density
 import java.io.File
 import kotlin.system.exitProcess
 
-/** One picture: [setup] prepares the state, [waitMs] lets internet content (mod lists, icons) arrive. */
 private class Shot(val name: String, val waitMs: Long = 0, val setup: LauncherState.() -> Unit)
 
 /** Renders each screen to a PNG so the design can be checked without opening a window. */
@@ -22,20 +21,25 @@ fun main(args: Array<String>) {
         Shot("mods-page", 9000) { screen = Screen.Mods; library.openProject = "sodium" },
         Shot("mods-cf-page", 9000) { screen = Screen.Mods; library.openProject = "cf:248787" },
         Shot("mods-installed", 7000) { screen = Screen.Mods; library.tab = LibraryTab.Installed },
-        // Real search of this computer's installs; nothing is imported.
+        // Real search of this computer's installs; nothing is imported
         Shot("profiles-import") {
             screen = Screen.Profiles
             imports.sources = Importer.find().also { imports.selected = it.firstOrNull() }
         },
         Shot("servers", 6000) { screen = Screen.Servers },
+        Shot("presence", 1500) { screen = Screen.Servers; Presence.preview(12, 5, 340) },
+        Shot("presence-open", 1500) { screen = Screen.Servers; Presence.preview(12, 5, 340); presenceOpen = true },
+        Shot("servers-make", 1500) { screen = Screen.Servers; host.step = HostStep.Choose },
+        Shot("servers-world", 1500) { screen = Screen.Servers; host.step = HostStep.World },
+        Shot("servers-server", 1500) { screen = Screen.Servers; host.step = HostStep.Server },
         Shot("settings") { screen = Screen.Settings },
-        // The whole Settings page in one tall picture (appearance cards at the bottom).
+        // the whole Settings page in one tall picture (appearance cards at the bottom)
         Shot("settings-all") { screen = Screen.Settings },
-        // Home with another accent color picked in Settings.
+        // Home with another accent color picked in Settings
         Shot("home-de") { screen = Screen.Home; language = Lang.DE },
         Shot("settings-de") { screen = Screen.Settings; language = Lang.DE },
         Shot("home-purple") { screen = Screen.Home; Dnz.pickAccent(0xFF9D6BFF) },
-        // Real scan of this computer, but nothing is changed (plan only).
+        // Real scan of this computer, but nothing is changed (plan only)
         Shot("settings-auto") {
             screen = Screen.Settings
             autoResult = AutoTune.Result(AutoTune.plan(PcScan.scan()), AutoTune.targets(profiles.toList()).map { it.name }, emptyList(), ramGb)
@@ -56,11 +60,11 @@ fun main(args: Array<String>) {
     for (shot in shots) {
         if (args.size > 1 && !shot.name.startsWith(args[1])) continue
         Dnz.theme = LauncherTheme.Colorful
-        val state = LauncherState().apply(shot.setup)
+        val state = LauncherState().apply { setupDone = true }.apply(shot.setup)
         val scene = ImageComposeScene(1200, when (shot.name) { "profiles-import" -> 1300; "settings-all" -> 1900; else -> 740 }, Density(1f)) {
             LauncherApp(state, dragArea = { it() }, onMinimize = {}, onClose = {})
         }
-        // Render a few frames so async content can appear.
+        // Render a few frames so async content can appear
         var time = 0L
         var image = scene.render(time)
         val end = System.currentTimeMillis() + shot.waitMs
@@ -71,6 +75,25 @@ fun main(args: Array<String>) {
         }
         File(out, "${shot.name}.png").writeBytes(image.encodeToData()!!.bytes)
         scene.close()
+    }
+    // first-run setup pages (the install page with nothing to install)
+    if (args.size < 2 || args[1].startsWith("setup")) {
+        for (page in 0 until 6) {
+            Dnz.theme = LauncherTheme.Colorful
+            val state = LauncherState()
+            val scene = ImageComposeScene(1200, 740, Density(1f)) {
+                androidx.compose.material3.MaterialTheme { FirstRunSetup(state, dragArea = { it() }, onMinimize = {}, onClose = {}, startPage = page) }
+            }
+            var time = 0L
+            var image = scene.render(time)
+            repeat(if (page == 3) 16 else 3) {
+                Thread.sleep(500)
+                time += 500_000_000L
+                image = scene.render(time)
+            }
+            File(out, "setup-$page.png").writeBytes(image.encodeToData()!!.bytes)
+            scene.close()
+        }
     }
     if (args.size < 2 || args[1].startsWith("custom")) {
         val state = LauncherState().apply { screen = Screen.Home }

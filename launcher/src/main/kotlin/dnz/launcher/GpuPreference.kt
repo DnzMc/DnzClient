@@ -4,14 +4,13 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
- * Laptops with two graphics chips (e.g. Intel + NVIDIA): Windows may start Java on the weak built-in one, which can
- * halve the FPS. Before the game starts, the game's Java is registered as "High performance" in Windows' own graphics
- * settings (Settings > System > Display > Graphics, per user). A choice the player made there themselves is kept.
+ * Laptops with two graphics chips (e.g. Intel + NVIDIA): Windows may start Java on the weak built-in one,
+ * which can halve the FPS. Before the game starts, the game's Java is registered as "High performance" in
+ * Windows' own graphics settings (Settings > System > Display > Graphics, per user).
  */
 object GpuPreference {
     private const val KEY = "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences"
 
-    /** Registers javaw.exe and java.exe next to [java] (a Java's bin folder program). Never throws. */
     fun preferDedicated(java: File) {
         if (!Platform.isWindows) return
         runCatching {
@@ -22,7 +21,7 @@ object GpuPreference {
             for (exe in targets) {
                 val value = valueOf(existing, exe.absolutePath)
                 if (Regex("GpuPreference=([12]);").containsMatchIn(value)) continue
-                // Windows keeps other settings in the same text (HDR, ...): they stay, only the choice is added.
+                // Windows keeps other settings in the same text (HDR, ...): they stay, only the choice is added
                 reg("add", KEY, "/v", exe.absolutePath, "/t", "REG_SZ", "/d", value.replace(Regex("GpuPreference=\\d+;"), "") + "GpuPreference=2;", "/f")
             }
         }
@@ -40,10 +39,7 @@ object GpuPreference {
         }
     }
 
-    /**
-     * The registered settings of [path] ("AppStatus=1;AutoHDREnable=2097;"), or "" when it has none.
-     * "GpuPreference=1;" or "=2;" in it means someone chose; "=0;" (let Windows decide) is not a real choice.
-     */
+    /** The registered settings of [path] ("AppStatus=1;AutoHDREnable=2097;"), or "" when it has none. */
     private fun valueOf(query: String, path: String): String = query.lineSequence().map { it.trim().split(Regex("\\s{2,}|\\t")) }
         .firstOrNull { it.size >= 3 && it[0].equals(path, ignoreCase = true) }?.last() ?: ""
 

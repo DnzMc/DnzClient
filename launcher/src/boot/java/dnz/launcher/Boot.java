@@ -5,10 +5,7 @@ import java.net.URI;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
-/**
- * Entry point of the standalone DNZ Launcher jar. Built for old Java too, so that someone with an older Java gets a
- * clear message (and a link to Java 25) instead of nothing happening when they double-click the jar.
- */
+/** Entry point of the standalone DNZ Launcher jar. */
 public final class Boot {
 	private static final int NEEDED = 25;
 	private static final String JAVA_PAGE = "https://adoptium.net/temurin/releases/?version=25";

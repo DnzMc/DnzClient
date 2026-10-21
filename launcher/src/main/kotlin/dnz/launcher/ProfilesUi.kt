@@ -35,7 +35,6 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
-/** Letter icon colors a profile can pick. */
 val ProfileColors = listOf(
     listOf(Color(0xFF4FA3FF), Color(0xFF7B5CFF)), listOf(Color(0xFF3ED6D0), Color(0xFF2A7FFF)),
     listOf(Color(0xFF7CE38B), Color(0xFF1FA35C)), listOf(Color(0xFFFFB347), Color(0xFFFF5E62)),
@@ -54,7 +53,7 @@ object Profiles {
         }
     }
 
-    /** Asks for a picture (Windows file window), crops it square, saves it 128 x 128. Returns its file name. */
+    /** Asks for a picture (Windows file window), crops it square, saves it 128 x 128. */
     fun pickPicture(folder: String): String? {
         val dialog = FileDialog(null as Frame?, "Profil resmi", FileDialog.LOAD)
         dialog.setFilenameFilter { _, n -> n.lowercase().let { it.endsWith(".png") || it.endsWith(".jpg") || it.endsWith(".jpeg") } }
@@ -73,7 +72,6 @@ object Profiles {
         return name
     }
 
-    /** A folder name that no profile uses yet. */
     fun freeFolder(name: String, taken: Collection<String>): String {
         val base = name.replace(Regex("[^A-Za-z0-9_-]"), "_").ifBlank { "Profil" }
         var folder = base
@@ -127,7 +125,7 @@ fun ProfilesScreen(state: LauncherState) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ScreenTitle(state.t("profiles"))
             Spacer(Modifier.weight(1f))
-            DnzButton("+ " + state.t("profiles.new")) { state.editingProfile = -1 }
+            DnzButton("+ " + state.t("profiles.new")) { requireSignIn(state) { state.editingProfile = -1 } }
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             for (i in state.profiles.indices) ProfileCard(state, i)
@@ -213,7 +211,7 @@ private fun duplicate(state: LauncherState, i: Int) {
 
 /** Window for a new profile (index -1) or for editing one: name, description, version, picture/color, RAM. */
 @Composable
-private fun ProfileEditor(state: LauncherState, index: Int) {
+internal fun ProfileEditor(state: LauncherState, index: Int) {
     val old = state.profiles.getOrNull(index)
     var name by remember { mutableStateOf(old?.name ?: "Profil ${state.profiles.size + 1}") }
     var description by remember { mutableStateOf(old?.description ?: "DNZ Client") }
@@ -221,8 +219,11 @@ private fun ProfileEditor(state: LauncherState, index: Int) {
     var color by remember { mutableStateOf(old?.color ?: (state.profiles.size % ProfileColors.size)) }
     var icon by remember { mutableStateOf(old?.icon) }
     var ram by remember { mutableStateOf(old?.ramGb) }
+    var loader by remember { mutableStateOf(old?.let { Versions.loaderOf(it) } ?: Versions.loader(old?.version ?: state.version)) }
+    // A version without the chosen way to start falls back to its default (e.g. no Fabric for 1.8.9)
+    if (loader !in Versions.loaders(version)) loader = Versions.loader(version)
     val folder = remember { old?.folder ?: Profiles.freeFolder(name, state.profiles.map { it.folder }) }
-    val preview = Profile(name.ifBlank { "?" }, version, description, folder, color, icon, ram)
+    val preview = Profile(name.ifBlank { "?" }, version, description, folder, color, icon, ram, loader.name)
 
     AlertDialog(
         onDismissRequest = { state.editingProfile = null },
@@ -255,15 +256,47 @@ private fun ProfileEditor(state: LauncherState, index: Int) {
                 }
                 EditField(state.t("profiles.name"), name) { name = it }
                 EditField(state.t("profiles.description"), description) { description = it }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(state.t("version"), color = Dnz.Muted, fontSize = 12.sp, modifier = Modifier.width(70.dp))
-                    state.versions.forEach { v ->
-                        Box(
-                            Modifier.clip(RoundedCornerShape(8.dp)).background(if (v == version) Dnz.Accent else Dnz.Surface)
-                                .dnzClickable { version = v }.padding(horizontal = 14.dp, vertical = 6.dp),
-                        ) { Text(v, color = if (v == version) Dnz.OnAccent else Dnz.Text, fontSize = 12.sp) }
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(state.t("version"), color = Dnz.Muted, fontSize = 12.sp, modifier = Modifier.width(70.dp).padding(top = 7.dp))
+                    // wraps to a second line when the versions don't fit; each shows how it starts (Fabric / Forge...)
+                    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                        state.versions.forEach { v ->
+                            val on = v == version
+                            Column(
+                                Modifier.clip(RoundedCornerShape(8.dp)).background(if (on) Dnz.Accent else Dnz.Surface)
+                                    .dnzClickable { version = v }.padding(horizontal = 12.dp, vertical = 5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(v, color = if (on) Dnz.OnAccent else Dnz.Text, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                Text(Versions.loader(v).label, color = (if (on) Dnz.OnAccent else Dnz.Muted).copy(alpha = 0.8f), fontSize = 9.sp, maxLines = 1)
+                            }
+                        }
                     }
                 }
+                // how the profile starts: only the ways this version supports
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(state.t("profiles.loader"), color = Dnz.Muted, fontSize = 12.sp, modifier = Modifier.width(70.dp))
+                    Row(Modifier.clip(RoundedCornerShape(10.dp)).background(Dnz.Surface).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Versions.loaders(version).forEach { l ->
+                            val on = l == loader
+                            Text(
+                                l.label, color = if (on) Dnz.OnAccent else Dnz.Text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (on) Dnz.Accent else Color.Transparent)
+                                    .dnzClickable { loader = l }.padding(horizontal = 14.dp, vertical = 6.dp),
+                            )
+                        }
+                    }
+                }
+                Text(
+                    when {
+                        Versions.hasDnzClient(version, loader) -> state.t("profiles.loader_dnz")
+                        loader == Loader.Fabric -> state.t("profiles.loader_fabric")
+                        loader == Loader.Forge -> state.t("profiles.loader_forge")
+                        else -> state.t("profiles.loader_vanilla")
+                    },
+                    color = Dnz.Muted, fontSize = 11.sp,
+                )
                 if (old != null && version != old.version) Text(state.t("profiles.version_warn"), color = Color(0xFFFFB74D), fontSize = 11.sp)
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -281,7 +314,7 @@ private fun ProfileEditor(state: LauncherState, index: Int) {
         },
         confirmButton = {
             DnzButton(state.t("servers.save")) {
-                val profile = Profile(name.trim().ifBlank { "Profil" }, version, description.trim(), folder, color, icon, ram)
+                val profile = Profile(name.trim().ifBlank { "Profil" }, version, description.trim(), folder, color, icon, ram, loader.name)
                 if (old == null) {
                     state.profiles.add(profile)
                     state.selectedProfile = state.profiles.size - 1
@@ -314,7 +347,6 @@ private fun EditField(label: String, value: String, onChange: (String) -> Unit) 
     }
 }
 
-/** Delete: removes the profile from the list; its files go to the Recycle Bin only if asked. */
 @Composable
 private fun DeleteProfileDialog(state: LauncherState, index: Int) {
     val p = state.profiles.getOrNull(index) ?: run { state.deletingProfile = null; return }

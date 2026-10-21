@@ -9,9 +9,9 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 /**
- * DNZ Workshop: launcher themes made for DNZ. The list is dnzclient.com/workshop.json (the website shows the same
- * file); the player's library is kept by DNZ Cloud under their Microsoft account, so it is the same list as on
- * dnzclient.com/workshop when they sign in there with the same Microsoft account.
+ * DNZ Workshop: launcher themes made for DNZ. The list is dnzclient.com/workshop.json (the website shows the
+ * same file); the player's library is kept by DNZ Cloud under their Microsoft account, so it is the same list
+ * as on dnzclient.com/workshop when they sign in there with the same Microsoft account.
  */
 object Workshop {
     private const val CATALOG = "https://dnzclient.com/workshop.json"
@@ -47,10 +47,6 @@ object Workshop {
     /** Signed in with Microsoft: DNZ Cloud can tell who the player is. */
     val canSync: Boolean get() = MicrosoftAuth.hasSaved
 
-    /**
-     * The ids in the player's library. Null when they aren't signed in with Microsoft or Microsoft didn't give an
-     * identity for DNZ Cloud (then they need to sign in again); throws when DNZ Cloud can't be reached.
-     */
     fun library(): List<String>? {
         val token = MicrosoftAuth.idToken() ?: return null
         val res = http.send(

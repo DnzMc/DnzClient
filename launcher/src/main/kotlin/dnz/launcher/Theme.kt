@@ -13,16 +13,12 @@ import com.google.gson.JsonParser
 
 /** Launcher color themes, chosen on the Settings page. */
 enum class LauncherTheme(val key: String) {
-    /** Near-black base with an orange accent. */
     Colorful("theme.color"),
     /** Black and white only (errors stay red). */
     Mono("theme.mono"),
 }
 
-/**
- * A DNZ Workshop theme: the launcher's 8 main colors, made with the Theme Maker of DNZ Workshop Uploader.
- * File: {"dnzLauncherTheme": 1, "name": "...", "colors": {"background": "#0A0D12", ...}} (only colors, no code).
- */
+/** A DNZ Workshop theme: the launcher's 8 main colors, made with the Theme Maker of DNZ Workshop Uploader. */
 data class ThemeColors(
     val name: String,
     val background: Long,
@@ -58,12 +54,10 @@ data class ThemeColors(
     companion object {
         val KEYS = listOf("background", "sidebar", "surface", "surfaceHigh", "accent", "accent2", "text", "muted")
 
-        /** The launcher's own colors, the starting point of the Theme Maker. */
         val DEFAULT = ThemeColors("DNZ", 0xFF0A0D12, 0xFF0A0D12, 0xFF151B25, 0xFF1C2330, 0xFFFF8A3D, 0xFFFF6A1A, 0xFFF2F4FA, 0xFF8C95AB)
 
         fun hex(c: Long) = "#%06X".format(c and 0xFFFFFF)
 
-        /** "#RRGGBB" to an opaque color, or null. */
         fun parseHex(text: String): Long? =
             Regex("^#?([0-9a-fA-F]{6})$").find(text.trim())?.groupValues?.get(1)?.toLong(16)?.let { it or 0xFF000000 }
 
@@ -77,7 +71,7 @@ data class ThemeColors(
     }
 }
 
-/** DNZ colors of the current theme. Reading them in a composable redraws it when the theme changes. */
+/** DNZ colors of the current theme. */
 object Dnz {
     var theme by mutableStateOf(LauncherTheme.Colorful)
     /** A theme from DNZ Workshop; while set it wins over [theme]. */
@@ -135,7 +129,6 @@ object Dnz {
     val Success get() = pick(0xFF7CE38B, 0xFFFFFFFF)
     val Danger get() = pick(0xFFFF6B6B, 0xFFFF6B6B)
 
-    /** Makes the DNZ logo gray in the black & white theme. */
     val LogoFilter: ColorFilter? get() = if (mono) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
 
     val AccentGradient get() = Brush.horizontalGradient(listOf(Accent, Accent2))

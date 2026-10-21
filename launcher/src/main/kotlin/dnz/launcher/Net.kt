@@ -26,7 +26,6 @@ object Net {
         return JsonParser.parseString(response.body())
     }
 
-    /** POSTs a JSON body and parses the JSON answer. */
     fun postJson(url: String, body: String, headers: Map<String, String> = emptyMap()): JsonElement {
         val builder = HttpRequest.newBuilder(URI.create(url))
             .header("User-Agent", USER_AGENT).header("Content-Type", "application/json")
@@ -46,7 +45,7 @@ object Net {
         return response.body()
     }
 
-    /** Downloads [url] to [target] unless it already exists with the right SHA-1. Retries a few times. */
+    /** Downloads [url] to [target] unless it already exists with the right SHA-1. */
     fun download(url: String, target: File, sha1: String? = null) {
         if (target.exists() && (sha1 == null || sha1(target).equals(sha1, ignoreCase = true))) return
         target.parentFile.mkdirs()

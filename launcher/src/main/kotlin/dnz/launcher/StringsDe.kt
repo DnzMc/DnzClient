@@ -1,6 +1,5 @@
 package dnz.launcher
 
-/** German texts of the launcher. A key missing here falls back to English. */
 internal val germanStrings = mapOf(
     "home" to "Start", "profiles" to "Profile", "mods" to "Mods", "settings" to "Einstellungen", "account" to "Konto",
     "play" to "SPIELEN", "version" to "Version", "profile" to "Profil",
@@ -25,10 +24,11 @@ internal val germanStrings = mapOf(
     "ws.applied" to "%s ist jetzt das Aussehen des Launchers.", "ws.default" to "Zurück zum Standard", "ws.not_saved" to "Deine Bibliothek konnte nicht gespeichert werden. Versuche es erneut.",
     "ws.browse" to "Entdecken",
     "mods.search_all" to "Mods und Texturenpakete auf Modrinth suchen...", "mods.search_cf_all" to "Mods und Texturenpakete auf CurseForge suchen...", "lib.results_all" to "%s Ergebnisse",
-    "mods.search_packs" to "Texturenpakete auf Modrinth suchen...", "mods.search_cf_packs" to "Texturenpakete auf CurseForge suchen...", "lib.kind.mods" to "Mods", "lib.kind.packs" to "Texturenpakete", "lib.pack_tag" to "Texturenpaket",
+    "mods.search_packs" to "Texturenpakete auf Modrinth suchen...", "mods.search_cf_packs" to "Texturenpakete auf CurseForge suchen...", "lib.kind.mods" to "Mods", "lib.kind.packs" to "Texturenpakete", "lib.kind.modpacks" to "Modpacks", "lib.modpack_tag" to "Modpack", "lib.modpack_install" to "Als neues Profil installieren", "lib.modpack_made" to "Profil bereit", "lib.modpack_done" to "Profil %s ist bereit (%n Dateien). Es ist ausgewählt, starte es mit SPIELEN.", "mods.search_modpacks" to "Modpacks auf Modrinth suchen...", "mods.search_cf_modpacks" to "Modpacks auf Modrinth suchen...", "lib.results_modpacks" to "%s Modpacks", "lib.pack_tag" to "Texturenpaket",
     "lib.pack_installed" to "%s wurde zum Profil \"%p\" hinzugefügt. Aktiviere es im Spiel: Optionen → Ressourcenpakete.",
     "mods.search" to "Mods auf Modrinth suchen...", "mods.search_cf" to "Mods auf CurseForge suchen...", "mods.searching" to "Suche...", "mods.install" to "Installieren",
     "mods.error" to "Suche fehlgeschlagen. Prüfe deine Internetverbindung.", "mods.downloads" to "Downloads",
+    "settings.theme_file" to "Theme-Datei laden (.dnztheme)", "settings.theme_applied" to "Theme angewendet", "settings.theme_remove" to "Theme entfernen",
     "settings.accent" to "Akzentfarbe", "settings.accent.caption" to "Knöpfe, Auswahlen und Leuchteffekte nutzen diese Farbe.",
     "settings.character" to "Animierte Figur", "settings.character.caption" to "Dein Skin steht in 3D auf der Startseite, atmet und schaut zur Maus. Ziehen zum Drehen, klicken zum Winken.",
     "settings.ram" to "Arbeitsspeicher (RAM)", "settings.language" to "Sprache", "settings.theme" to "Design", "theme.color" to "Farbig", "theme.mono" to "Schwarz-Weiß", "settings.folder" to "Spielordner",
@@ -38,7 +38,7 @@ internal val germanStrings = mapOf(
     "account.safe2" to "DNZ speichert nur den Anmeldeschlüssel von Microsoft, verschlüsselt.",
     "account.safe3" to "Du kannst den Zugriff jederzeit auf account.microsoft.com entfernen.",
     "ok" to "OK", "acc.relogin" to "Die Anmeldung dieses Kontos ist nicht mehr gültig. Melde dich auf der Kontoseite erneut an.", "acc.add_another" to "Weiteres Konto hinzufügen", "acc.others" to "Deine anderen Konten", "acc.remove" to "Entfernen", "acc.use" to "Zu diesem Konto wechseln", "changelog.title" to "Änderungen", "changelog.updated" to "Der Launcher wurde von %1 auf %2 aktualisiert. Neu:", "changelog.now" to "Der Launcher wurde auf %s aktualisiert. Neu:",
-    "need_account.title" to "Zuerst anmelden",
+    "signin.first" to "Melde dich zuerst mit Microsoft an; die Anmeldeseite wurde im Browser geöffnet.", "need_account.title" to "Zuerst anmelden",
     "need_account.body" to "Melde dich auf der Konto-Seite mit Microsoft an, um zu spielen.",
     "signin.no_internet" to "Microsoft war nicht erreichbar, deine Anmeldung konnte nicht erneuert werden. Prüfe deine Internetverbindung und drücke erneut auf Spielen.",
     "sign_out" to "Abmelden",
@@ -134,6 +134,7 @@ internal val germanStrings = mapOf(
     "profiles.picture" to "Bild wählen", "profiles.picture_remove" to "Bild entfernen", "profiles.name" to "Name", "profiles.description" to "Beschreibung",
     "profiles.version_warn" to "Nach einem Versionswechsel werden die Mods beim nächsten SPIELEN dafür neu installiert. Ein Backup deiner Welten ist eine gute Idee.",
     "profiles.ram_hint" to "Ganz links = der RAM aus den Einstellungen.",
+    "profiles.loader" to "Loader", "profiles.loader_dnz" to "Mit DNZ Client und den FPS-Verbesserungen.", "profiles.loader_fabric" to "Mit Fabric-Mods (Sodium usw. automatisch).", "profiles.loader_forge" to "Mit Forge-Mods.", "profiles.loader_vanilla" to "Ohne Mods, reines Minecraft.",
     "profiles.delete_title" to "\"%s\" löschen?", "profiles.delete_body" to "Das Profil wird aus der Liste entfernt. Seine Dateien (Welten, Mods, Einstellungen) können in den Papierkorb, wo du sie zurückholen kannst.",
     "profiles.delete_files" to "Dateien auch in den Papierkorb verschieben", "profiles.delete_running" to "Dieses Profil kann nicht gelöscht werden, solange das Spiel offen ist.",
     "profiles.deleted" to "%s gelöscht.", "profiles.trash_failed" to "%s wurde aus der Liste entfernt, aber seine Dateien konnten nicht in den Papierkorb verschoben werden.",

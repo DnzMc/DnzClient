@@ -31,10 +31,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.withContext
 
-/** The DNZ logo (loaded once). */
 
 val DnzLogo: ImageBitmap by lazy {
     val bytes = LauncherState::class.java.getResourceAsStream("/logo.png")!!.readBytes()
+    org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap()
+}
+
+val AppIcon: ImageBitmap by lazy {
+    val bytes = LauncherState::class.java.getResourceAsStream("/tray.png")!!.readBytes()
     org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap()
 }
 
@@ -51,15 +55,13 @@ fun LauncherApp(
     onMinimize: () -> Unit,
     onClose: () -> Unit,
 ) {
-    // Save preferences shortly after they change (not on every step of a slider).
-    // Signed in with Microsoft before: the player shows at once, and the sign-in is renewed quietly (no window).
-    // The launcher often starts with Windows before the internet is up, so it keeps trying until it works.
+    // save preferences shortly after they change (not on every step of a slider)
     LaunchedEffect(Unit) {
         if (state.account == null) MicrosoftAuth.lastAccount()?.let { state.account = it }
         var wait = 5_000L
         while (MicrosoftAuth.hasSaved && state.account.let { it == null || (!it.offline && it.accessToken.isEmpty()) }) {
             val result = withContext(Dispatchers.IO) { runCatching { MicrosoftAuth.restore() } }
-            // Signed in or out by hand in the meantime: leave it.
+            // Signed in or out by hand in the meantime: leave it
             if (state.account.let { it != null && (it.offline || it.accessToken.isNotEmpty()) }) break
             result.onSuccess { account ->
                 state.account = account // null: Microsoft no longer accepts the saved sign-in
@@ -69,11 +71,13 @@ fun LauncherApp(
             wait = (wait * 2).coerceAtMost(120_000L)
         }
     }
-    // First start after the launcher updated itself: the Changelog popup.
+    // how many have DNZ Launcher open / are playing (top right)
+    PresenceUpdates(state)
+    // first start after the launcher updated itself: the Changelog popup
     LaunchedEffect(Unit) { Changelog.checkAtStart(state) }
-    // CurseForge in the mod library only when DNZ Cloud can reach it.
+    // CurseForge in the mod library only when DNZ Cloud can reach it
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { CurseForge.check() } }
-    // Mac, first start: AUTO once by itself, so the game starts with settings made for this Mac (it can be undone).
+    // Mac, first start: AUTO once by itself, so the game starts with settings made for this Mac (it can be undone)
     LaunchedEffect(Unit) {
         if (Platform.isMac && !state.macAutoDone) {
             state.macAutoDone = true
@@ -96,11 +100,19 @@ fun LauncherApp(
         }
     }
     MaterialTheme(colorScheme = darkColorScheme(primary = Dnz.Accent, background = Dnz.Background, surface = Dnz.Surface)) {
-        Column(Modifier.fillMaxSize().background(Dnz.Background).border(1.dp, Dnz.Border)) {
+        // first start: the setup pages instead of the launcher
+        if (!state.setupDone) FirstRunSetup(state, dragArea, onMinimize, onClose)
+        else Column(Modifier.fillMaxSize().background(Dnz.Background).border(1.dp, Dnz.Border)) {
             dragArea { TitleBar(state, onMinimize, onClose) }
             Row(Modifier.fillMaxSize()) {
                 Sidebar(state)
                 Box(Modifier.fillMaxSize()) {
+                    // the applied theme's picture behind the home page, darkened toward the edges so text stays readable
+                    val themePicture = ThemePack.background
+                    if (state.screen == Screen.Home && themePicture != null) {
+                        androidx.compose.foundation.Image(themePicture, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Dnz.Background.copy(alpha = 0.92f), Dnz.Background.copy(alpha = 0.55f), Dnz.Background.copy(alpha = 0.35f)))))
+                    }
                     when (state.screen) {
                         Screen.Home -> HomeScreen(state)
                         Screen.Profiles -> ProfilesScreen(state)
@@ -148,7 +160,6 @@ fun LauncherApp(
     }
 }
 
-/** Short message at the bottom of the page that hides itself after a few seconds. */
 @Composable
 private fun Toast(state: LauncherState, modifier: Modifier) {
     val message = state.toast ?: return
@@ -170,7 +181,7 @@ private fun Toast(state: LauncherState, modifier: Modifier) {
 
 /**
  * The game sends settings to the cloud as it closes (DNZ Cloud): a note asks the player not to close anything
- * meanwhile. The game keeps the marker file only while it is saving (a leftover older than a minute is ignored).
+ * meanwhile.
  */
 @Composable
 private fun CloudSaving(state: LauncherState) {
@@ -222,6 +233,8 @@ private fun TitleBar(state: LauncherState, onMinimize: () -> Unit, onClose: () -
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))
+        PresenceChip(state)
+        Spacer(Modifier.width(8.dp))
         if (state.screen != Screen.Home) AccountMenu(state) // Home shows the account top right
         Spacer(Modifier.width(8.dp))
         WindowButton("—", Dnz.SurfaceHigh, onMinimize)
@@ -242,13 +255,11 @@ private fun WindowButton(label: String, hoverColor: Color, onClick: () -> Unit) 
 
 @Composable
 private fun Sidebar(state: LauncherState) {
-    // Narrow icon bar: logo, then one rounded square per page.
+    // Narrow icon bar: logo, then one rounded square per page
     Column(
         Modifier.width(88.dp).fillMaxHeight().background(Dnz.Sidebar).padding(vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(DnzLogo, null, Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)), colorFilter = Dnz.LogoFilter)
-        Spacer(Modifier.height(28.dp))
         NavItem(state, Screen.Home, Icons.Outlined.Home, "home")
         NavItem(state, Screen.Servers, ServerIcon, "servers")
         NavItem(state, Screen.Profiles, Icons.Outlined.List, "profiles")
@@ -258,7 +269,6 @@ private fun Sidebar(state: LauncherState) {
     }
 }
 
-/** Bottom of the sidebar: skin face and name of the active account; opens the Account page. */
 @Composable
 private fun AccountChip(state: LauncherState) {
     val current = state.currentAccount
@@ -292,7 +302,6 @@ private fun NavItem(state: LauncherState, screen: Screen, icon: ImageVector, key
     }
 }
 
-/** Accent-gradient button used everywhere. */
 @Composable
 fun DnzButton(text: String, modifier: Modifier = Modifier, big: Boolean = false, onClick: () -> Unit) {
     val hover = remember { MutableInteractionSource() }
@@ -309,7 +318,6 @@ fun DnzButton(text: String, modifier: Modifier = Modifier, big: Boolean = false,
     }
 }
 
-/** Dark rounded card. */
 @Composable
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(

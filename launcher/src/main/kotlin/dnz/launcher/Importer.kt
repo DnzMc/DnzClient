@@ -9,17 +9,12 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.ZipFile
 
 /**
- * Brings game settings, mods, servers and packs over from other Minecraft installs on this computer
- * (other launchers, mod platforms, the official launcher) into a DNZ profile.
- *
- * Nothing is hard-coded per launcher: the user's folders are searched for game folders (a folder with an
- * options.txt) and for folders full of Fabric mods. Mods are not copied as files but looked up on Modrinth
- * by their hash and installed again in the version that fits the DNZ profile. Nothing in the source is changed.
+ * Brings game settings, mods, servers and packs over from other Minecraft installs on this computer (other
+ * launchers, mod platforms, the official launcher) into a DNZ profile.
  */
 object Importer {
     data class Source(
         val dir: File,
-        /** Game folder (options.txt, servers.dat, packs, config). Null for a plain folder of mods. */
         val gameDir: File?,
         val modsDir: File?,
         val modCount: Int,
@@ -55,24 +50,23 @@ object Importer {
 
     // ------------------------------------------------------------------ finding installs
 
-    /** Folders never searched. AppData is searched on its own (Roaming only); Local is huge and holds no installs. */
+    /** Folders never searched. */
     private val skipNames = setOf(
         "appdata", ".dnzlauncher", ".fabric", ".quilt", "node_modules", ".git", ".gradle", ".m2", ".cache", "cache", "caches", "build", "venv", "site-packages",
         "assets", "libraries", "versions", "saves", "logs", "crash-reports", "screenshots", "natives", "runtime",
         "windows", "program files", "program files (x86)", "\$recycle.bin", "temp", "tmp",
         "microsoft", "packages", "google", "mozilla", "discord", "spotify", "steam", "steamapps",
-        // macOS: ~/Library is searched on its own (Application Support only).
+        // macOS: ~/Library is searched on its own (Application Support only)
         "library", "applications", "movies", "music", "pictures", ".trash",
     )
 
-    /** Searches the user's folders. Takes a few seconds at most (it stops after [maxFolders] folders). */
     fun find(maxFolders: Int = 60_000): List<Source> {
         val home = File(System.getProperty("user.home"))
         val appData: File? = Platform.appData.takeIf { it.isDirectory }
         val roots = buildList {
             appData?.let { add(it to 5) }
             add(home to 6)
-            // Game folders the official launcher's profiles point to (they can be anywhere, e.g. another drive).
+            // Game folders the official launcher's profiles point to (they can be anywhere, e.g. another drive)
             profileGameDirs(File(Platform.minecraftDir, "launcher_profiles.json")).forEach { add(it to 1) }
         }
         val own = canonical(GameLauncher.root)
@@ -88,7 +82,7 @@ object Importer {
             val source = inspect(dir, children)
             if (source != null) {
                 found[path] = source
-                // Its "mods" folder belongs to it; worlds, packs etc. hold no other installs.
+                // its "mods" folder belongs to it; worlds, packs etc. hold no other installs
                 if (source.gameDir != null) return
             }
             if (depth <= 0) return
@@ -98,7 +92,7 @@ object Importer {
         }
         for ((root, depth) in roots) walk(root, depth)
 
-        // A mods folder that sits inside a found game folder is already covered by it.
+        // A mods folder that sits inside a found game folder is already covered by it
         val gameDirs = found.values.mapNotNull { it.gameDir?.let(::canonical) }
         return found.values.filter { s ->
             s.gameDir != null || gameDirs.none { canonical(s.dir).startsWith(it + File.separator) }
@@ -108,7 +102,7 @@ object Importer {
     private fun inspect(dir: File, children: Array<File>): Source? {
         val options = children.firstOrNull { it.isFile && it.name == "options.txt" }
         if (options != null) {
-            // Test runs of mods being developed (a build.gradle next to them) are not real installs.
+            // Test runs of mods being developed (a build.gradle next to them) are not real installs
             val parent = dir.parentFile
             if (parent != null && (File(parent, "build.gradle").exists() || File(parent, "build.gradle.kts").exists())) return null
             val mods = File(dir, "mods").takeIf { it.isDirectory }
@@ -119,7 +113,7 @@ object Importer {
                 packs, mcVersion(dir, children), options.lastModified(),
             )
         }
-        // A folder of Fabric mods without a game folder around it (some launchers keep mods apart).
+        // A folder of Fabric mods without a game folder around it (some launchers keep mods apart)
         val jars = modJars(dir)
         if (jars.isEmpty() || jars.all { it.name.startsWith("dnz-client") || it.name.startsWith("dnz-schematic") }) return null
         if (jars.take(3).none(::isFabricMod)) return null
@@ -141,14 +135,13 @@ object Importer {
 
     private val versionPattern = Regex("\"(?:gameVersion|game_version|minecraftVersion|mcVersion|inheritsFrom)\"\\s*:\\s*\"([0-9][0-9.]*[0-9])\"")
 
-    /** The Minecraft version, if a small json file in the folder (or its name) tells it. */
     private fun mcVersion(dir: File, children: Array<File>): String? {
         for (file in children) {
             if (!file.isFile || !file.name.endsWith(".json") || file.length() > 256_000) continue
             val text = runCatching { file.readText() }.getOrNull() ?: continue
             versionPattern.find(text)?.let { return it.groupValues[1] }
         }
-        // From the folder name: "mc26.2" first, then any Minecraft-looking number ("1.21.4", "26.3").
+        // from the folder name: "mc26.2" first, then any Minecraft-looking number ("1.21.4", "26.3")
         val number = "(1\\.[0-9]{1,2}(?:\\.[0-9]{1,2})?|2[0-9]\\.[0-9]{1,2}(?:\\.[0-9]{1,2})?)(?![0-9])"
         return Regex("(?i)mc[-_ ]?$number").find(dir.name)?.groupValues?.get(1)
             ?: Regex("(?<![0-9.])$number").find(dir.name)?.groupValues?.get(1)
@@ -172,7 +165,6 @@ object Importer {
         return PcScan.scan().runningGameDirs.any { canonical(File(it)) == dir }
     }
 
-    /** Copies the chosen [parts] of [source] into [profile]. Nothing that is already in the profile is deleted. */
     suspend fun import(source: Source, profile: Profile, parts: Parts, progress: (String) -> Unit): Result {
         val target = GameLauncher.instanceDir(profile).apply { mkdirs() }
         val errors = mutableListOf<String>()
@@ -209,7 +201,7 @@ object Importer {
             }
             if (parts.configs) step("config") {
                 progress(Strings.current("import.step.configs"))
-                // Mod settings: only files the profile doesn't have yet, so DNZ's own settings stay.
+                // Mod settings: only files the profile doesn't have yet, so DNZ's own settings stay
                 val from = File(game, "config")
                 from.walkTopDown().filter { it.isFile && it.length() < 4_000_000 }.forEach { file ->
                     val to = File(target, "config/" + file.relativeTo(from).path)
@@ -234,7 +226,7 @@ object Importer {
             val projectIds = hashes.values.mapNotNull { versions[it]?.projectId }.toSet()
             val projects = Modrinth.projects(projectIds).associateBy { it.id }
             val have = Library.scan(profile, checkUpdates = false).mapNotNull { it.projectId }.toMutableSet()
-            // Mods DNZ installs itself on PLAY are left to it (two copies of one mod would crash the game).
+            // Mods DNZ installs itself on PLAY are left to it (two copies of one mod would crash the game)
             val bundled = GameLauncher.modrinthMods.toSet()
 
             for (jar in jars) {
@@ -254,7 +246,7 @@ object Importer {
                 runCatching { Library.install(profile, version.projectId) }
                     .onSuccess {
                         installed += title
-                        // Its required mods came along too; don't install them a second time.
+                        // its required mods came along too; don't install them a second time
                         have += Library.scan(profile, checkUpdates = false).mapNotNull { it.projectId }
                     }
                     .onFailure { if (it.message == noVersionText) noVersion += title else errors += "$title: ${it.message ?: it}" }
@@ -265,7 +257,6 @@ object Importer {
         return Result(options, servers, packs, configs, installed, already, noVersion, unknown, errors)
     }
 
-    /** Adds the servers of [from] to the profile's server list; servers that are already there (same address) are kept once. */
     private fun mergeServers(from: File, target: File): Int {
         if (!from.isFile) return 0
         val incoming = servers(Nbt.read(from))

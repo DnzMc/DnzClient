@@ -8,11 +8,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Builds a Modrinth modpack (.mrpack) of DNZ Client for Modrinth App / Prism (gradlew mrpack):
- * DNZ Client itself goes into overrides/mods, every other mod (Sodium, the FPS mods...) is listed with its
- * official Modrinth download and hashes, so the app downloads it from Modrinth.
- *
- * Arguments: <DNZ version> <client jars folder> <output folder>
+ * Builds a Modrinth modpack (.mrpack) of DNZ Client for Modrinth App / Prism (gradlew mrpack): DNZ Client
+ * itself goes into overrides/mods, every other mod (Sodium, the FPS mods...) is listed with its official
+ * Modrinth download and hashes, so the app downloads it from Modrinth.
  */
 fun main(args: Array<String>) {
     val version = args[0]
@@ -22,7 +20,7 @@ fun main(args: Array<String>) {
         val jar = File(jars, "dnz-client-mc$mc-$version.jar")
         check(jar.exists()) { "missing ${jar.absolutePath}" }
         val file = File(out, "DNZ-Client-$version-mc$mc.mrpack")
-        // DNZ Schematic comes along when it has been built (../schematic/build/libs).
+        // DNZ Schematic comes along when it has been built (../schematic/build/libs)
         val schematic = File(jars, "../../../schematic/build/libs").canonicalFile
             .listFiles { f -> f.name.startsWith("dnz-schematic-mc$mc-") && f.name.endsWith(".jar") && !f.name.contains("sources") }
             ?.maxByOrNull { it.lastModified() }
@@ -32,9 +30,9 @@ fun main(args: Array<String>) {
 }
 
 object MrpackBuilder {
-    /** Same mods the launcher installs (GameLauncher), from Modrinth. */
     val mods = listOf("fabric-api", "sodium", "sodium-extra", "modmenu", "lithium", "entityculling", "immediatelyfast", "ferrite-core", "dynamic-fps", "badoptimizations",
-        "ixeris", "gnetum", "obe", "cull-fewer-leaves", "asynclogger", "debugify")
+        "ixeris", "gnetum", "obe", "cull-fewer-leaves", "asynclogger", "debugify",
+        "scalablelux", "zconfig", "zfastnoise", "notenoughcrashes", "simple-voice-chat", "creativecore", "itemphysic-lite", "3dskinlayers")
 
     fun build(version: String, mc: String, dnzJar: File, target: File, extraJars: List<File> = emptyList()) {
         val files = JsonArray()

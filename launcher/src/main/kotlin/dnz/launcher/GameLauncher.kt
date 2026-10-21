@@ -14,7 +14,7 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Who is playing. Microsoft accounts come later; offline is only for local testing. */
+/** Who is playing. */
 data class Account(val name: String, val uuid: String, val accessToken: String, val offline: Boolean) {
     companion object {
         fun offline(name: String) = Account(
@@ -26,10 +26,42 @@ data class Account(val name: String, val uuid: String, val accessToken: String, 
     }
 }
 
+/** How a Minecraft version is started. */
+enum class Loader(val label: String) { Fabric("Fabric"), Forge("Forge"), Vanilla("Vanilla") }
+
 /**
- * Installs Minecraft + Fabric + DNZ mods into %APPDATA%\.dnzlauncher and starts the game.
- * Everything is downloaded from official sources (Mojang, FabricMC, Modrinth) and verified with SHA-1.
+ * The Minecraft versions DNZ Launcher offers and how each can start: Fabric (1.14 and newer), Forge (1.8.9
+ * and 1.12.2, whose Forge installers are simple enough to read without running them) and always plain
+ * Minecraft (Vanilla).
  */
+object Versions {
+    val all = listOf("26.3", "26.2", "1.21.11", "1.20.1", "1.16.5", "1.12.2", "1.8.9")
+
+    private val fabric = setOf("26.3", "26.2", "1.21.11", "1.20.1", "1.16.5")
+
+    /** Forge build per version (from Forge's own maven; installers in the old, plain format). */
+    val forge = mapOf("1.8.9" to "1.8.9-11.15.1.2318-1.8.9", "1.12.2" to "1.12.2-14.23.5.2847")
+
+    /** The ways [mc] can start, the default first. */
+    fun loaders(mc: String): List<Loader> = listOfNotNull(
+        Loader.Fabric.takeIf { mc in fabric },
+        Loader.Forge.takeIf { mc in forge },
+        Loader.Vanilla,
+    ).let { list -> if (mc == "1.8.9" || mc == "1.12.2") list.sortedBy { if (it == Loader.Forge) 0 else 1 } else list }
+
+    fun loader(mc: String) = loaders(mc).first()
+
+    /** How this profile starts: its own choice if the version supports it, else the version's default. */
+    fun loaderOf(profile: Profile): Loader {
+        val chosen = profile.loader?.let { name -> Loader.values().firstOrNull { it.name == name } }
+        return chosen?.takeIf { it in loaders(profile.version) } ?: loader(profile.version)
+    }
+
+    fun hasDnzClient(mc: String, loader: Loader) =
+        (mc.startsWith("26.") && loader == Loader.Fabric) || (mc == "1.8.9" && loader == Loader.Forge)
+}
+
+/** Installs Minecraft + Fabric + DNZ mods into %APPDATA%\.dnzlauncher and starts the game. */
 object GameLauncher {
     // User home instead of %APPDATA%: packaged Windows apps can have AppData redirected, which confuses Fabric's
     // classpath checks. Paths are also made canonical below for the same reason.
@@ -39,12 +71,6 @@ object GameLauncher {
     private val versions = File(root, "versions")
     private val runtimes = File(root, "runtime")
 
-    /**
-     * Mods every DNZ profile gets from Modrinth (slug list). DNZ Client itself ships inside the launcher.
-     * Besides Sodium, proven FPS mods: Lithium (game logic), EntityCulling (skips hidden
-     * entities and chests), ImmediatelyFast (HUD, text, name tags), FerriteCore (less RAM), Dynamic FPS
-     * (low FPS while the game is in the background), BadOptimizations (caches small per-frame calculations).
-     */
     val modrinthMods = listOf(
         "fabric-api", "sodium", "sodium-extra", "modmenu",
         "lithium", "entityculling", "immediatelyfast", "ferrite-core", "dynamic-fps", "badoptimizations",
@@ -56,11 +82,18 @@ object GameLauncher {
         "sciophobia", "vmp-fabric", "servercore",
         // ModernFix (26.x port "ModernFix-mVUS" on Modrinth): faster start, less RAM.
         "modernfix-mvus",
+        // 17.10.2026: faster light updates (ScalableLux), faster world generation in single player (Fast Noise + its
+        // config library), and a crash screen that returns to the menu instead of
+        // closing the game (Not Enough Crashes).
+        "scalablelux", "zconfig", "zfastnoise", "notenoughcrashes",
+        // Extras: proximity voice chat on servers that have it, items that lie flat and roll on the ground (with its
+        // library CreativeCore), the skin's outer layer in 3D.
+        "simple-voice-chat", "creativecore", "itemphysic-lite", "3dskinlayers",
     )
 
     /**
-     * Java settings for smooth PvP: the whole RAM is reserved at start (no resizing mid-game) and the
-     * garbage collector aims for short pauses, which removes most micro-stutters.
+     * Java settings for smooth PvP: the whole RAM is reserved at start (no resizing mid-game) and the garbage
+     * collector aims for short pauses, which removes most micro-stutters.
      */
     fun jvmArgs(ramGb: Int): List<String> = listOf(
         "-Xmx${ramGb}G", "-Xms${ramGb}G",
@@ -68,9 +101,9 @@ object GameLauncher {
         "-XX:G1NewSizePercent=20", "-XX:G1ReservePercent=20", "-XX:G1HeapRegionSize=16M",
         "-XX:+ParallelRefProcEnabled", "-XX:+DisableExplicitGC", "-XX:+PerfDisableSharedMem",
     ) + if (Platform.isMac) listOf(
-        // Java 25: smaller objects in memory (about 10-20% less RAM), which matters most on 8 GB Macs.
+        // Java 25: smaller objects in memory (about 10-20% less RAM), which matters most on 8 GB Macs
         "-XX:+UseCompactObjectHeaders",
-        // More room for the game code Java compiles, so it never has to fall back to the slow path after a while.
+        // more room for the game code Java compiles, so it never has to fall back to the slow path after a while
         "-XX:ReservedCodeCacheSize=256M",
     ) else emptyList()
 
@@ -94,7 +127,6 @@ object GameLauncher {
     /** This profile's game is already open (maybe started before the launcher was reopened). */
     class AlreadyRunning : Exception("already running")
 
-    /** Holds the process id of the game that runs in this folder. */
     private fun runningFile(instance: File) = File(instance, "dnz-running.pid")
 
     /** True while a game started from this profile folder is still open. */
@@ -104,7 +136,7 @@ object GameLauncher {
     }
 
     suspend fun play(profile: Profile, account: Account, ramGb: Int, progress: (String, Float) -> Unit): Process = withContext(Dispatchers.IO) {
-        // Two games in one folder break each other (Fabric's mod files); the second one is not started.
+        // two games in one folder break each other (Fabric's mod files); the second one is not started
         if (isRunning(profile)) throw AlreadyRunning()
         val mc = profile.version
 
@@ -115,10 +147,21 @@ object GameLauncher {
         Net.download(entry["url"].asString, vanillaFile, entry["sha1"].asString)
         val vanilla = com.google.gson.JsonParser.parseString(vanillaFile.readText()).asJsonObject
 
-        progress("Fabric hazırlanıyor...", 0.05f)
-        val loader = Net.json("https://meta.fabricmc.net/v2/versions/loader/$mc").asJsonArray
-            .map { it.asJsonObject["loader"].asJsonObject }.first { it["stable"].asBoolean }["version"].asString
-        val fabric = Net.json("https://meta.fabricmc.net/v2/versions/loader/$mc/$loader/profile/json").asJsonObject
+        // the mod loader's own version file: Fabric (1.14+), Forge (1.8.9) or none (plain Minecraft)
+        val kind = Versions.loaderOf(profile)
+        val loaderProfile: JsonObject? = when (kind) {
+            Loader.Fabric -> {
+                progress("Fabric hazırlanıyor...", 0.05f)
+                val loader = Net.json("https://meta.fabricmc.net/v2/versions/loader/$mc").asJsonArray
+                    .map { it.asJsonObject["loader"].asJsonObject }.first { it["stable"].asBoolean }["version"].asString
+                Net.json("https://meta.fabricmc.net/v2/versions/loader/$mc/$loader/profile/json").asJsonObject
+            }
+            Loader.Forge -> {
+                progress("Forge hazırlanıyor...", 0.05f)
+                forgeProfile(mc)
+            }
+            Loader.Vanilla -> null
+        }
 
         // Client jar
         val clientJar = File(versions, "$mc/$mc.jar")
@@ -126,22 +169,34 @@ object GameLauncher {
         progress("Minecraft indiriliyor...", 0.08f)
         Net.download(clientDl["url"].asString, clientJar, clientDl["sha1"].asString)
 
-        // Libraries (Fabric first so its versions win over vanilla duplicates)
+        // Libraries (the loader's first so its versions win over vanilla duplicates)
         val jobs = mutableListOf<Triple<String, File, String?>>()
+        val nativeJars = mutableListOf<File>()
         val seen = HashSet<String>()
         val classpath = mutableListOf<File>()
-        for (lib in fabric.getAsJsonArray("libraries").map { it.asJsonObject }) {
+        for (lib in loaderProfile?.getAsJsonArray("libraries")?.map { it.asJsonObject }.orEmpty()) {
+            if (lib["clientreq"]?.asBoolean == false) continue // Forge: server-only
             val name = lib["name"].asString
             val path = mavenPath(name)
-            val base = lib["url"]?.asString ?: "https://maven.fabricmc.net/"
             seen += name.substringBeforeLast(':')
             val file = File(libraries, path)
             classpath += file
+            if (file.exists()) continue // Forge's own jar comes out of its installer (forgeProfile)
+            val base = lib["url"]?.asString?.replace("http://files.minecraftforge.net/maven", "https://maven.minecraftforge.net")
+                ?: if (kind == Loader.Forge) "https://libraries.minecraft.net/" else "https://maven.fabricmc.net/"
             jobs += Triple(base.trimEnd('/') + "/" + path, file, lib["sha1"]?.asString)
         }
         for (lib in vanilla.getAsJsonArray("libraries").map { it.asJsonObject }) {
             if (!rulesAllow(lib["rules"])) continue
-            val artifact = lib["downloads"]?.asJsonObject?.get("artifact")?.asJsonObject ?: continue
+            val downloads = lib["downloads"]?.asJsonObject
+            // old versions (before 1.19): native libraries (LWJGL...) come as a separate jar that is unpacked
+            val classifier = lib["natives"]?.asJsonObject?.get(Platform.mojangOs)?.asString?.replace("\${arch}", "64")
+            downloads?.get("classifiers")?.asJsonObject?.get(classifier ?: "")?.asJsonObject?.let { n ->
+                val file = File(libraries, n["path"].asString)
+                jobs += Triple(n["url"].asString, file, n["sha1"].asString)
+                nativeJars += file
+            }
+            val artifact = downloads?.get("artifact")?.asJsonObject ?: continue
             val name = lib["name"].asString
             val key = name.split(':').let { if (it.size > 3) name else it.take(2).joinToString(":") }
             if (!seen.add(key)) continue
@@ -150,7 +205,7 @@ object GameLauncher {
             jobs += Triple(artifact["url"].asString, file, artifact["sha1"].asString)
         }
         classpath += clientJar
-        parallelDownload(jobs, "Kütüphaneler indiriliyor", 0.10f, 0.30f, progress)
+        parallelDownloadWithMirrors(jobs, "Kütüphaneler indiriliyor", 0.10f, 0.30f, progress)
 
         // Assets
         val assetIndex = vanilla["assetIndex"].asJsonObject
@@ -167,15 +222,19 @@ object GameLauncher {
         val java = installJava(vanilla, progress)
         GpuPreference.preferDedicated(java)
 
-        // Mods
-        val instance = instanceDir(profile)
-        installMods(mc, File(instance, "mods")) { text, value -> progress(text, 0.90f + value * 0.07f) }
+        // Mods (Fabric profiles; Forge and plain Minecraft start without DNZ's mods)
+        val instance = instanceDir(profile).apply { mkdirs() }
+        if (kind == Loader.Fabric) installMods(mc, File(instance, "mods")) { text, value -> progress(text, 0.90f + value * 0.07f) }
+        if (kind == Loader.Forge) installDnzClient(mc, File(instance, "mods").apply { mkdirs() }) // DNZ Client 1.8.9
 
         progress("Oyun başlatılıyor...", 0.98f)
         val natives = File(versions, "$mc/natives").apply { mkdirs() }
+        for (jar in nativeJars) unpackNatives(jar, natives)
         val vars = mapOf(
             "auth_player_name" to account.name,
-            "version_name" to fabric["id"].asString,
+            "auth_session" to "token:${account.accessToken}:${account.uuid}",
+            "game_assets" to assets.absolutePath,
+            "version_name" to (loaderProfile?.get("id")?.asString ?: mc),
             "game_directory" to instance.absolutePath,
             "assets_root" to assets.absolutePath,
             "assets_index_name" to assetIndex["id"].asString,
@@ -194,22 +253,35 @@ object GameLauncher {
             "classpath" to classpath.joinToString(File.pathSeparator) { it.toPath().toRealPath().toString() },
         )
         val command = mutableListOf(java.absolutePath)
-        command += jvmArgs(ramGb)
-        command += arguments(vanilla["arguments"]?.asJsonObject?.get("jvm"), vars)
-        command += arguments(fabric["arguments"]?.asJsonObject?.get("jvm"), vars)
-        command += fabric["mainClass"].asString
-        command += arguments(vanilla["arguments"]?.asJsonObject?.get("game"), vars)
-        command += arguments(fabric["arguments"]?.asJsonObject?.get("game"), vars)
+        // Java 25-only switches (Mac) are left out for the older Java that old versions need
+        val javaMajor = vanilla["javaVersion"]?.asJsonObject?.get("majorVersion")?.asInt ?: 25
+        command += jvmArgs(ramGb).filter { javaMajor >= 25 || it != "-XX:+UseCompactObjectHeaders" }
+        val mainClass = loaderProfile?.get("mainClass")?.asString ?: vanilla["mainClass"].asString
+        if (vanilla.has("arguments")) {
+            // 1.13 and newer: argument lists in the version files
+            command += arguments(vanilla["arguments"]?.asJsonObject?.get("jvm"), vars)
+            command += arguments(loaderProfile?.get("arguments")?.asJsonObject?.get("jvm"), vars)
+            command += mainClass
+            command += arguments(vanilla["arguments"]?.asJsonObject?.get("game"), vars)
+            command += arguments(loaderProfile?.get("arguments")?.asJsonObject?.get("game"), vars)
+        } else {
+            // 1.12.2 and older: one argument line (Forge's replaces Minecraft's), the launcher adds the Java part
+            command += "-Djava.library.path=${natives.absolutePath}"
+            if (kind == Loader.Forge) command += listOf("-Dfml.ignoreInvalidMinecraftCertificates=true", "-Dfml.ignorePatchDiscrepancies=true")
+            command += listOf("-cp", vars.getValue("classpath"))
+            command += mainClass
+            val line = loaderProfile?.get("minecraftArguments")?.asString ?: vanilla["minecraftArguments"].asString
+            command += line.split(' ').filter { it.isNotBlank() }.map { substitute(it, vars) }
+        }
 
         val log = File(instance, "dnz-launcher.log")
         ProcessBuilder(command).directory(instance).redirectErrorStream(true).redirectOutput(log).apply {
-            // Java settings left on the computer by other programs would sneak into the game (and can slow it down).
+            // Java settings left on the computer by other programs would sneak into the game (and can slow it down)
             environment().remove("_JAVA_OPTIONS")
             environment().remove("JAVA_TOOL_OPTIONS")
         }.start().also { runCatching { runningFile(instance).writeText(it.pid().toString()) } }
     }
 
-    /** DNZ Client + the Modrinth mods, into [mods]. Progress value goes 0..1. */
     fun installMods(mc: String, mods: File, progress: (String, Float) -> Unit) {
         mods.mkdirs()
         progress("DNZ Client kuruluyor...", 0f)
@@ -233,6 +305,67 @@ object GameLauncher {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /**
+     * Forge 1.8.9: its version file and Forge's own jar both come from the official installer (Forge's
+     * maven); nothing of the installer is run.
+     */
+    private fun forgeProfile(mc: String): JsonObject {
+        val v = Versions.forge.getValue(mc)
+        val installer = File(libraries, "net/minecraftforge/forge/$v/forge-$v-installer.jar")
+        Net.download("https://maven.minecraftforge.net/net/minecraftforge/forge/$v/forge-$v-installer.jar", installer)
+        java.util.zip.ZipFile(installer).use { zip ->
+            val profile = zip.getInputStream(zip.getEntry("install_profile.json")).use {
+                com.google.gson.JsonParser.parseString(it.readBytes().toString(Charsets.UTF_8)).asJsonObject
+            }
+            val install = profile["install"].asJsonObject
+            val forgeJar = File(libraries, mavenPath(install["path"].asString))
+            if (!forgeJar.exists()) {
+                forgeJar.parentFile.mkdirs()
+                zip.getInputStream(zip.getEntry(install["filePath"].asString)).use { input -> forgeJar.outputStream().use { input.copyTo(it) } }
+            }
+            return profile["versionInfo"].asJsonObject
+        }
+    }
+
+    private suspend fun parallelDownloadWithMirrors(
+        jobs: List<Triple<String, File, String?>>, label: String, from: Float, to: Float, progress: (String, Float) -> Unit,
+    ) = coroutineScope {
+        val done = AtomicInteger()
+        val limit = Semaphore(24)
+        jobs.map { (url, file, sha1) ->
+            async(Dispatchers.IO) {
+                limit.withPermit {
+                    val path = url.substringAfter("/maven2/", "").ifEmpty { libraries.toPath().relativize(file.toPath()).toString().replace('\\', '/') }
+                    val tries = listOf(url, "https://repo1.maven.org/maven2/$path", "https://libraries.minecraft.net/$path", "https://maven.minecraftforge.net/$path").distinct()
+                    var error: Exception? = null
+                    for (u in tries) {
+                        try {
+                            Net.download(u, file, sha1)
+                            error = null
+                            break
+                        } catch (e: Exception) {
+                            error = e
+                        }
+                    }
+                    error?.let { throw it }
+                }
+                val n = done.incrementAndGet()
+                if (n % 25 == 0 || n == jobs.size) progress("$label ($n/${jobs.size})", from + (to - from) * n / jobs.size)
+            }
+        }.awaitAll()
+    }
+
+    private fun unpackNatives(jar: File, into: File) {
+        java.util.zip.ZipFile(jar).use { zip ->
+            for (entry in zip.entries()) {
+                if (entry.isDirectory || entry.name.startsWith("META-INF")) continue
+                val out = File(into, entry.name.substringAfterLast('/'))
+                if (out.exists() && out.length() == entry.size) continue
+                zip.getInputStream(entry).use { input -> out.outputStream().use { input.copyTo(it) } }
+            }
+        }
+    }
 
     private suspend fun parallelDownload(
         jobs: List<Triple<String, File, String?>>, label: String, from: Float, to: Float, progress: (String, Float) -> Unit,
@@ -290,6 +423,17 @@ object GameLauncher {
     private fun substitute(s: String, vars: Map<String, String>): String =
         Regex("\\$\\{([a-z_]+)}").replace(s) { vars[it.groupValues[1]] ?: "" }
 
+    /** The Java runtime for Minecraft [mc] (downloaded when missing), e.g. for a local server. */
+    internal suspend fun javaFor(mc: String, progress: (String, Float) -> Unit): File = withContext(Dispatchers.IO) {
+        val manifest = Net.json("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json").asJsonObject
+        val entry = manifest.getAsJsonArray("versions").map { it.asJsonObject }.first { it["id"].asString == mc }
+        val vanillaFile = File(versions, "$mc/$mc.json")
+        Net.download(entry["url"].asString, vanillaFile, entry["sha1"].asString)
+        installJava(com.google.gson.JsonParser.parseString(vanillaFile.readText()).asJsonObject, progress)
+    }
+
+    internal fun vanillaJson(mc: String): JsonObject = com.google.gson.JsonParser.parseString(File(versions, "$mc/$mc.json").readText()).asJsonObject
+
     /** Downloads the Java runtime Mojang lists for this version (e.g. java-runtime-epsilon = Java 25). */
     private suspend fun installJava(vanilla: JsonObject, progress: (String, Float) -> Unit): File {
         val component = vanilla["javaVersion"]?.asJsonObject?.get("component")?.asString ?: "java-runtime-epsilon"
@@ -301,7 +445,11 @@ object GameLauncher {
         progress("Java indiriliyor...", 0.70f)
         val all = Net.json("https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json").asJsonObject
         // Apple Silicon always gets the Apple Silicon Java: Intel Java through Rosetta would be much slower.
-        val manifestUrl = all[Platform.javaRuntimeKey].asJsonObject[component].asJsonArray[0].asJsonObject["manifest"].asJsonObject["url"].asString
+        // Old Java (Java 8 for 1.8.9...) has no Apple Silicon build: the Intel one runs through Rosetta.
+        val builds = all[Platform.javaRuntimeKey].asJsonObject[component]?.asJsonArray?.takeIf { it.size() > 0 }
+            ?: all["mac-os"]?.asJsonObject?.get(component)?.asJsonArray?.takeIf { Platform.isMac }
+            ?: error("Java $component bu bilgisayar için yok")
+        val manifestUrl = builds[0].asJsonObject["manifest"].asJsonObject["url"].asString
         val files = Net.json(manifestUrl).asJsonObject["files"].asJsonObject
         val executables = mutableListOf<File>()
         val links = mutableListOf<Pair<File, String>>()
@@ -332,14 +480,14 @@ object GameLauncher {
         return javaExe
     }
 
-    /** DNZ Client and DNZ Schematic are bundled inside the launcher (until they are published on Modrinth). */
     private fun installDnzClient(mc: String, mods: File) {
+        if (!Versions.hasDnzClient(mc, if (mc == "1.8.9") Loader.Forge else Loader.Fabric)) return // older versions: the FPS mods only
         mods.listFiles { f -> f.name.startsWith("dnz-client") }?.forEach { it.delete() }
         val resource = GameLauncher::class.java.getResourceAsStream("/mods/dnz-client-mc$mc.jar")
             ?: error("DNZ Client $mc bulunamadı")
         resource.use { input -> File(mods, "dnz-client-mc$mc.jar").outputStream().use { input.copyTo(it) } }
 
-        // The schematic mod can be turned off on the Mods page; then it stays off after updates too.
+        // the schematic mod can be turned off on the Mods page; then it stays off after updates too
         val old = mods.listFiles { f -> f.name.startsWith("dnz-schematic") } ?: emptyArray()
         val off = old.isNotEmpty() && old.all { it.name.endsWith(".disabled") }
         old.forEach { it.delete() }
@@ -348,7 +496,7 @@ object GameLauncher {
         }
     }
 
-    private fun installModrinthMod(slug: String, mc: String, mods: File) {
+    internal fun installModrinthMod(slug: String, mc: String, mods: File) {
         val url = "https://api.modrinth.com/v2/project/$slug/version?loaders=%5B%22fabric%22%5D&game_versions=%5B%22$mc%22%5D"
         val versionsJson: JsonArray = Net.json(url).asJsonArray
         val version = versionsJson.map { it.asJsonObject }.firstOrNull { it["version_type"].asString == "release" }
@@ -356,10 +504,10 @@ object GameLauncher {
         val files = version.getAsJsonArray("files").map { it.asJsonObject }
         val file = files.firstOrNull { it["primary"].asBoolean } ?: files.first()
         val name = file["filename"].asString
-        // Remember which file belongs to which mod, so an update replaces exactly the old file.
+        // Remember which file belongs to which mod, so an update replaces exactly the old file
         val marker = File(mods, ".dnz-$slug")
         val previous = if (marker.exists()) marker.readText().trim() else null
-        // A mod the player turned off (file renamed to .disabled) stays off, also after an update.
+        // A mod the player turned off (file renamed to .disabled) stays off, also after an update
         val disabled = slug !in lockedMods && previous != null && File(mods, "$previous.disabled").exists()
         if (previous != null && previous != name) {
             File(mods, previous).delete()

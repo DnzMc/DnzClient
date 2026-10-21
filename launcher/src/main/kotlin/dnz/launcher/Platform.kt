@@ -21,7 +21,6 @@ object Platform {
         else -> File(System.getenv("XDG_DATA_HOME") ?: File(home, ".local/share").path)
     }
 
-    /** The official Minecraft Launcher's folder. */
     val minecraftDir: File = when {
         isMac -> File(appData, "minecraft")
         isWindows -> File(appData, ".minecraft")
@@ -49,7 +48,6 @@ object Platform {
         else -> File(runtime, "bin/java")
     }
 
-    /** Runs a small command and returns what it printed, or null. */
     fun run(vararg command: String, timeoutSec: Long = 15): String? = runCatching {
         val process = ProcessBuilder(*command).redirectError(ProcessBuilder.Redirect.DISCARD).start()
         val text = process.inputStream.bufferedReader().readText()
@@ -60,7 +58,6 @@ object Platform {
         text.trim()
     }.getOrNull()
 
-    /** Shows [file] selected in Finder / Explorer. */
     fun reveal(file: File) {
         runCatching {
             when {

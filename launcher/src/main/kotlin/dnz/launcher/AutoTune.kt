@@ -5,7 +5,6 @@ import java.io.File
 /**
  * The "Auto" button: picks a quality level from the computer's hardware and writes the game settings
  * (options.txt) of every profile, tuned for high FPS and low input delay (PvP), plus the RAM for the game.
- * The old options.txt is kept as a backup, so everything can be undone.
  */
 object AutoTune {
     enum class Tier(val key: String) {
@@ -23,7 +22,6 @@ object AutoTune {
         val simulationDistance: Int,
         /** 0 = all, 1 = decreased, 2 = minimal (Minecraft's own numbers). */
         val particles: Int,
-        /** options.txt lines to set, exactly as Minecraft writes them. */
         val options: Map<String, String>,
     )
 
@@ -44,11 +42,10 @@ object AutoTune {
     }
 
     private const val BACKUP = "options.txt.dnz-before-auto"
-    /** Marks an options.txt that Auto created itself (undo deletes it again). */
     private const val CREATED = "options.txt.dnz-created-by-auto"
 
     fun plan(specs: PcSpecs): Plan {
-        // The weakest part decides: a strong graphics card doesn't help with too little RAM.
+        // the weakest part decides: a strong graphics card doesn't help with too little RAM.
         val gpuTier = specs.bestGpu?.score ?: 0
         val ramTier = when {
             specs.ramGb < 7.5 -> 0
@@ -81,9 +78,7 @@ object AutoTune {
             "graphicsPreset" to "\"custom\"",
             "renderDistance" to render.toString(),
             "simulationDistance" to simulation.toString(),
-            // 260 = "Unlimited". No VSync: less input delay, which matters most in PvP.
-            // Mac: capped at the screen's refresh rate. Unlimited FPS only heats a MacBook up until it slows itself
-            // down; at the cap the FPS stays steady and the fans quiet.
+            // 260 = "Unlimited".
             "maxFps" to if (Platform.isMac) (specs.refreshRate ?: 60).coerceIn(30, 250).toString() else "260",
             "enableVsync" to "false",
             "particles" to particles.toString(),
@@ -105,10 +100,6 @@ object AutoTune {
         return Plan(specs, tier, ram, render, simulation, particles, options)
     }
 
-    /**
-     * Writes the plan into every profile's options.txt. Profiles whose game is open right now are skipped,
-     * because the game would overwrite the file when it closes.
-     */
     fun apply(plan: Plan, targets: List<Target>, previousRamGb: Float): Result {
         val running = plan.specs.runningGameDirs.map { normalize(File(it)) }.toSet()
         val applied = mutableListOf<String>()
@@ -146,7 +137,7 @@ object AutoTune {
         check(temp.renameTo(file)) { "options.txt could not be written" }
     }
 
-    /** Puts back the options.txt files from before Auto (skipping games that are open). Returns the restored profiles. */
+    /** Puts back the options.txt files from before Auto (skipping games that are open). */
     fun undo(targets: List<Target>, runningGameDirs: List<String>): List<String> {
         val running = runningGameDirs.map { normalize(File(it)) }.toSet()
         val restored = mutableListOf<String>()

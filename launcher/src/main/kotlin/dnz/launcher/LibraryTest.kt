@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
  * dependencies into a throwaway profile, turns one off and on, removes it, then deletes the profile.
  */
 fun main(args: Array<String>) = runBlocking {
-    // Installs and AUTO run on LauncherState.scope (Dispatchers.Main); it needs kotlinx-coroutines-swing.
+    // Installs and AUTO run on LauncherState.scope (Dispatchers.Main); it needs kotlinx-coroutines-swing
     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { println("Main dispatcher OK") }
     checkSettings()
     checkAutoTune()
@@ -37,7 +37,7 @@ fun main(args: Array<String>) = runBlocking {
         check(Library.remove(toRemove)) { "could not remove" }
         println("Removed ${toRemove.title}; left: ${Library.scan(profile, checkUpdates = false).map { it.title }}")
 
-        // Texture packs: the first Modrinth result and, when DNZ Cloud reaches it, the first CurseForge result.
+        // Texture packs: the first Modrinth result and, when DNZ Cloud reaches it, the first CurseForge result
         val packIds = mutableListOf(Modrinth.search("faithful", mc, Modrinth.Sort.Relevance, null, 0, 1, packs = true).hits.first().id)
         CurseForge.check()
         if (CurseForge.ready) packIds += CurseForge.search("faithful", mc, Modrinth.Sort.Relevance, 0, 1, packs = true).hits.first().id
@@ -71,7 +71,6 @@ fun main(args: Array<String>) = runBlocking {
     }
 }
 
-/** The AUTO button picks sensible levels, keeps the player's other options, backs up and undoes (throwaway folders only). */
 private fun checkAutoTune() {
     fun pc(ram: Double, threads: Int, gpu: String, vram: Double) =
         PcSpecs(ram, "Test CPU", threads / 2, threads, listOf(PcSpecs.Gpu(gpu, vram, PcScan.isDedicated(gpu))), false, 144, emptyList())
@@ -89,7 +88,7 @@ private fun checkAutoTune() {
         }
     }
 
-    // options.txt: only Auto's keys change; a second Auto keeps the first backup.
+    // options.txt: only Auto's keys change; a second Auto keeps the first backup
     val dir = kotlin.io.path.createTempDirectory("dnz-auto").toFile()
     try {
         java.io.File(dir, "options.txt").writeText("version:4000\nrenderDistance:16\nfov:0.5\nkey_key.jump:key.keyboard.space\nmaxFps:120\n")
@@ -103,7 +102,7 @@ private fun checkAutoTune() {
         dir.deleteRecursively()
     }
 
-    // apply + undo on a throwaway profile; a profile whose game is open is skipped.
+    // apply + undo on a throwaway profile; a profile whose game is open is skipped
     val profile = Profile("DNZ_AutoTest", "26.3", "test")
     val instance = GameLauncher.instanceDir(profile)
     instance.deleteRecursively()
@@ -122,14 +121,13 @@ private fun checkAutoTune() {
         instance.deleteRecursively()
     }
 
-    // This computer (read-only scan).
+    // this computer (read-only scan)
     val real = PcScan.scan()
     println("This PC: ${"%.1f".format(real.ramGb)} GB RAM, ${real.cpuName} (${real.cpuCores}c/${real.cpuThreads}t), " +
         "GPUs=${real.gpus}, laptop=${real.laptop}, refresh=${real.refreshRate}, open games=${real.runningGameDirs} -> ${AutoTune.plan(real).tier}")
     println("AutoTune OK")
 }
 
-/** Settings survive a restart (uses a temporary file, not the player's real settings). */
 private fun checkSettings() {
     val real = Settings.file
     val temp = java.io.File.createTempFile("dnz-settings", ".json")

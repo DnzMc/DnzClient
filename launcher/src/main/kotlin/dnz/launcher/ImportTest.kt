@@ -16,7 +16,7 @@ fun main() = runBlocking {
     println("FOUND ${found.size} in ${System.currentTimeMillis() - start} ms")
     found.forEach { println("  ${it.dir}  game=${it.gameDir != null} mods=${it.modCount} servers=${it.serverCount} packs=${it.packCount} mc=${it.mcVersion}") }
 
-    // Real installs of this computer into a throwaway profile (the installs themselves are only read).
+    // Real installs of this computer into a throwaway profile (the installs themselves are only read)
     for (source in found.filter { it.gameDir != null }) {
         val tmp = Profile("DNZ_ImportReal", "26.3", "test")
         val dir = GameLauncher.instanceDir(tmp)
@@ -36,7 +36,7 @@ fun main() = runBlocking {
             val untouched = changed.isEmpty()
             println("  options same=$sameOptions  servers in file=$serverCount/${source.serverCount}  source untouched=$untouched")
             println("  mod files: $mods")
-            // What PLAY does next (downloads only, the game is not started): no mod may end up twice.
+            // what PLAY does next (downloads only, the game is not started): no mod may end up twice
             GameLauncher.installMods(tmp.version, File(dir, "mods")) { _, _ -> }
             val all = Library.scan(tmp, checkUpdates = false)
             val twice = all.filter { it.projectId != null }.groupBy { it.projectId }.filter { it.value.size > 1 }
@@ -54,7 +54,7 @@ fun main() = runBlocking {
     val srcDir = GameLauncher.instanceDir(src)
     val dstDir = GameLauncher.instanceDir(dst)
     try {
-        // Source: a real mod from Modrinth + a Fabric mod that is on no site.
+        // Source: a real mod from Modrinth + a Fabric mod that is on no site
         Library.install(src, "iris")
         ZipOutputStream(File(srcDir, "mods/unknown-test-mod.jar").outputStream()).use {
             it.putNextEntry(ZipEntry("fabric.mod.json"))
@@ -67,13 +67,13 @@ fun main() = runBlocking {
         File(srcDir, "config/some-mod.json").writeText("{}")
         Nbt.write(File(srcDir, "servers.dat"), servers("play.example.net" to "Example", "shared.example.net" to "Shared"))
 
-        // Target already has one of the servers and its own options.
+        // Target already has one of the servers and its own options
         dstDir.mkdirs()
         File(dstDir, "options.txt").writeText("fov:0.5\n")
         Nbt.write(File(dstDir, "servers.dat"), servers("shared.example.net" to "Shared"))
 
         val source = Importer.find().firstOrNull { it.dir.canonicalPath == srcDir.canonicalPath }
-        // The launcher's own folder is skipped on purpose, so build the source the same way find() would.
+        // the launcher's own folder is skipped on purpose, so build the source the same way find() would
             ?: Importer.Source(srcDir, srcDir, File(srcDir, "mods"), 2, true, 2, 1, null, 0)
         val r = Importer.import(source, dst, Importer.Parts()) { println("  .. $it") }
         println("RESULT $r")

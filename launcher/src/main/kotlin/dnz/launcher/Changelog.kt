@@ -18,27 +18,80 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * "Changelog" popup: shown once on the first start after the launcher updated itself, with the new version and what
- * came with it (every version newer than the one used before). Not shown on a fresh install.
+ * "Changelog" popup: shown once on the first start after the launcher updated itself, with the new version
+ * and what came with it (every version newer than the one used before).
  */
 object Changelog {
     private class Release(val version: String, val tr: List<String>, val en: List<String>, val de: List<String>)
 
-    /** Newest first. Add the new version here before every launcher release. */
     private val RELEASES = listOf(
+        Release(
+            "1.0.17",
+            tr = listOf(
+                "Sağ üstte \"Aktif oyuncu\": şu an kaç kişi DNZ Launcher'da. Tıklayınca kaç kişinin oyunda olduğunu ve toplam oyuncu sayısını gösterir.",
+                "DNZ rozeti yeniden çalışıyor: DNZ kullanan oyuncuların isminin önünde D logosu.",
+            ),
+            en = listOf(
+                "\"Active players\" at the top right: how many people have DNZ Launcher open. Click it to see how many are in game and the overall player count.",
+                "The DNZ badge works again: a D logo before the names of players using DNZ.",
+            ),
+            de = listOf(
+                "\"Aktive Spieler\" oben rechts: wie viele DNZ Launcher gerade offen haben. Klick zeigt, wie viele im Spiel sind und alle Spieler insgesamt.",
+                "Das DNZ-Abzeichen funktioniert wieder: ein D-Logo vor den Namen von DNZ-Spielern.",
+            ),
+        ),
+        Release(
+            "1.0.16",
+            tr = listOf(
+                "Sürüm desteği: 1.8.9'dan 26.3'e kadar. Profil oluştururken Vanilla, Fabric veya Forge seç (sadece sürümün desteklediği çıkar).",
+                "DNZ Client artık 1.8.9'da da var: aynı menüler, aynı modlar, D rozeti ve FPS için DNZ Engine.",
+                "Temalar: Ayarlar → \"Tema dosyası yükle\". Bir .dnztheme dosyası launcher'ın ve oyun içi DNZ menüsünün renklerini ve süslerini değiştirir.",
+                "Skin: oyuncu adıyla skin ara veya dosyadan yükle, tek tıkla kendi skinin yap.",
+                "Profillerde \"Logları aç\" butonu (oyun açıkken de çalışır). Discord'da \"DNZ Client oynuyor\" yazar.",
+                "Yeni görev çubuğu simgesi ve sağ tık menüsü.",
+                "DNZ Client 1.40.0: Sohbet Kafaları (mesajı yazanın skin kafası mesajın yanında) ve Blok Çerçevesi (baktığın bloğun çerçevesi; renk, gökkuşağı, kalınlık, dolgu).",
+                "Yeni modlar otomatik kurulur: Simple Voice Chat (sesli sohbet), ItemPhysic Lite (yere düşen eşyalar yatar), 3D Skin Layers, Not Enough Crashes (çökünce oyun kapanmaz, menüye döner), ScalableLux ve Fast Noise (daha hızlı ışık ve dünya oluşturma).",
+            ),
+            en = listOf(
+                "Version support from 1.8.9 to 26.3. Choose Vanilla, Fabric or Forge when making a profile (only what the version supports).",
+                "DNZ Client on 1.8.9 too: the same menus and modules, the D badge and DNZ Engine for more FPS.",
+                "Themes: Settings → \"Load theme file\". A .dnztheme changes the colors and decorations of the launcher and the in-game DNZ menu.",
+                "Skins: search a skin by player name or load one from a file, and wear it with one click.",
+                "\"Open logs\" button on profiles (works while the game runs). Discord shows \"Playing DNZ Client\".",
+                "New tray icon and right-click menu.",
+                "DNZ Client 1.40.0: Chat Heads (the writer's skin head next to each message) and Block Outline (the frame around the block you look at; color, rainbow, width, fill).",
+                "New mods installed automatically: Simple Voice Chat, ItemPhysic Lite (dropped items lie flat), 3D Skin Layers, Not Enough Crashes (a crash returns to the menu instead of closing the game), ScalableLux and Fast Noise (faster lighting and world generation).",
+            ),
+            de = listOf(
+                "Versionen von 1.8.9 bis 26.3. Beim Erstellen eines Profils Vanilla, Fabric oder Forge wählen (nur was die Version unterstützt).",
+                "DNZ Client jetzt auch für 1.8.9: gleiche Menüs und Module, das D-Abzeichen und DNZ Engine für mehr FPS.",
+                "Themes: Einstellungen → \"Theme-Datei laden\". Eine .dnztheme ändert Farben und Deko des Launchers und des DNZ-Menüs im Spiel.",
+                "Skins: Skin per Spielername suchen oder aus einer Datei laden und mit einem Klick tragen.",
+                "\"Logs öffnen\" bei Profilen (auch während das Spiel läuft). Discord zeigt \"Spielt DNZ Client\".",
+                "Neues Taskleisten-Symbol und Rechtsklick-Menü.",
+                "DNZ Client 1.40.0: Chat-Köpfe (Skin-Kopf des Schreibers neben jeder Nachricht) und Block-Umrandung (Farbe, Regenbogen, Dicke, Füllung).",
+                "Neue Mods werden automatisch installiert: Simple Voice Chat, ItemPhysic Lite, 3D Skin Layers, Not Enough Crashes (nach einem Absturz zurück ins Menü), ScalableLux und Fast Noise (schnelleres Licht und Weltgenerierung).",
+            ),
+        ),
         Release(
             "1.0.15",
             tr = listOf(
+                "Modpack desteği: Mods → Modpackler. Modrinth'teki Fabric modpacklerini tek tıkla yeni bir profil olarak kur.",
                 "Birden fazla Microsoft hesabı: Hesap sayfasında \"Başka hesap ekle\", sağ üstteki menüden tek tıkla hesap değiştir.",
-                "DNZ Client 1.39.0: Serbest Bakış (Freelook). Sol Alt'a basılı tut, karakterin etrafına bak. Sadece tek oyunculu dünyada çalışır, sunucularda kilitli.",
+                "DNZ Client 1.39.0: Serbest Bakış (Freelook). Sol Alt'a basılı tut, karakterin etrafına bak. Sadece tek oyunculu dünyada çalışır, sunucularda kapalı ve açılamaz.",
+                "Değişiklikler penceresi artık her açılışta tekrar çıkmıyor.",
             ),
             en = listOf(
+                "Modpack support: Mods → Modpacks. Install Fabric modpacks from Modrinth as a new profile with one click.",
                 "Several Microsoft accounts: \"Add another account\" on the Account page, switch with one click in the top-right menu.",
-                "DNZ Client 1.39.0: Freelook. Hold Left Alt to look around your player. Single player only, locked on servers.",
+                "DNZ Client 1.39.0: Freelook. Hold Left Alt to look around your player. Single player only, off and locked on servers.",
+                "The changelog no longer opens again on every start.",
             ),
             de = listOf(
+                "Modpack-Unterstützung: Mods → Modpacks. Fabric-Modpacks von Modrinth mit einem Klick als neues Profil installieren.",
                 "Mehrere Microsoft-Konten: \"Weiteres Konto hinzufügen\" auf der Kontoseite, Wechsel mit einem Klick oben rechts.",
-                "DNZ Client 1.39.0: Freelook. Linke Alt-Taste halten, um dich umzusehen. Nur im Einzelspieler, auf Servern gesperrt.",
+                "DNZ Client 1.39.0: Freelook. Linke Alt-Taste halten, um dich umzusehen. Nur im Einzelspieler, auf Servern aus und gesperrt.",
+                "Diese Übersicht erscheint nicht mehr bei jedem Start.",
             ),
         ),
         Release(
@@ -96,7 +149,7 @@ object Changelog {
         val current = Updater.current ?: return
         val last = state.lastVersion
         if (last == current) return
-        // No version saved yet: an older launcher (from before this popup) if settings already existed, else a fresh install.
+        // no version saved yet: an older launcher (from before this popup) if settings already existed, else a fresh install
         if (last != null || state.hadSettings) {
             if (notes(state.language, last, current).isNotEmpty()) {
                 state.changelogTo = current
@@ -104,6 +157,9 @@ object Changelog {
             }
         }
         state.lastVersion = current
+        // Saved at once: the automatic save skips changes made this early, and the popup would come back every start
+        val saved = Settings.snapshot(state)
+        Thread { Settings.save(saved) }.start()
     }
 }
 

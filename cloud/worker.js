@@ -1,22 +1,5 @@
-// DNZ Cloud: keeps a player's DNZ Client settings (key bindings, DNZ menu and HUD settings) so they follow the
-// player to another computer. Runs as a Cloudflare Worker at cloud.dnzclient.com.
-//
-// Sign-in without passwords or tokens: Minecraft gives every player a key pair whose public key Mojang signs
-// (the "player certificate" the game uses to sign chat). The game signs a fresh challenge from this worker with
-// that key; the worker checks Mojang's signature on the key (Mojang's public keys are below, from
-// api.minecraftservices.com/publickeys) and the signature on the challenge. Mojang is never asked (it blocks
-// requests from Cloudflare), and the player's access token never reaches DNZ.
-//
-// Bindings (Cloudflare dashboard → Worker → Settings):
-//   BUCKET  R2 bucket for the settings files (private, e.g. "dnz-cloud")
-//   SECRET  secret text, a long random value (signs the challenges and the short-lived session tokens)
-//   CURSEFORGE_KEY  secret text, DNZ's CurseForge API key (console.curseforge.com → API keys)
-//   WORKSHOP_CLIENT_IDS  text, see "DNZ Workshop library" below
-//   GOOGLE_CLIENT_ID  text, the Google sign-in client id of dnzclient.com (Google Cloud → Credentials)
-//   DB  D1 database, see "DNZ badge" at the end
-//
-// CurseForge relay (/cf/...): DNZ Launcher's mod library asks this worker, and the worker asks CurseForge with DNZ's
-// key, so the key is never inside the launcher. Only reading Minecraft mods is passed on; answers are cached briefly.
+// DNZ Cloud: keeps a player's DNZ Client settings (key bindings, DNZ menu and HUD settings) so they follow
+// the player to another computer.
 
 const MAX_SIZE = 256 * 1024;
 const TOKEN_TIME = 60 * 60; // seconds
@@ -33,6 +16,15 @@ export default {
 		try {
 			if (url.pathname.startsWith("/cf/")) {
 				return await curseforge(request, url, env);
+			}
+			if (url.pathname === "/presence" && request.method === "POST") {
+				return await presence(request, env);
+			}
+			if (url.pathname === "/presence" && request.method === "GET") {
+				return json(await presenceCounts(env));
+			}
+			if (url.pathname === "/admin" && request.method === "GET") {
+				return await adminPlayers(request, env);
 			}
 			if (url.pathname === "/online" && request.method === "POST") {
 				return await online(request, env);
@@ -76,6 +68,10 @@ export default {
 			}
 			return json({ error: "not found" }, 404);
 		} catch (e) {
+			// A missing setting is the owner's to fix; say which one instead of "bad request".
+			if (String(e && e.message).includes("is not set")) {
+				return json({ error: e.message }, 503);
+			}
 			return json({ error: "bad request" }, 400);
 		}
 	},
@@ -99,12 +95,12 @@ async function curseforge(request, url, env) {
 	}
 	const headers = { "x-api-key": env.CURSEFORGE_KEY, Accept: "application/json" };
 	if (featured) {
-		// Only Minecraft's lists; the launcher's body is not passed on.
+		// only Minecraft's lists; the launcher's body is not passed on
 		headers["Content-Type"] = "application/json";
 		const r = await fetch("https://api.curseforge.com/v1/mods/featured", { method: "POST", headers, body: JSON.stringify({ gameId: 432, excludedModIds: [] }) });
 		return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json" } });
 	}
-	// The same question within a few minutes is answered from Cloudflare's cache (CurseForge is asked once).
+	// the same question within a few minutes is answered from Cloudflare's cache (CurseForge is asked once)
 	const cache = caches.default;
 	const cacheKey = new Request(url.toString(), { method: "GET" });
 	const hit = await cache.match(cacheKey);
@@ -120,22 +116,22 @@ async function curseforge(request, url, env) {
 }
 
 /**
- * {uuid, expiresAt, publicKey, keySignature, challenge, signature} → a session token for one hour, when Mojang
- * signed the player's key for that uuid and that key signed the challenge.
+ * {uuid, expiresAt, publicKey, keySignature, challenge, signature} → a session token for one hour, when
+ * Mojang signed the player's key for that uuid and that key signed the challenge.
  */
 async function auth(request, env) {
 	const b = await request.json();
 	if (!/^[0-9a-f]{32}$/.test(b.uuid) || typeof b.expiresAt !== "number" || b.expiresAt < Date.now()) {
 		return json({ error: "bad request" }, 400);
 	}
-	// The challenge must come from this worker and be fresh.
+	// the challenge must come from this worker and be fresh
 	const [nonce, mac] = String(b.challenge).split(".");
 	if (!nonce || mac !== (await sign(nonce, env.SECRET))
 		|| JSON.parse(new TextDecoder().decode(fromB64url(nonce))).t < Date.now() / 1000 - CHALLENGE_TIME) {
 		return json({ error: "bad challenge" }, 401);
 	}
 	const publicKey = fromB64(b.publicKey);
-	// What Mojang signed: uuid (16 bytes) + expiry in milliseconds (8 bytes) + the player's public key.
+	// what Mojang signed: uuid (16 bytes) + expiry in milliseconds (8 bytes) + the player's public key
 	const payload = new Uint8Array(24 + publicKey.length);
 	for (let i = 0; i < 16; i++) {
 		payload[i] = parseInt(b.uuid.substr(i * 2, 2), 16);
@@ -173,6 +169,9 @@ async function session(request, env) {
 }
 
 async function sign(text, secret) {
+	if (!secret) {
+		throw new Error("SECRET is not set (Worker → Settings → Variables and Secrets)");
+	}
 	const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
 	return b64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text))));
 }
@@ -194,10 +193,7 @@ function json(data, status = 200) {
 }
 
 // ------------------------------------------------------------------ DNZ Workshop library
-// The Workshop items a player added (theme ids), the same list on dnzclient.com and in DNZ Launcher. The player is
-// known by their Microsoft account: both send a Microsoft ID token, checked here with Microsoft's public keys.
-// Stored in BUCKET as workshop/library/<Microsoft account id>.json. Setting:
-//   WORKSHOP_CLIENT_IDS  text: the Application (client) IDs allowed to sign in, comma separated (website, launcher)
+// The Workshop items a player added (theme ids), the same list on dnzclient.com and in DNZ Launcher.
 
 const MS_ISSUER = "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"; // personal accounts
 const MS_KEYS = "https://login.microsoftonline.com/consumers/discovery/v2.0/keys";
@@ -240,6 +236,12 @@ async function workshopLibrary(request, env) {
 
 /** The Microsoft account id ("oid") of a valid ID token in the Authorization header, or null. */
 async function microsoftAccount(request, env) {
+	const claims = await microsoftClaims(request, env);
+	return claims ? String(claims.oid).replace(/[^A-Za-z0-9-]/g, "") : null;
+}
+
+/** The claims of a valid Microsoft ID token (DNZ Launcher or the website), or null. */
+async function microsoftClaims(request, env) {
 	const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
 	const parts = token.split(".");
 	if (parts.length !== 3) {
@@ -258,12 +260,12 @@ async function microsoftAccount(request, env) {
 	}
 	const key = await crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
 	const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, fromB64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
-	return ok ? String(claims.oid).replace(/[^A-Za-z0-9-]/g, "") : null;
+	return ok ? claims : null;
 }
 
 /**
- * Who signed in on the website or in DNZ Launcher: a Microsoft account id ("oid", as before) or "g-" + a Google
- * account id. Both are checked with the provider's public keys; null when the token is missing or not valid.
+ * Who signed in on the website or in DNZ Launcher: a Microsoft account id ("oid", as before) or "g-" + a
+ * Google account id.
  */
 async function webAccount(request, env) {
 	return (await microsoftAccount(request, env)) || (await googleAccount(request, env));
@@ -355,11 +357,8 @@ async function microsoftKey(kid) {
 }
 
 // ------------------------------------------------------------------ DNZ badge (who plays with DNZ Client)
-// While a player is on a server, DNZ Client sends (every few minutes) the ids of the players it sees, signed in as
-// above. The worker notes that this player uses DNZ Client right now and answers which of the sent players did too,
-// so the game can draw the DNZ badge next to their names. Kept in the D1 database DB, table "online" (one row per
-// player: id and last time seen). Binding:
-//   DB  D1 database (e.g. "dnz-db")
+// While a player is on a server, DNZ Client sends (every few minutes) the ids of the players it sees, signed
+// in as above.
 
 const ONLINE_TIME = 10 * 60; // seconds: a player counts as using DNZ Client this long after their last report
 const ONLINE_MAX = 300; // ids per request
@@ -374,15 +373,154 @@ async function online(request, env) {
 		return json({ error: "no database" }, 503);
 	}
 	const body = await request.json();
+	// the player's own name (sent by DNZ Client 1.40.0+), only for the owner's Players page
+	const name = typeof body.name === "string" && /^[A-Za-z0-9_]{1,16}$/.test(body.name) ? body.name : null;
 	const ids = (Array.isArray(body.players) ? body.players : []).filter((p) => /^[0-9a-f]{32}$/.test(p)).slice(0, ONLINE_MAX);
 	const now = Math.floor(Date.now() / 1000);
-	if (!onlineTable) {
-		await env.DB.prepare("CREATE TABLE IF NOT EXISTS online (uuid TEXT PRIMARY KEY, seen INTEGER NOT NULL)").run();
-		onlineTable = true;
-	}
+	await onlineTableReady(env);
 	const [, found] = await env.DB.batch([
-		env.DB.prepare("INSERT INTO online (uuid, seen) VALUES (?1, ?2) ON CONFLICT(uuid) DO UPDATE SET seen = ?2").bind(uuid, now),
+		env.DB.prepare("INSERT INTO online (uuid, seen, name, first) VALUES (?1, ?2, ?3, ?2) ON CONFLICT(uuid) DO UPDATE SET seen = ?2, name = COALESCE(?3, name)")
+			.bind(uuid, now, name),
 		env.DB.prepare("SELECT o.uuid FROM json_each(?1) j JOIN online o ON o.uuid = j.value WHERE o.seen > ?2").bind(JSON.stringify(ids), now - ONLINE_TIME),
 	]);
 	return json({ dnz: found.results.map((r) => r.uuid) });
+}
+
+/** The "online" table with its newer columns (name, first) added to an older one. */
+async function onlineTableReady(env) {
+	if (onlineTable) {
+		return;
+	}
+	await env.DB.prepare("CREATE TABLE IF NOT EXISTS online (uuid TEXT PRIMARY KEY, seen INTEGER NOT NULL, name TEXT, first INTEGER)").run();
+	for (const column of ["name TEXT", "first INTEGER"]) {
+		try {
+			await env.DB.prepare(`ALTER TABLE online ADD COLUMN ${column}`).run();
+		} catch (e) {
+			// already there
+		}
+	}
+	onlineTable = true;
+}
+
+// ------------------------------------------------------------------ Players page (owner only)
+// cloud.dnzclient.com/admin lists the players of the "online" table (everyone who played on a server with DNZ
+// Client and the DNZ badge on): name, first and last time seen.
+
+async function accessEmail(request, env) {
+	const token = request.headers.get("Cf-Access-Jwt-Assertion");
+	if (!token || !env.ACCESS_TEAM || !env.ACCESS_AUD || !env.ADMIN_EMAIL) {
+		return null;
+	}
+	const [head, payload, signature] = token.split(".");
+	if (!head || !payload || !signature) {
+		return null;
+	}
+	const header = JSON.parse(new TextDecoder().decode(fromB64url(head)));
+	const certs = await (await fetch(`https://${env.ACCESS_TEAM}/cdn-cgi/access/certs`)).json();
+	const jwk = (certs.keys || []).find((k) => k.kid === header.kid);
+	if (!jwk || header.alg !== "RS256") {
+		return null;
+	}
+	const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+	const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, fromB64url(signature), new TextEncoder().encode(`${head}.${payload}`));
+	if (!ok) {
+		return null;
+	}
+	const data = JSON.parse(new TextDecoder().decode(fromB64url(payload)));
+	const audiences = Array.isArray(data.aud) ? data.aud : [data.aud];
+	const email = String(data.email || "").toLowerCase();
+	if (!audiences.includes(env.ACCESS_AUD) || data.iss !== `https://${env.ACCESS_TEAM}` || data.exp * 1000 < Date.now()
+		|| email !== String(env.ADMIN_EMAIL).toLowerCase()) {
+		return null;
+	}
+	return email;
+}
+
+async function adminPlayers(request, env) {
+	if (!(await accessEmail(request, env))) {
+		return new Response("Not allowed", { status: 403 });
+	}
+	if (!env.DB) {
+		return new Response("No database (DB binding)", { status: 503 });
+	}
+	await onlineTableReady(env);
+	const rows = (await env.DB.prepare("SELECT uuid, seen, name, first FROM online ORDER BY seen DESC LIMIT 2000").all()).results;
+	const now = Math.floor(Date.now() / 1000);
+	const day = rows.filter((r) => r.seen > now - 86400).length;
+	const week = rows.filter((r) => r.seen > now - 7 * 86400).length;
+	const nowOn = rows.filter((r) => r.seen > now - ONLINE_TIME).length;
+	const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+	const ago = (t) => {
+		const d = now - t;
+		return d < 60 ? "az önce" : d < 3600 ? `${Math.floor(d / 60)} dk önce` : d < 86400 ? `${Math.floor(d / 3600)} saat önce` : `${Math.floor(d / 86400)} gün önce`;
+	};
+	const date = (t) => (t ? new Date(t * 1000).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }) : "-");
+	const list = rows.map((r) => {
+		const id = esc(r.uuid);
+		const online = r.seen > now - ONLINE_TIME;
+		return `<tr><td><img src="https://mc-heads.net/avatar/${id}/28" width="28" height="28" alt=""></td>
+<td><b>${r.name ? esc(r.name) : "<span class=m>(isim yok)</span>"}</b><div class=m>${id}</div></td>
+<td>${online ? "<span class=on>● oyunda</span>" : esc(ago(r.seen))}<div class=m>${esc(date(r.seen))}</div></td>
+<td class=m>${esc(date(r.first))}</td></tr>`;
+	}).join("");
+	const page = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNZ Oyuncular</title><meta name="robots" content="noindex">
+<style>body{margin:0;background:#0a0d12;color:#f2f4fa;font:14px system-ui,sans-serif;padding:24px}h1{margin:0 0 4px}
+.m{color:#8c95ab;font-size:12px}.cards{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}.card{background:#151b25;border:1px solid #ffffff22;border-radius:12px;padding:14px 18px;min-width:120px}
+.card b{display:block;font-size:24px}table{width:100%;border-collapse:collapse;background:#151b25;border-radius:12px;overflow:hidden}
+td,th{padding:10px 12px;border-bottom:1px solid #ffffff12;text-align:left;vertical-align:middle}th{color:#8c95ab;font-weight:600;font-size:12px}
+img{border-radius:6px;display:block}.on{color:#7ce38b;font-weight:600}</style></head><body>
+<h1>DNZ Oyuncular</h1><div class=m>DNZ Client ile sunucuda oynayan ve DNZ Rozeti açık olan oyuncular. Sadece sen görebilirsin.</div>
+<div class=cards><div class=card><b>${nowOn}</b>şu an oyunda</div><div class=card><b>${day}</b>son 24 saat</div><div class=card><b>${week}</b>son 7 gün</div><div class=card><b>${rows.length}</b>toplam</div></div>
+<table><tr><th></th><th>Oyuncu</th><th>En son</th><th>İlk görülme</th></tr>${list || "<tr><td colspan=4 class=m>Henüz kimse yok.</td></tr>"}</table>
+</body></html>`;
+	return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Frame-Options": "DENY" } });
+}
+
+// ------------------------------------------------------------------ Launcher presence
+// Every DNZ Launcher says about once a minute whether it is open ("launcher") or its game is running
+// ("game"), with a random install id made on its first start (no account, name or IP is kept).
+
+const PRESENCE_TIME = 150;
+let presenceTable = false;
+
+async function presenceReady(env) {
+	if (presenceTable) {
+		return;
+	}
+	await env.DB.prepare("CREATE TABLE IF NOT EXISTS presence (id TEXT PRIMARY KEY, state TEXT NOT NULL, seen INTEGER NOT NULL, first INTEGER NOT NULL)").run();
+	await env.DB.prepare("CREATE INDEX IF NOT EXISTS presence_seen ON presence (seen)").run();
+	presenceTable = true;
+}
+
+async function presenceCounts(env) {
+	if (!env.DB) {
+		return { launcher: 0, game: 0, total: 0 };
+	}
+	await presenceReady(env);
+	const since = Math.floor(Date.now() / 1000) - PRESENCE_TIME;
+	const rows = (await env.DB.prepare("SELECT state, COUNT(*) AS n FROM presence WHERE seen > ?1 AND state != 'off' GROUP BY state").bind(since).all()).results;
+	const game = rows.filter((r) => r.state === "game").reduce((a, r) => a + r.n, 0);
+	const launcher = rows.reduce((a, r) => a + r.n, 0);
+	const total = (await env.DB.prepare("SELECT COUNT(*) AS n FROM presence").first()).n;
+	// "launcher": everyone with DNZ Launcher open (also the ones playing), "game": the ones playing now,
+	// "total": every installation that ever opened DNZ Launcher
+	return { launcher, game, total };
+}
+
+async function presence(request, env) {
+	if (!env.DB) {
+		return json({ error: "no database" }, 503);
+	}
+	const body = await request.json();
+	const id = String(body.id || "").toLowerCase();
+	const state = ["launcher", "game", "off"].includes(body.state) ? body.state : "launcher";
+	if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {
+		return json({ error: "bad id" }, 400);
+	}
+	await presenceReady(env);
+	const now = Math.floor(Date.now() / 1000);
+	await env.DB.prepare("INSERT INTO presence (id, state, seen, first) VALUES (?1, ?2, ?3, ?3) ON CONFLICT(id) DO UPDATE SET state = ?2, seen = ?3")
+		.bind(id, state, now).run();
+	return json(await presenceCounts(env));
 }

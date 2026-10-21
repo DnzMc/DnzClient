@@ -5,9 +5,8 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * Account switching on a COPY of the Minecraft Launcher's account file (the real one is only read):
- * a second fake account is added to the copy, then switched to; everything else must stay the same.
- * Also loads the skin face of the real account. gradlew accountsTest
+ * Account switching on a COPY of the Minecraft Launcher's account file (the real one is only read): a second
+ * fake account is added to the copy, then switched to; everything else must stay the same.
  */
 fun main() {
     val official = Accounts.readOfficial()
