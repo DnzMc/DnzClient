@@ -22,7 +22,6 @@ public final class SkinUploader {
 	private SkinUploader() {
 	}
 
-	/** Completes with null on success, or a user-facing (Turkish) error message. */
 	public static CompletableFuture<String> upload(String accessToken, Path file, boolean slim) {
 		byte[] png;
 		try {

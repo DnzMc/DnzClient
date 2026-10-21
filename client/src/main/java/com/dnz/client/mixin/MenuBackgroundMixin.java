@@ -40,7 +40,7 @@ public abstract class MenuBackgroundMixin {
 		if (!this.dnz$picture()) {
 			return;
 		}
-		// Fill the whole screen without stretching: scale up until both sides are covered, crop the rest evenly.
+		// fill the whole screen without stretching: scale up until both sides are covered, crop the rest evenly
 		float scale = Math.max(this.width / PICTURE_W, this.height / PICTURE_H);
 		int w = (int) Math.ceil(PICTURE_W * scale);
 		int h = (int) Math.ceil(PICTURE_H * scale);

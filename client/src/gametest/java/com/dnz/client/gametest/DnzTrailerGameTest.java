@@ -22,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
  * editor.
  */
 public class DnzTrailerGameTest implements FabricClientGameTest {
-	/** The HUD that shows in the footage (a tidy set, not every module). */
 	private static final List<String> HUD = List.of("fps", "cps", "coords", "direction", "keystrokes", "minimap", "armor", "target", "combo", "reach", "crosshair");
 
 	@Override
@@ -56,7 +55,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 			Vec3 home = context.computeOnClient(mc -> mc.player.position());
 			double hx = home.x, hy = home.y, hz = home.z;
 
-			// 1 · Drone shot over the land: no HUD, high and slow.
+			// 1 · Drone shot over the land: no HUD, high and slow
 			server.runCommand("gamemode spectator @p");
 			context.runOnClient(mc -> { if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle(); });
 			tp(server, hx - 60, hy + 40, hz - 60, -45, 22);
@@ -67,7 +66,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 				shot(context, "fly", i);
 			}
 
-			// 2 · The HUD in first person, standing on the ground and looking around.
+			// 2 · The HUD in first person, standing on the ground and looking around
 			server.runCommand("gamemode survival @p");
 			context.runOnClient(mc -> { if (mc.gui.hud.isHidden()) mc.gui.hud.toggle(); });
 			server.runCommand("item replace entity @p armor.chest with minecraft:diamond_chestplate");
@@ -86,7 +85,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 				shot(context, "hud", i);
 			}
 
-			// 3 · A quick fight: target info, combo and reach count up.
+			// 3 · A quick fight: target info, combo and reach count up
 			tp(server, hx, hy, hz, 0, 5);
 			here(server, "summon minecraft:zombie ^ ^ ^2.6 {NoAI:1b,Health:40f,Attributes:[{id:\"minecraft:max_health\",base:40}]}");
 			context.waitTicks(10);
@@ -105,7 +104,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 			}
 			server.runCommand("kill @e[type=minecraft:zombie]");
 
-			// 4 · Hitboxes on, with animals around.
+			// 4 · Hitboxes on, with animals around
 			for (int i = 0; i < 8; i++) {
 				here(server, "summon minecraft:cow ^" + (i % 4 * 2 - 3) + " ^ ^" + (5 + i / 4 * 3) + " {NoAI:1b}");
 			}
@@ -119,7 +118,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 			}
 			context.runOnClient(mc -> DnzHud.module("hitboxes").setEnabled(false));
 
-			// 5 · Right Shift: the DNZ screen, then the Mods page with modules switching on.
+			// 5 · Right Shift: the DNZ screen, then the Mods page with modules switching on
 			tp(server, hx, hy, hz, 20, 0);
 			context.waitTicks(4);
 			context.runOnClient(mc -> mc.gui.setScreen(new DnzShiftScreen()));
@@ -136,7 +135,7 @@ public class DnzTrailerGameTest implements FabricClientGameTest {
 				shot(context, "menu", i);
 			}
 
-			// 6 · The HUD editor.
+			// 6 · The HUD editor
 			context.runOnClient(mc -> mc.gui.setScreen(new DnzHudScreen(null)));
 			for (int i = 0; i < 60; i++) {
 				shot(context, "editor", i);

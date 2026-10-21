@@ -11,9 +11,7 @@ import org.mozilla.javascript.ContextFactory;
  * script code runs on the game (render) thread.
  */
 final class ScriptEngine {
-	/** Loading a mod (running its top-level code). */
 	static final long LOAD_BUDGET_MS = 1000;
-	/** One event, timer, key or command handler. */
 	static final long CALL_BUDGET_MS = 40;
 	/** One HUD value (runs every few frames). */
 	static final long HUD_BUDGET_MS = 5;

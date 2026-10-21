@@ -56,7 +56,7 @@ public abstract class ServerEntryMixin {
 		int h = self.getHeight();
 		int accent = Theme.accentInfo().rgb();
 
-		// Card (covers vanilla's row), accent edge when selected.
+		// Card (covers vanilla's row), accent edge when selected
 		int bg = hovered ? 0xF01D2230 : 0xF0141820;
 		if (selected) {
 			Theme.roundedRect(g, x - 1, y - 1, w + 2, h + 2, 5, 0xFF000000 | accent);
@@ -71,7 +71,7 @@ public abstract class ServerEntryMixin {
 		int right = self.getContentRight();
 		this.extractIcon(g, cx, cy, this.icon.textureLocation());
 
-		// Right side: ping and players.
+		// right side: ping and players
 		ServerData.State state = this.serverData.state();
 		int pillRight = right - 2;
 		Component ping;
@@ -104,7 +104,7 @@ public abstract class ServerEntryMixin {
 			textRight = Math.min(textRight, pillRight - playersW - 6);
 		}
 
-		// Name and message of the day.
+		// Name and message of the day
 		int textX = cx + 38;
 		Theme.text(g, font, Component.literal(this.serverData.name), textX, cy + 2, 0xFFFFFFFF);
 		List<FormattedCharSequence> motd = font.split(this.serverData.motd, Math.max(40, right - textX - 70));
@@ -112,7 +112,7 @@ public abstract class ServerEntryMixin {
 			g.text(font, motd.get(i), textX, cy + 13 + i * 10, 0xFFB0B8C8, false);
 		}
 
-		// Join arrow on the icon while hovering, like vanilla (click still works the same).
+		// Join arrow on the icon while hovering, like vanilla (click still works the same)
 		if (hovered) {
 			g.fill(cx, cy, cx + 32, cy + 32, 0xA0101018);
 			boolean onIcon = mouseX >= cx && mouseX < cx + 32 && mouseY >= cy && mouseY < cy + 32;
@@ -120,7 +120,6 @@ public abstract class ServerEntryMixin {
 		}
 	}
 
-	/** Small rounded label ending at [right]; returns its width. */
 	private static int pill(GuiGraphicsExtractor g, Font font, Component text, int right, int y, int rgb) {
 		int w = font.width(text) + 10;
 		Theme.roundedRect(g, right - w, y, w, 12, 3, Theme.withAlpha(rgb, 0.16F));

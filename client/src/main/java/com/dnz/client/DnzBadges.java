@@ -27,7 +27,6 @@ import net.minecraft.resources.Identifier;
 public final class DnzBadges {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("DNZ Badge");
 	private static final FontDescription FONT = new FontDescription.Resource(Identifier.fromNamespaceAndPath("dnzclient", "badge"));
-	/** Seconds between two reports while on a server. */
 	private static final int EVERY = 120;
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 	private static final AtomicBoolean busy = new AtomicBoolean();
@@ -97,7 +96,7 @@ public final class DnzBadges {
 	private static void report(JsonArray players, String name) throws Exception {
 		JsonObject body = new JsonObject();
 		body.add("players", players);
-		// Own name, for the owner's list of DNZ players (cloud.dnzclient.com/admin).
+		// Own name, for the owner's list of DNZ players (cloud.dnzclient.com/admin)
 		body.addProperty("name", name);
 		HttpResponse<String> answer = send(body.toString());
 		if (answer.statusCode() == 401) {

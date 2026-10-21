@@ -40,7 +40,6 @@ public final class ModManager {
 		.followRedirects(HttpClient.Redirect.NORMAL)
 		.build();
 
-	/** Project ids installed during this session, so the UI can show "Yüklendi". */
 	private static final Set<String> INSTALLED_THIS_SESSION = new HashSet<>();
 
 	public record LocalMod(Path path, String name, String id, boolean enabled, boolean locked) {
@@ -96,7 +95,6 @@ public final class ModManager {
 		return mods;
 	}
 
-	/** Enables/disables a mod by renaming it. */
 	public static String toggle(LocalMod mod) {
 		if (mod.locked()) {
 			return L.t("mods.locked");
@@ -135,7 +133,6 @@ public final class ModManager {
 		});
 	}
 
-	/** Installs the newest compatible version plus required dependencies. */
 	public static CompletableFuture<String> install(RemoteMod mod) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {

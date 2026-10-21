@@ -34,7 +34,7 @@ public final class ModMenuTitleCount {
 				}
 			}
 		} catch (ReflectiveOperationException | RuntimeException e) {
-			// Another Mod Menu version: the count just stays.
+			// Another Mod Menu version: the count just stays
 		}
 	}
 }

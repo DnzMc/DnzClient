@@ -21,14 +21,12 @@ import net.minecraft.network.chat.Component;
 public final class Friends {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("dnzclient-friends.json");
 	private static List<String> names;
-	/** Friends on the current server (lower-case names), updated once a second. */
 	private static Set<String> here = Set.of();
 	private static String server;
 
 	private Friends() {
 	}
 
-	/** Friend names in the order they were added. */
 	public static synchronized List<String> list() {
 		if (names == null) {
 			names = new ArrayList<>();
@@ -101,7 +99,7 @@ public final class Friends {
 			}
 		}
 		String current = mc.getCurrentServer() == null ? "" : mc.getCurrentServer().ip;
-		// No notes for the friends already here when joining a server.
+		// no notes for the friends already here when joining a server
 		if (current.equals(server)) {
 			for (String n : list()) {
 				String lower = n.toLowerCase(Locale.ROOT);

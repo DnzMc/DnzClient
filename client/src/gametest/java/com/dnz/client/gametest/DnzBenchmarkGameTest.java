@@ -14,9 +14,9 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 /**
- * FPS benchmark (only with gradlew runClientGameTest -Pbench=base|full): the same busy scene every time — a
+ * FPS benchmark (only with gradlew runClientGameTest -Pbench=base|full): the same busy scene every time (a
  * big leaf block (forest), about 1900 chests with signs (block entities, like on a market/spawner server),
- * 200 armor stands, 80 animals — at 1600x900, render distance 12, unlimited FPS. Measures average FPS and the
+ * 200 armor stands, 80 animals) at 1600x900, render distance 12, unlimited FPS. Measures average FPS and the
  * 1% lows (stutters) for DNZ defaults, all DNZ HUD modules on, and DNZ Turbo off.
  */
 public class DnzBenchmarkGameTest implements FabricClientGameTest {
@@ -44,7 +44,7 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 			}
 			last = now;
 		});
-		// -Pbench_size=2560x1440 measures at the player's own resolution.
+		// -Pbench_size=2560x1440 measures at the player's own resolution
 		String[] size = System.getProperty("dnz.benchSize", "1600x900").split("x");
 		context.getInput().resizeWindow(Integer.parseInt(size[0]), Integer.parseInt(size[1]));
 		context.runOnClient(mc -> {
@@ -52,14 +52,14 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 			mc.options.simulationDistance().set(8);
 			mc.options.framerateLimit().set(260);
 			mc.options.enableVsync().set(false);
-			// Nobody touches the keyboard in a test: without this Minecraft drops to 30 FPS after 30 s (AFK limit).
+			// Nobody touches the keyboard in a test: without this Minecraft drops to 30 FPS after 30 s (AFK limit)
 			mc.options.inactivityFpsLimit().set(net.minecraft.client.InactivityFpsLimit.MINIMIZED);
 			DnzConfig.get().turbo = true;
 		});
 
 		List<String> report = new ArrayList<>();
 		report.add("DNZ FPS benchmark: " + bench + "  (" + String.join("x", size) + ", render distance 12)");
-		// A normal Minecraft world (hills, trees, caves, water), always the same seed so runs can be compared.
+		// A normal Minecraft world (hills, trees, caves, water), always the same seed so runs can be compared
 		try (TestSingleplayerContext world = context.worldBuilder().setUseConsistentSettings(false)
 			.adjustSettings(ui -> ui.setSeed("20261001")).create()) {
 			var server = world.getServer();
@@ -74,7 +74,7 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 			// for a while after joining; measuring during that would mostly measure the world generator.
 			context.waitTicks(1200);
 			report.add(measure(context, "Light: normal world"));
-			// Heavy scene, built around where the player stands (~ = relative to the player).
+			// Heavy scene, built around where the player stands (~ = relative to the player)
 			for (int x = -48; x < 48; x += 24) {
 				here(server, "fill ~" + x + " ~ ~30 ~" + (x + 23) + " ~15 ~70 minecraft:oak_leaves[persistent=true]");
 			}
@@ -94,7 +94,7 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 
 			report.add(measure(context, "Heavy: DNZ default"));
 			context.runOnClient(mc -> {
-				// Only the HUD panels (features like fullbright or streamer mode stay as they are).
+				// only the HUD panels (features like fullbright or streamer mode stay as they are)
 				for (HudModule m : DnzHud.modules()) {
 					if (m.movable()) {
 						m.setEnabled(true);
@@ -106,7 +106,7 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 			DnzHud.profiling = true;
 			report.add(measure(context, "DNZ all HUD panels on"));
 			DnzHud.profiling = false;
-			// Which panels cost the most (time on the game's thread per frame).
+			// which panels cost the most (time on the game's thread per frame)
 			DnzHud.PROFILE.entrySet().stream()
 				.sorted((a, b) -> Long.compare(b.getValue()[0] / Math.max(1, b.getValue()[1]), a.getValue()[0] / Math.max(1, a.getValue()[1])))
 				.limit(12)
@@ -125,7 +125,6 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 		}
 	}
 
-	/** Runs a command at the player's position. */
 	private static void here(net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext server, String command) {
 		server.runCommand("execute as @p at @s run " + command);
 	}
@@ -141,7 +140,7 @@ public class DnzBenchmarkGameTest implements FabricClientGameTest {
 		long[] frames = Arrays.copyOf(FRAMES, count);
 		Arrays.sort(frames);
 		double avgFps = count / (wall / 1e9);
-		// 1% low: the FPS of the slowest 1% of frames (stutters).
+		// 1% low: the FPS of the slowest 1% of frames (stutters)
 		int from = Math.max(0, (int) (frames.length * 0.99));
 		double slow = 0;
 		for (int i = from; i < frames.length; i++) {

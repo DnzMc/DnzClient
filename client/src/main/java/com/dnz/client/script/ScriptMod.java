@@ -21,7 +21,6 @@ public final class ScriptMod {
 	public final String version;
 	public final String author;
 	public final String description;
-	/** Folder, .dnzmod file or single .js file the mod was loaded from. */
 	public final Path source;
 	/** File name shown in error messages (e.g. "main.js"). */
 	final String fileName;
@@ -92,7 +91,6 @@ public final class ScriptMod {
 		return this.status;
 	}
 
-	/** Error text for the player, or null. */
 	public String error() {
 		return this.error;
 	}
@@ -102,7 +100,6 @@ public final class ScriptMod {
 		return this.errorLine;
 	}
 
-	/** Last lines the mod wrote with log(). */
 	public List<String> logLines() {
 		return List.copyOf(this.log);
 	}

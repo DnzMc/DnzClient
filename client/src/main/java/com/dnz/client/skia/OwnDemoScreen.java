@@ -19,7 +19,7 @@ public class OwnDemoScreen extends Screen {
 	}
 
 	private void text(GuiGraphicsExtractor g, FontDescription font, float px, float x, float y, int color, String s) {
-		// px = wanted text height in window pixels (like the Skia/NanoVG font size); Minecraft's font is 9 units tall.
+		// px = wanted text height in window pixels (like the Skia/NanoVG font size); Minecraft's font is 9 units tall
 		float scale = px / (float) this.minecraft.getWindow().getGuiScale() / 7.0F;
 		g.pose().pushMatrix();
 		g.pose().translate(x, y - 7.0F * scale);

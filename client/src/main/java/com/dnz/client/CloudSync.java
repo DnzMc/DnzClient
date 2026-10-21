@@ -45,9 +45,7 @@ public final class CloudSync {
 	/** Exists while the game sends settings at exit; DNZ Launcher shows a "don't close" note meanwhile. */
 	private static final Path SAVING = Path.of(System.getProperty("user.home"), ".dnzlauncher", "cloud-saving");
 	private static final Path STATE = FabricLoader.getInstance().getConfigDir().resolve("dnzclient-cloud.json");
-	/** Options of options.txt that travel besides the key bindings (key_*). */
 	private static final Set<String> OPTIONS = Set.of("mouseSensitivity", "toggleCrouch", "toggleSprint", "autoJump", "invertYMouse", "rawMouseInput");
-	/** DNZ settings that belong to one computer and stay local. */
 	private static final Set<String> LOCAL_FIELDS = Set.of("fpsDefaults", "macRetina");
 
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -59,7 +57,6 @@ public final class CloudSync {
 
 	private static String token;
 	private static long tokenUntil;
-	/** True after this session's first download: uploads before it could overwrite newer settings from another PC. */
 	private static volatile boolean ready;
 	private static volatile boolean dirty;
 	private static volatile boolean applying;
@@ -67,7 +64,6 @@ public final class CloudSync {
 	private CloudSync() {
 	}
 
-	/** The switch, read once (and again when it is changed in the game). */
 	private static volatile Boolean on;
 
 	public static boolean enabled() {
@@ -122,7 +118,7 @@ public final class CloudSync {
 				}
 				ready = true;
 			} catch (Exception e) {
-				// Offline or not signed in with a Minecraft account: try again next start.
+				// Offline or not signed in with a Minecraft account: try again next start
 				LOG.warn("Cloud sync failed at start: {}", e.toString());
 			}
 		});
@@ -232,7 +228,6 @@ public final class CloudSync {
 		return values;
 	}
 
-	/** Replaces the synced lines of options.txt (other options stay as they are on this computer). */
 	private static void writeOptions(Map<String, String> values) throws Exception {
 		File file = optionsFile();
 		List<String> out = new ArrayList<>();
@@ -281,7 +276,7 @@ public final class CloudSync {
 		}
 		Minecraft mc = Minecraft.getInstance();
 		User user = mc.getUser();
-		// The player certificate the game uses for chat: Mojang signed its public key for this player.
+		// the player certificate the game uses for chat: Mojang signed its public key for this player
 		ProfileKeyPair keys = mc.getProfileKeyPairManager().prepareKeyPair().get(20, TimeUnit.SECONDS)
 			.orElseThrow(() -> new IllegalStateException("no player certificate (offline account?)"));
 		ProfilePublicKey.Data data = keys.publicKey().data();

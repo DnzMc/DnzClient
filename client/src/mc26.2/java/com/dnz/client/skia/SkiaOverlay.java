@@ -97,13 +97,13 @@ public final class SkiaOverlay {
 			}
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 			GL11.glViewport(0, 0, w, h);
-			// Minecraft leaves its own pixel upload settings; NanoVG's font texture needs the defaults.
+			// Minecraft leaves its own pixel upload settings; NanoVG's font texture needs the defaults
 			GL15.glBindBuffer(0x88EC, 0);
 			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 			GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, 0);
 			GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
 			GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
-			// Minecraft binds sampler objects (they override texture filtering); NanoVG expects none.
+			// Minecraft binds sampler objects (they override texture filtering); NanoVG expects none
 			for (int i = 0; i < 4; i++) {
 				GL33.glBindSampler(i, 0);
 			}
@@ -128,7 +128,6 @@ public final class SkiaOverlay {
 		return pixels;
 	}
 
-	/** The OpenGL state Minecraft expects to find unchanged. */
 	private record State(int program, int vao, int arrayBuffer, int drawFbo, int readFbo, int activeTexture, int[] textures,
 			int[] samplers, int[] viewport, int[] scissorBox, boolean blend, int[] blendFunc, int blendEq, boolean depth,
 			boolean depthMask, boolean cull, boolean scissor, boolean stencil, int[] colorMask, int unpackAlign,

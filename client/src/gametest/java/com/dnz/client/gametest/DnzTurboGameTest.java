@@ -30,7 +30,7 @@ public class DnzTurboGameTest implements FabricClientGameTest {
 
 			world.getServer().runCommand("execute as @p at @s run particle minecraft:flame ~ ~1 ~3 2 2 2 0 5000 force");
 			context.waitTicks(2);
-			// countParticles() looks like "SQ 1500 T 1500": take the biggest number in it.
+			// countParticles() looks like "SQ 1500 T 1500": take the biggest number in it
 			int particles = context.computeOnClient(mc -> java.util.regex.Pattern.compile("\\d+").matcher(mc.particleEngine.countParticles())
 				.results().mapToInt(m -> Integer.parseInt(m.group())).max().orElse(0));
 			check("particles capped at " + Turbo.PARTICLE_LIMIT + " (were " + particles + ")", particles <= Turbo.PARTICLE_LIMIT + 50);
@@ -46,7 +46,6 @@ public class DnzTurboGameTest implements FabricClientGameTest {
 		System.out.println("[DNZ TEST] TURBO OK");
 	}
 
-	/** Would Turbo skip the armor stand about [distance] blocks from the player? */
 	private static boolean skipped(ClientGameTestContext context, int distance) {
 		return context.computeOnClient(mc -> {
 			for (Entity entity : mc.level.entitiesForRendering()) {

@@ -26,7 +26,7 @@ public class AbstractSliderButtonMixin {
 		}
 		AbstractWidget self = (AbstractWidget) (Object) this;
 		if (Theme.dnzStyle()) {
-			// DNZ: dark glass box, the part up to the value lit in the accent color, a white knob.
+			// DNZ: dark glass box, the part up to the value lit in the accent color, a white knob
 			if (w == 8 && self.getWidth() != 8) {
 				int left = self.getX();
 				int accent = self.active ? Theme.menuAccent() : 0xFF5B5F69;

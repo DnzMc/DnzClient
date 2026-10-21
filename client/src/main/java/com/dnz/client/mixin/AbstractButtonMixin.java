@@ -53,7 +53,7 @@ public class AbstractButtonMixin {
 		Component text = Theme.smooth(self.getMessage());
 		int max = self.getWidth() - 8;
 		if (font.width(text) > max) {
-			// Too long for the button: cut it and add "..." (vanilla would scroll it).
+			// Too long for the button: cut it and add "..." (vanilla would scroll it)
 			text = Theme.smooth(Component.literal(font.plainSubstrByWidth(self.getMessage().getString(), max - font.width("...")) + "..."));
 		}
 		int color = self.active ? 0xFFFFFFFF : 0xFF9AA0AC;

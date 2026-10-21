@@ -12,7 +12,6 @@ public final class SmoothBlit {
 	private SmoothBlit() {
 	}
 
-	/** The whole texture into the box (x0, y0) - (x1, y1). */
 	public static void blit(GuiGraphicsExtractor g, Identifier texture, int x0, int y0, int x1, int y1) {
 		AbstractTexture t = Minecraft.getInstance().getTextureManager().getTexture(texture);
 		g.blit(t.getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR), x0, y0, x1, y1, 0, 1, 0, 1);

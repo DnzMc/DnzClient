@@ -20,7 +20,6 @@ public final class DnzConfig {
 	/** Chest / inventory screens: false = vanilla white, true = black. */
 	public boolean containerDark = false;
 	public boolean fullbright = false;
-	/** Hides random block texture rotation and HUD coordinates. */
 	public boolean streamerMode = false;
 	/** Java style: vanilla Minecraft buttons. */
 	public boolean javaStyle = false;
@@ -57,7 +56,6 @@ public final class DnzConfig {
 	public boolean testTitle = false;
 	/** HUD elements by id; positions are fractions (0..1) of the screen size. */
 	public java.util.Map<String, HudPos> hud = new java.util.LinkedHashMap<>();
-	/** DNZ Script mods the player turned off (by mod id). */
 	public java.util.Set<String> disabledScripts = new java.util.LinkedHashSet<>();
 
 	/** Custom crosshair settings (module "crosshair"); sizes in screen pixels. */
@@ -73,7 +71,6 @@ public final class DnzConfig {
 		public boolean dot = false;
 	}
 
-	/** Block outline settings (module "blockoutline"). */
 	public BlockOutline blockOutline = new BlockOutline();
 
 	public static class BlockOutline {
@@ -84,7 +81,6 @@ public final class DnzConfig {
 		public float thickness = 2;
 		/** Rainbow color that keeps changing. */
 		public boolean chroma = false;
-		/** Fills the block faces with the color too. */
 		public boolean fill = false;
 		/** Fill opacity in percent. */
 		public int fillOpacity = 20;
@@ -106,7 +102,6 @@ public final class DnzConfig {
 		public java.util.Map<String, Boolean> opts = new java.util.HashMap<>();
 		/** Text before the value ("FPS" in "FPS 240"); empty = the module's own name. */
 		public String label = "";
-		/** Free-form value used by editable HUD modules (text or item identifier). */
 		public String value = "";
 
 		public HudPos() {
@@ -142,7 +137,7 @@ public final class DnzConfig {
 			try (Reader reader = Files.newBufferedReader(FILE)) {
 				DnzConfig config = GSON.fromJson(reader, DnzConfig.class);
 				if (config != null) {
-					// Files from older versions don't have the newer fields.
+					// Files from older versions don't have the newer fields
 					if (config.hud == null) {
 						config.hud = new java.util.LinkedHashMap<>();
 					}

@@ -55,7 +55,6 @@ public final class ScriptManager {
 	private static final int MAX_CODE_CHARS = 512 * 1024;
 	private static final int MAX_RUNTIME_ERRORS = 25;
 	private static final long HUD_CACHE_NANOS = 50_000_000L;
-	/** "// @name Saat" style info lines at the top of a single-file mod. */
 	private static final java.util.regex.Pattern HEADER = java.util.regex.Pattern.compile("//\\s*@(name|version|author|description|id)\\s+(.+)");
 
 	private static final List<ScriptMod> MODS = new ArrayList<>();
@@ -220,7 +219,6 @@ public final class ScriptManager {
 		}
 	}
 
-	/** Turns a mod on (runs it) or off (stops it) and remembers the choice. */
 	public static void setEnabled(ScriptMod mod, boolean enabled) {
 		Set<String> disabled = DnzConfig.get().disabledScripts;
 		if (enabled) {
@@ -286,7 +284,6 @@ public final class ScriptManager {
 		return found;
 	}
 
-	/** Reads one entry of the scripts folder, or null if it isn't a script mod. */
 	private static ScriptMod read(Path path) throws IOException {
 		String file = path.getFileName().toString();
 		if (Files.isDirectory(path)) {
@@ -409,7 +406,6 @@ public final class ScriptManager {
 		emitAll("tick", null);
 	}
 
-	/** A key went down (from KeyboardHandlerMixin). */
 	public static void onKeyPress(int keyCode) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.gui.screen() != null) {
@@ -480,7 +476,6 @@ public final class ScriptManager {
 		return invokeWith(mod, fn, ScriptEngine.CALL_BUDGET_MS, cx -> args, false);
 	}
 
-	/** Calls a script function with a time limit and catches its errors. */
 	private static Object invokeWith(ScriptMod mod, Function fn, long budgetMs, java.util.function.Function<Context, Object[]> args, boolean asText) {
 		if (mod.scope == null) {
 			return null;
@@ -502,7 +497,6 @@ public final class ScriptManager {
 
 	// ------------------------------------------------------------------ errors
 
-	/** Line in the mod's own file where the error happened (not in DNZ's code). */
 	private static int line(ScriptMod mod, RhinoException e) {
 		for (ScriptStackElement element : e.getScriptStack()) {
 			if (mod.fileName.equals(element.fileName)) {
@@ -591,7 +585,6 @@ public final class ScriptManager {
 		thread.start();
 	}
 
-	/** Watches the scripts folder and every mod folder in it. */
 	private static void registerWatches() {
 		if (watcher == null) {
 			return;

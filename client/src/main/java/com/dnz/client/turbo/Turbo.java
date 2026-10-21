@@ -19,7 +19,6 @@ import net.minecraft.world.level.block.entity.SkullBlockEntity;
  * particles.
  */
 public final class Turbo {
-	/** Most particles on screen at once (Minecraft allows far more). */
 	public static final int PARTICLE_LIMIT = 1500;
 	private static final double DECORATION_DISTANCE = 32;
 	private static final double DROP_DISTANCE = 24;

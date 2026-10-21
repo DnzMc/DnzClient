@@ -66,7 +66,7 @@ public final class ScriptEngineCheck {
 		} catch (RhinoException e) {
 			System.out.println("  ok  " + name + " -> blocked: " + e.details());
 		} catch (RuntimeException | StackOverflowError e) {
-			// Blocked, but not as a script error; still safe, report it.
+			// Blocked, but not as a script error; still safe, report it
 			System.out.println("  ok  " + name + " -> blocked (" + e.getClass().getSimpleName() + "): " + e.getMessage());
 		}
 	}

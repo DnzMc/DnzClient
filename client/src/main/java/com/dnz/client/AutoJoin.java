@@ -18,7 +18,6 @@ import net.minecraft.client.multiplayer.resolver.ServerAddress;
  */
 public final class AutoJoin {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("dnzclient-join.json");
-	/** Older notes are ignored (e.g. the game was not started after all). */
 	private static final long MAX_AGE_MS = 10 * 60 * 1000L;
 	private static boolean done;
 
@@ -48,7 +47,7 @@ public final class AutoJoin {
 			if (address.isBlank() || System.currentTimeMillis() - time > MAX_AGE_MS) {
 				return false;
 			}
-			// After the title screen has finished opening.
+			// after the title screen has finished opening
 			mc.execute(() -> ConnectScreen.startConnecting(screen, mc, ServerAddress.parseString(address),
 				new ServerData(name, address, ServerData.Type.OTHER), false, null));
 			return true;

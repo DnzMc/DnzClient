@@ -58,7 +58,7 @@ public class DnzSkiaGameTest implements FabricClientGameTest {
 			world.getServer().runCommand("time set 6000");
 			context.waitTicks(400);
 			report.add(measure(context, "No menu"));
-			// New HUD modules: picture for checking (hud-new.png in the screenshots folder).
+			// new HUD modules: picture for checking (hud-new.png in the screenshots folder)
 			context.runOnClient(mc -> {
 				for (String id : new String[] {"minimap", "lookat", "crosshair", "direction", "tps", "entities", "chunks", "xp", "dimension", "frametime"}) {
 					com.dnz.client.hud.DnzHud.module(id).setEnabled(true);
@@ -102,7 +102,6 @@ public class DnzSkiaGameTest implements FabricClientGameTest {
 		}
 	}
 
-	/** Opens the demo screen, measures FPS and saves a picture (dnz-<name>.png). */
 	private static void compare(ClientGameTestContext context, List<String> report, String name, java.util.function.Supplier<net.minecraft.client.gui.screens.Screen> screen) {
 		context.runOnClient(mc -> mc.gui.setScreen(screen.get()));
 		context.waitTicks(60);

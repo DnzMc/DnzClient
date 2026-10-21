@@ -31,7 +31,6 @@ public abstract class TextSmoothMixin {
 		return Theme.smoothAll ? Theme.smooth(text) : text;
 	}
 
-	/** No Minecraft drop shadow in the DNZ menu (it doubles the letters like pixel art). */
 	@ModifyVariable(method = TEXT, at = @At("HEAD"), argsOnly = true)
 	private boolean dnz$noShadow(boolean shadow) {
 		return shadow && !Theme.smoothAll;

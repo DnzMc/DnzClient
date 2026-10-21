@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** NanoVG menus: record a DNZ menu's content and tooltips. */
 @Mixin(Screen.class)
 public class ScreenNvgMixin {
-	// After the background: Minecraft's blur and dimming stay Minecraft's (the blur needs its own layer).
+	// after the background: Minecraft's blur and dimming stay Minecraft's (the blur needs its own layer)
 	@Inject(method = "extractRenderStateWithTooltipAndSubtitles", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/client/gui/screens/Screen;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"))
 	private void dnz$begin(GuiGraphicsExtractor g, int mouseX, int mouseY, float a, CallbackInfo ci) {

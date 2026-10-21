@@ -57,7 +57,7 @@ public abstract class TrueTypeProviderMixin implements SharpFonts.Sharp {
 		if (current == null || value == this.oversample) {
 			return;
 		}
-		// Minecraft loads glyphs while holding the face, so nothing is half loaded while the size changes.
+		// Minecraft loads glyphs while holding the face, so nothing is half loaded while the size changes
 		synchronized (current) {
 			if (this.face == null) {
 				return; // closed meanwhile (resource reload)

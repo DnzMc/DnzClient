@@ -33,7 +33,6 @@ import net.minecraft.client.multiplayer.ServerData;
  */
 public final class DiscordPresence {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger("DNZ Discord");
-	/** Application ID of the "DNZ Client" app in the Discord Developer Portal; its name is what Discord shows. */
 	private static final String APP_ID = "1558531559940816938";
 	private static final String WEBSITE = "https://dnzclient.com";
 	private static final long STARTED = System.currentTimeMillis();
@@ -140,7 +139,7 @@ public final class DiscordPresence {
 			pipe.receive();
 			sent = activity;
 		} catch (Exception e) {
-			// Discord closed or restarted: try again a little later.
+			// Discord closed or restarted: try again a little later
 			close();
 			nextConnect = System.currentTimeMillis() + 30_000;
 		}
@@ -181,7 +180,6 @@ public final class DiscordPresence {
 		sent = null;
 	}
 
-	/** One Discord IPC connection. */
 	private static final class Pipe {
 		private final InputStream in;
 		private final OutputStream out;

@@ -32,18 +32,18 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 			.filter(id -> net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded(id)).toList());
 		System.out.println("[DNZ TEST] performance mods loaded: " + perfMods);
 
-		// Default (Modern) look: sunset picture, sharp logo, smooth button labels.
+		// default (Modern) look: sunset picture, sharp logo, smooth button labels
 		style(context, false);
 		shot(context, "dnz-0-title", net.minecraft.client.gui.screens.TitleScreen::new);
 		shot(context, "dnz-0-singleplayer", () -> new net.minecraft.client.gui.screens.worldselection.SelectWorldScreen(null));
 
 		style(context, true);
 		context.runOnClient(mc -> mc.options.menuBackgroundBlurriness().set(6));
-		// Title screen and server list: smooth labels, sharp "DNZ CLIENT" logo.
+		// Title screen and server list: smooth labels, sharp "DNZ CLIENT" logo
 		shot(context, "simple-0-title", net.minecraft.client.gui.screens.TitleScreen::new);
 		shot(context, "simple-0-multiplayer", () -> new net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen(null));
 
-		// "Join" from the launcher: a note makes the game connect (to a closed port here, so it fails right away).
+		// "Join" from the launcher: a note makes the game connect (to a closed port here, so it fails right away)
 		boolean connecting = context.computeOnClient(mc -> {
 			try {
 				java.nio.file.Files.writeString(com.dnz.client.AutoJoin.noteFile(),
@@ -72,7 +72,7 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 			style(context, false);
 			shot(context, "dnz-pause", () -> new net.minecraft.client.gui.screens.PauseScreen(true));
 			shot(context, "dnz-inventory", () -> new net.minecraft.client.gui.screens.inventory.InventoryScreen(net.minecraft.client.Minecraft.getInstance().player));
-			// "DNZ Settings" in the ESC menu opens the DNZ menu.
+			// "DNZ Settings" in the ESC menu opens the DNZ menu
 			context.setScreen(() -> new net.minecraft.client.gui.screens.PauseScreen(true));
 			context.waitTicks(5);
 			String opened = context.computeOnClient(mc -> {
@@ -96,7 +96,7 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 			shot(context, "dnz-feedback", () -> new com.dnz.client.gui.DnzFeedbackTab(null));
 			shot(context, "dnz-module-coords", () -> new com.dnz.client.gui.DnzModuleScreen(null, com.dnz.client.hud.DnzHud.modules().stream().filter(m -> m.id.equals("coords")).findFirst().orElseThrow()));
 
-			// DNZ Config: the menu keeps its proportions at every window size and GUI scale.
+			// DNZ Config: the menu keeps its proportions at every window size and GUI scale
 			context.getInput().resizeWindow(1920, 1080);
 			context.waitTicks(5);
 			shot(context, "dnz-1080p-mods", () -> new com.dnz.client.gui.DnzHudTab(null));
@@ -104,7 +104,7 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 			shot(context, "dnz-1080p-gui2-mods", () -> new com.dnz.client.gui.DnzHudTab(null));
 			guiScale(context, 0);
 			shot(context, "dnz-1080p-visual", () -> new DnzVisualScreen(null));
-			// A dropdown list unfolded over the rows.
+			// A dropdown list unfolded over the rows
 			context.runOnClient(mc -> mc.gui.screen().children().forEach(child -> {
 				if (child instanceof com.dnz.client.gui.config.OptionList list) {
 					list.openChoice("Style");
@@ -114,7 +114,7 @@ public class DnzMenuGameTest implements FabricClientGameTest {
 			System.out.println("[DNZ TEST] screenshot " + context.takeScreenshot("dnz-1080p-dropdown").toAbsolutePath());
 			shot(context, "dnz-1080p-performance", () -> new com.dnz.client.gui.DnzPerformanceTab(null));
 			shot(context, "dnz-1080p-module", () -> new com.dnz.client.gui.DnzModuleScreen(null, com.dnz.client.hud.DnzHud.modules().stream().filter(m -> m.id.equals("fps")).findFirst().orElseThrow()));
-			// Themes: Modern white, Minecraft black and white.
+			// Themes: Modern white, Minecraft black and white
 			look(context, 0, true);
 			shot(context, "dnz-1080p-white-visual", () -> new DnzVisualScreen(null));
 			shot(context, "dnz-1080p-white-mods", () -> new com.dnz.client.gui.DnzHudTab(null));

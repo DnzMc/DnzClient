@@ -5,7 +5,6 @@ package com.dnz.client;
  * normal screen.
  */
 public final class MacRetina {
-	/** GLFW_COCOA_RETINA_FRAMEBUFFER (an alias of GLFW_SCALE_FRAMEBUFFER in GLFW 3.4). */
 	private static final int RETINA_HINT = 0x00023001;
 
 	private MacRetina() {
@@ -24,7 +23,7 @@ public final class MacRetina {
 			Class.forName("org.lwjgl.glfw.GLFW").getMethod("glfwWindowHint", int.class, int.class)
 				.invoke(null, RETINA_HINT, DnzConfig.get().macRetina ? 1 : 0);
 		} catch (ReflectiveOperationException ignored) {
-			// Keep the default (Retina) if GLFW changed.
+			// keep the default (Retina) if GLFW changed
 		}
 	}
 }

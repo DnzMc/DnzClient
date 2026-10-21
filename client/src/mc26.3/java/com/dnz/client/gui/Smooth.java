@@ -63,7 +63,6 @@ public final class Smooth {
 		access.dnz$state().addGuiElement(new Shape(new Matrix3x2f(g.pose()), x, y, w, h, r, soft, from, to, horizontal, scissor));
 	}
 
-	/** One smooth shape as part of the interface's frame. */
 	private record Shape(Matrix3x2fc pose, float x, float y, float w, float h, int radius, int softness, int from, int to,
 						 boolean horizontal, ScreenRectangle scissorArea, ScreenRectangle bounds) implements GuiElementRenderState {
 		Shape(Matrix3x2fc pose, float x, float y, float w, float h, int radius, int softness, int from, int to, boolean horizontal, ScreenRectangle scissor) {

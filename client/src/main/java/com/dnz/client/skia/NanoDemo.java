@@ -43,7 +43,6 @@ public final class NanoDemo {
 		nvgFill(vg);
 	}
 
-	/** Soft shadow under a rounded box (NanoVG's box gradient). */
 	private static void shadow(long vg, float x, float y, float w, float h, float r, float blur, float dy, int argb) {
 		nvgBoxGradient(vg, x, y + dy, w, h, r, blur, rgba(COLOR, argb), rgba(COLOR2, 0), PAINT);
 		nvgBeginPath(vg);

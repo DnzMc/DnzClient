@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-// Darkens chest / inventory textures for the black container style.
+// Darkens chest / inventory textures for the black container style
 @Mixin(GuiGraphicsExtractor.class)
 public class ContainerBlitMixin {
 	@ModifyVariable(method = "innerBlit(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIIIFFFFI)V", at = @At("HEAD"), argsOnly = true, ordinal = 4)

@@ -40,7 +40,7 @@ public class DnzClient implements ClientModInitializer {
 		KeyMappingHelper.registerKeyMapping(com.dnz.client.hud.Freelook.KEY);
 		KeyMappingHelper.registerKeyMapping(MENU_KEY);
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("dnzclient", "hud"), DnzHud::render);
-		// Custom crosshair when its module is on, Minecraft's own otherwise.
+		// Custom crosshair when its module is on, Minecraft's own otherwise
 		HudElementRegistry.replaceElement(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
 			if (com.dnz.client.hud.Crosshair.active(net.minecraft.client.Minecraft.getInstance())) {
 				com.dnz.client.hud.Crosshair.render(g, delta);
@@ -55,11 +55,11 @@ public class DnzClient implements ClientModInitializer {
 		com.dnz.client.hud.CleanHotbar.register();
 		AutoJoin.register();
 
-		// Once per install: VSync off and no FPS cap (they hold FPS back and add input delay in PvP).
+		// Once per install: VSync off and no FPS cap (they hold FPS back and add input delay in PvP)
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> CloudSync.start());
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> com.dnz.client.mods.ModMenuTitleCount.hide());
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> CloudSync.stop());
-		// Discord shows "Playing DNZ Client" (local pipe to the Discord app, see DiscordPresence).
+		// Discord shows "Playing DNZ Client" (local pipe to the Discord app, see DiscordPresence)
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> DiscordPresence.start());
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> DiscordPresence.stop());
 
@@ -89,18 +89,18 @@ public class DnzClient implements ClientModInitializer {
 			com.dnz.client.hud.ExtraModules.tick(client);
 			DiscordPresence.tick(client);
 			toggleSprint(client);
-			// Our fonts follow the window's pixel size (resized window, new GUI scale, menu closed).
+			// Our fonts follow the window's pixel size (resized window, new GUI scale, menu closed)
 			SharpFonts.update(client, client.gui.screen());
 		});
 
-		// Add a "Visual" tab button to the vanilla Options screen.
+		// add a "Visual" tab button to the vanilla Options screen
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
 			if (!(screen instanceof DnzMenuScreen)) {
 				SharpFonts.update(client, screen); // the DNZ menu does this itself, at its own scale
 			}
 			if (screen.getClass() == net.minecraft.client.gui.screens.TitleScreen.class && DnzConfig.get().testTitle
 				&& !DnzConfig.get().javaStyle) {
-				// Only if nothing else took over meanwhile (e.g. the launcher's "join this server" note).
+				// only if nothing else took over meanwhile (e.g. the launcher's "join this server" note)
 				client.execute(() -> {
 					if (client.gui.screen() == screen) {
 						client.gui.setScreen(new com.dnz.client.gui.DnzTitleScreen());
@@ -124,7 +124,6 @@ public class DnzClient implements ClientModInitializer {
 
 	private static boolean sprintHeld;
 
-	/** Auto sprint module: sprinting stays on while moving forward (same as holding the sprint key). */
 	private static void toggleSprint(Minecraft client) {
 		HudModule module = DnzHud.module("togglesprint");
 		boolean on = module != null && module.enabled() && client.player != null;
@@ -132,7 +131,7 @@ public class DnzClient implements ClientModInitializer {
 			client.options.keySprint.setDown(true);
 			sprintHeld = true;
 		} else if (sprintHeld) {
-			// Let go once when the module is turned off.
+			// let go once when the module is turned off
 			client.options.keySprint.setDown(false);
 			sprintHeld = false;
 		}

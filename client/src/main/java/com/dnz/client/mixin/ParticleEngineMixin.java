@@ -21,7 +21,6 @@ public class ParticleEngineMixin {
 	@Final
 	private Map<ParticleRenderType, ParticleGroup<?>> particles;
 
-	/** New particles wait here until the next tick; they count too (a burst of 5000 arrives in one tick). */
 	@Shadow
 	@Final
 	private Queue<Particle> particlesToAdd;

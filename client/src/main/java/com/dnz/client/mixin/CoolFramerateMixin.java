@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(FramerateLimitTracker.class)
 public class CoolFramerateMixin {
-	/** The menu FPS test measures menus without the cap. */
 	private static final boolean TESTING = !System.getProperty("dnz.skia", "").isEmpty();
 
 	@Inject(method = "getFramerateLimit", at = @At("RETURN"), cancellable = true)

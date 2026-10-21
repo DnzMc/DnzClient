@@ -36,7 +36,6 @@ public final class NvgOverlay {
 	private static final NVGColor C2 = NVGColor.create();
 	private static final NVGPaint PAINT = NVGPaint.create();
 	private static final float[] BOUNDS = new float[4];
-	/** NanoVG font size per face that gives the same text width as Minecraft's font (GUI units). */
 	private static final Map<String, Float> SIZE = new HashMap<>();
 	private static final ByteBuffer[] KEEP = new ByteBuffer[8];
 
@@ -96,7 +95,6 @@ public final class NvgOverlay {
 		}
 	}
 
-	/** GUI units -> window pixels, the clip area (screen coordinates), then the element's own transform. */
 	private static void place(float scale, float[] m, ScreenRectangle scissor) {
 		nvgResetTransform(vg);
 		nvgScale(vg, scale, scale);
@@ -115,7 +113,7 @@ public final class NvgOverlay {
 	private static void shape(NvgRecorder.Shape s) {
 		float r = Math.max(0, Math.min(s.radius(), Math.min(s.w(), s.h()) / 2));
 		if (s.softness() > 0) {
-			// Smooth.shadow passes the box already grown by the blur on every side.
+			// Smooth.shadow passes the box already grown by the blur on every side
 			float b = s.softness();
 			nvgBoxGradient(vg, s.x() + b, s.y() + b, s.w() - 2 * b, s.h() - 2 * b, Math.max(0, r - b), 2 * b,
 				color(C1, s.from()), color(C2, s.from() & 0xFFFFFF), PAINT);
@@ -144,7 +142,6 @@ public final class NvgOverlay {
 		nvgFill(vg);
 	}
 
-	/** NanoVG image handles of Minecraft textures (by OpenGL id). */
 	private static final Map<Integer, Integer> IMAGES = new HashMap<>();
 
 	private static void image(NvgRecorder.Image i) {
@@ -153,7 +150,7 @@ public final class NvgOverlay {
 		}
 		int w = tex.getWidth(0), h = tex.getHeight(0);
 		int img = IMAGES.computeIfAbsent(tex.glId(), id -> {
-			// Minecraft samples through sampler objects; NanoVG reads the texture's own filter, so give it one.
+			// Minecraft samples through sampler objects; NanoVG reads the texture's own filter, so give it one
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, id);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
@@ -206,7 +203,6 @@ public final class NvgOverlay {
 		return bold ? "semibold" : "regular";
 	}
 
-	/** Font size so NanoVG's text is as wide as Minecraft's (measured once per face). */
 	private static float size(String face, FontDescription font) {
 		return SIZE.computeIfAbsent(face, f -> {
 			String sample = f.equals("icons") ? String.valueOf(Icon.MODS) + Icon.SEARCH + Icon.CLOSE : "The quick brown fox jumps over 1234567890";

@@ -43,7 +43,7 @@ public class DnzHudGameTest implements FabricClientGameTest {
 			server.runCommand("give @p minecraft:ender_pearl 16");
 			server.runCommand("item replace entity @p armor.chest with minecraft:diamond_chestplate");
 			server.runCommand("item replace entity @p armor.head with minecraft:iron_helmet");
-			// Get hungry, then a little saturation back, so both food displays have something to show.
+			// get hungry, then a little saturation back, so both food displays have something to show
 			server.runCommand("effect give @p minecraft:hunger 4 255");
 			context.waitTicks(80);
 			server.runCommand("effect clear @p minecraft:hunger");
@@ -54,7 +54,7 @@ public class DnzHudGameTest implements FabricClientGameTest {
 			server.runCommand("execute as @p at @s run tp @s ~ ~ ~ facing entity @e[type=minecraft:zombie,limit=1,sort=nearest] eyes");
 			context.waitTicks(5);
 
-			// Two hits, far enough apart that both do damage.
+			// two hits, far enough apart that both do damage
 			for (int i = 0; i < 2; i++) {
 				context.runOnClient(mc -> {
 					Entity zombie = mc.level.getEntitiesOfClass(Zombie.class, mc.player.getBoundingBox().inflate(6)).stream().findFirst().orElse(null);
@@ -76,7 +76,7 @@ public class DnzHudGameTest implements FabricClientGameTest {
 			check("player is hungry (food preview visible)", food < 20);
 			System.out.println("[DNZ TEST] screenshot " + context.takeScreenshot("hud-all").toAbsolutePath());
 
-			// Shulker preview: a filled box gets the grid, and the text list of its contents is left out.
+			// Shulker preview: a filled box gets the grid, and the text list of its contents is left out
 			server.runCommand("item replace entity @p hotbar.8 with minecraft:red_shulker_box[container=[{slot:0,item:{id:\"minecraft:diamond\",count:64}},"
 				+ "{slot:13,item:{id:\"minecraft:totem_of_undying\",count:1}}]]");
 			context.waitTicks(5);
@@ -91,7 +91,7 @@ public class DnzHudGameTest implements FabricClientGameTest {
 				context.computeOnClient(mc -> com.dnz.client.hud.ShulkerPreview.of(mc.player.getInventory().getItem(8)).isEmpty()));
 			context.runOnClient(mc -> DnzHud.module("shulkerpreview").setEnabled(true));
 
-			// Turning a feature off from the Modules list works (zoom).
+			// Turning a feature off from the Modules list works (zoom)
 			context.runOnClient(mc -> DnzHud.module("zoom").setEnabled(false));
 			check("zoom can be switched off", !context.computeOnClient(mc -> DnzHud.module("zoom").enabled()));
 			context.runOnClient(mc -> DnzHud.module("zoom").setEnabled(true));

@@ -34,7 +34,7 @@ public final class ModConfigScreens {
 					return s;
 				}
 			} catch (Throwable ignored) {
-				// Sodium changed its API; fall back to the vanilla screen.
+				// Sodium changed its API; fall back to the vanilla screen
 			}
 		}
 		Minecraft mc = Minecraft.getInstance();
@@ -93,7 +93,7 @@ public final class ModConfigScreens {
 			} catch (Throwable ignored) {
 			}
 		}
-		// Mods without settings still get Mod Menu's default factory, which returns null; callers handle that.
+		// Mods without settings still get Mod Menu's default factory, which returns null; callers handle that
 		return factories;
 	}
 }

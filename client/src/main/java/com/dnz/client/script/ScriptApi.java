@@ -151,7 +151,7 @@ final class ScriptApi {
 			if (!mod.allow("chat.show", 20)) {
 				throw error("chat.show(): too many messages (max 20 per second)");
 			}
-			// Always starts with the mod's name, so a script can't pretend to be the server or another player.
+			// Always starts with the mod's name, so a script can't pretend to be the server or another player
 			Component line = Component.literal("[" + mod.name + "] ").withColor(Theme.accentInfo().rgb())
 				.append(Component.literal(limit(text(a, 0), 256)).withColor(color));
 			mc.gui.hud.getChat().addClientSystemMessage(line);
@@ -231,7 +231,6 @@ final class ScriptApi {
 		ScriptableObject.putProperty(target, name, new JsFunction(scope, name, 3, body));
 	}
 
-	/** An error the script can catch; shown to the player with the mod's line number. */
 	static RuntimeException error(String message) {
 		return Context.reportRuntimeError(message);
 	}
@@ -283,7 +282,6 @@ final class ScriptApi {
 		};
 	}
 
-	/** GLFW key code for names like "K", "F6", "LEFT_ALT", "SPACE". */
 	private static int keyCode(String name) {
 		String keyName = "key.keyboard." + name.trim().toLowerCase(Locale.ROOT).replace('_', '.').replace(' ', '.');
 		try {
@@ -304,7 +302,6 @@ final class ScriptApi {
 		return name;
 	}
 
-	/** Colors by name ("red", "gold", "accent"...) or hex ("#ff8800"). */
 	static int color(String name) {
 		String n = name.trim().toLowerCase(Locale.ROOT);
 		if (n.isEmpty()) {

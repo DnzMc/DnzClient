@@ -24,7 +24,6 @@ import net.minecraft.client.gui.screens.DeathScreen;
  * and errors show up in the DNZ menu.
  */
 public class DnzScriptGameTest implements FabricClientGameTest {
-	/** Records every event it gets in a HUD element, so the test can read what happened. */
 	private static final String EVENT_RECORDER = """
 		let seen = [];
 		function mark(what) { if (seen.indexOf(what) < 0) seen.push(what); }
@@ -49,7 +48,7 @@ public class DnzScriptGameTest implements FabricClientGameTest {
 		Path scripts = context.computeOnClient(mc -> ScriptManager.folder());
 		copyExamples(scripts);
 		write(scripts.resolve("dnz-test.js"), EVENT_RECORDER);
-		// Let the file watcher's reload happen now, not in the middle of the test.
+		// let the file watcher's reload happen now, not in the middle of the test
 		context.waitTicks(30);
 		context.runOnClient(mc -> ScriptManager.reloadAll(false));
 		for (String id : List.of("olum-sayaci", "saat", "can-uyarisi", "dnz-test")) {
@@ -78,7 +77,7 @@ public class DnzScriptGameTest implements FabricClientGameTest {
 			context.waitTicks(10);
 			expectSeen(context, "damage");
 
-			// By name: key numbers differ between versions (26.3 uses SDL scancodes, 26.2 GLFW codes).
+			// by name: key numbers differ between versions (26.3 uses SDL scancodes, 26.2 GLFW codes)
 			context.getInput().pressKey(InputConstants.getKey("key.keyboard.k"));
 			context.waitTicks(5);
 			expectSeen(context, "key");
